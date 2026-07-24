@@ -20,7 +20,12 @@ MASTER_PASSWORD = (os.environ.get("MASTER_PASSWORD") or "admin").strip()
 db = None
 if MONGO_URI and "<db_username>" not in MONGO_URI:
     try:
-        mongo_client = MongoClient(MONGO_URI)
+        # Usa os certificados atualizados do certifi para ignorar o erro de handshake TLS
+        mongo_client = MongoClient(
+            MONGO_URI,
+            tlsCAFile=certifi.where(),
+            serverSelectionTimeoutMS=5000
+        )
         db = mongo_client["sisunid"]
     except Exception as e:
         print("Erro ao conectar no MongoDB:", str(e))
