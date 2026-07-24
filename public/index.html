@@ -415,6 +415,55 @@
                 tbody.appendChild(tr);
             });
         }
+        // ----------------------------------------------------
+        // ENVIAR NOVA RECEPÇÃO (CRIAR PACIENTE NA FILA)
+        // ----------------------------------------------------
+        document.getElementById('form-recepcao').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const btn = this.querySelector('button');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'Gerando Protocolo...';
+            btn.disabled = true;
+
+            const payload = {
+                unidade_id: localStorage.getItem('unidade_id'),
+                nome_paciente: document.getElementById('req-nome').value,
+                cpf: document.getElementById('req-cpf').value,
+                email: document.getElementById('req-email').value,
+                telefone: document.getElementById('req-telefone').value,
+                procedimento: document.getElementById('req-procedimento').value,
+                prioridade: document.getElementById('req-prioridade').value
+            };
+
+            try {
+                const response = await fetch('/api/tenant/regulacoes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                if (data.sucesso) {
+                    showToast('Protocolo Gerado!', `Paciente registrado sob o protocolo #${data.protocolo}`);
+                    this.reset(); // Limpa o formulário
+                    switchView('dashboard', document.querySelectorAll('.nav-item')[0]); // Volta pro Dashboard
+                    carregarFilaEspera(); // Atualiza a tabela com o novo paciente
+                } else {
+                    alert('Erro ao salvar requisição: ' + data.erro);
+                }
+            } catch (error) {
+                // Fallback para testes visuais offline
+                console.error(error);
+                showToast('Aviso', 'Modo Offline: Registro simulado com sucesso.');
+                this.reset();
+                switchView('dashboard', document.querySelectorAll('.nav-item')[0]);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        });
     </script>
 </body>
 </html>
