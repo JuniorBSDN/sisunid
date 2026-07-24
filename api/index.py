@@ -13,7 +13,7 @@ app = Flask(__name__)
 MONGO_URI = os.environ.get("MONGO_URI")
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-MASTER_PASSWORD = os.environ.get("MASTER_PASSWORD", "admin")
+MASTER_PASSWORD = os.environ.get("MASTER_PASSWORD").strip()
 
 # Inicializa MongoDB
 mongo_client = MongoClient(MONGO_URI)
