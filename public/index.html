@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sis_antonio - Sistema Completo V3 (Final)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root {
+            /* Cores Principais */
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --primary-light: #dbeafe;
+            --bg-color: #f8fafc;
+            --surface: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+
+            /* Status e Alertas */
+            --danger: #ef4444;
+            --danger-bg: #fef2f2;
+            --warning: #f59e0b;
+            --warning-bg: #fffbeb;
+            --success: #10b981;
+            --success-bg: #ecfdf5;
+            --info: #3b82f6;
+            --info-bg: #eff6ff;
+            --whatsapp: #25D366;
+            --whatsapp-bg: #dcf8c6;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+
+        /* --- SIDEBAR --- */
+        .sidebar { width: 260px; background-color: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 20; transition: transform 0.3s ease; }
+        .logo { padding: 24px; font-size: 22px; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); }
+        .nav-menu { padding: 24px 16px; display: flex; flex-direction: column; gap: 8px; }
+        .nav-item { padding: 12px 16px; border-radius: 8px; color: var(--text-muted); display: flex; align-items: center; gap: 12px; font-weight: 500; cursor: pointer; border: none; background: transparent; width: 100%; text-align: left; font-size: 15px; transition: all 0.2s ease; }
+        .nav-item i { font-size: 20px; }
+        .nav-item:hover { background-color: var(--info-bg); color: var(--primary); }
+        .nav-item.active { background-color: var(--primary); color: white; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); }
+
+        /* --- MAIN CONTENT & TOPBAR --- */
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; position: relative; }
+        .topbar { background-color: var(--surface); padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
+
+        .search-bar { flex: 1; max-width: 400px; margin: 0 16px; }
+        .search-bar input { width: 100%; padding: 10px 16px 10px 40px; border-radius: 20px; border: 1px solid var(--border); outline: none; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%2364748b" viewBox="0 0 256 256"><path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"></path></svg>') no-repeat 12px center; background-size: 16px; transition: border-color 0.2s; }
+        .search-bar input:focus { border-color: var(--primary); }
+
+        .user-actions { display: flex; align-items: center; gap: 24px; }
+        .notification { position: relative; cursor: pointer; color: var(--text-muted); font-size: 24px; }
+        .badge-alert { position: absolute; top: 0; right: 0; background-color: var(--danger); width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--surface); animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+        .menu-toggle { display: none; background: none; border: none; font-size: 24px; color: var(--text-main); cursor: pointer; }
+
+        /* --- VIEWS CONTAINER --- */
+        .view-section { display: none; padding: 32px; max-width: 1200px; margin: 0 auto; width: 100%; animation: fadeIn 0.3s ease; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- COMPONENTES COMPARTILHADOS --- */
+        .page-header { margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; }
+        .page-title { font-size: 24px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; }
+        .page-subtitle { color: var(--text-muted); font-size: 15px; }
+
+        .btn-primary { background-color: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; transition: background 0.2s, transform 0.1s; }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .btn-primary:active { transform: scale(0.98); }
+
+        .btn-outline { background: transparent; color: var(--text-main); border: 1px solid var(--border); }
+        .btn-outline:hover { background: var(--bg-color); border-color: var(--text-muted); }
+
+        .card { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 24px; }
+        .card-header { padding: 20px 24px; border-bottom: 1px solid var(--border); font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+        .card-body { padding: 24px; }
+
+        /* --- TABELAS E BADGES --- */
+        .table-responsive { overflow-x: auto; width: 100%; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 16px 24px; border-bottom: 1px solid var(--border); }
+        th { background-color: #f8fafc; color: var(--text-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+        td { font-size: 14px; vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background-color: #f8fafc; }
+
+        .badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+        .badge.bg-info { background: var(--info-bg); color: var(--info); }
+        .badge.bg-warning { background: var(--warning-bg); color: var(--warning); }
+        .badge.bg-danger { background: var(--danger-bg); color: var(--danger); }
+        .badge.bg-success { background: var(--success-bg); color: var(--success); }
+
+        .sla-indicator { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; }
+
+        /* --- FILTROS (DASHBOARD) --- */
+        .filter-bar { padding: 16px 24px; background: #f8fafc; border-bottom: 1px solid var(--border); display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+        .filter-select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; outline: none; font-size: 13px; background: white; }
+
+        /* --- DASHBOARD E RELATÓRIOS (GRIDS) --- */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 32px; }
+        .stat-card { padding: 24px; }
+        .stat-card h3 { color: var(--text-muted); font-size: 14px; font-weight: 500; margin-bottom: 8px; }
+        .stat-card .value { font-size: 28px; font-weight: 700; color: var(--text-main); }
+
+        .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+        .bar-chart-row { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+        .bar-label { width: 120px; font-size: 14px; color: var(--text-muted); }
+        .bar-track { flex: 1; height: 12px; background-color: var(--border); border-radius: 6px; overflow: hidden; }
+        .bar-fill { height: 100%; border-radius: 6px; }
+        .bar-value { width: 40px; text-align: right; font-size: 14px; font-weight: 600; }
+
+        /* --- FORMS E UPLOAD --- */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        .form-label { font-size: 14px; font-weight: 500; color: var(--text-main); }
+        .form-control { padding: 12px 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; transition: all 0.2s; background: white; }
+        .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+
+        .upload-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 40px; text-align: center; background-color: #f8fafc; cursor: pointer; transition: all 0.2s; }
+        .upload-zone:hover { border-color: var(--primary); background-color: var(--info-bg); }
+        .upload-zone i { font-size: 48px; color: var(--text-muted); margin-bottom: 16px; }
+        .upload-zone p { font-size: 14px; color: var(--text-muted); }
+
+        /* --- TIMELINE DE EMAILS/WPP --- */
+        .timeline { padding: 20px 0; }
+        .timeline-item { display: flex; gap: 24px; margin-bottom: 32px; position: relative; }
+        .timeline-item::before { content: ''; position: absolute; left: 19px; top: 40px; bottom: -32px; width: 2px; background-color: var(--border); }
+        .timeline-item:last-child::before { display: none; }
+        .timeline-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; z-index: 2; flex-shrink: 0; border: 4px solid var(--surface); }
+        .timeline-content { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; flex: 1; }
+        .timeline-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .timeline-title { font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 8px;}
+        .timeline-time { color: var(--text-muted); font-size: 13px; }
+
+        /* --- MODAIS E TOASTS --- */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.5); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+        .modal-overlay.active { display: flex; animation: fadeIn 0.2s; }
+        .modal-content { background: var(--surface); width: 100%; max-width: 500px; border-radius: 12px; padding: 24px; position: relative; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        .modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer; }
+
+        .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border-left: 4px solid var(--success); padding: 16px 24px; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 16px; transform: translateY(100px); opacity: 0; transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 1000; }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast-icon { color: var(--success); font-size: 24px; }
+
+        /* --- RESPONSIVIDADE (MOBILE) --- */
+        @media (max-width: 1024px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .charts-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; height: 100%; transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .menu-toggle { display: block; }
+            .topbar { padding: 16px; }
+            .search-bar { display: none; /* Oculta barra de busca no mobile para focar no logo */ }
+            .user-actions > div:last-child { display: none; }
+            .form-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr; }
+            th, td { padding: 12px 16px; white-space: nowrap; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ================= SIDEBAR ================= -->
+    <aside class="sidebar" id="sidebar">
+        <div class="logo">
+            <i class="ph-fill ph-heartbeat"></i> sis_antonio
+            <button class="menu-toggle" style="margin-left:auto" onclick="toggleMenu()"><i class="ph ph-x"></i></button>
+        </div>
+        <nav class="nav-menu">
+            <button class="nav-item active" onclick="switchView('dashboard', this)"><i class="ph ph-squares-four"></i> Fila de Regulação</button>
+            <button class="nav-item" onclick="switchView('nova-recepcao', this)"><i class="ph ph-file-plus"></i> Nova Recepção</button>
+            <button class="nav-item" onclick="switchView('pacientes', this)"><i class="ph ph-users"></i> Pacientes</button>
+            <button class="nav-item" onclick="switchView('relatorios', this)"><i class="ph ph-chart-line-up"></i> Relatórios</button>
+            <button class="nav-item" onclick="switchView('emails', this)"><i class="ph ph-paper-plane-tilt"></i> Disparos & Alertas</button>
+        </nav>
+    </aside>
+
+    <!-- ================= MAIN AREA ================= -->
+    <main class="main-content">
+
+        <!-- HEADER -->
+        <header class="topbar">
+            <button class="menu-toggle" onclick="toggleMenu()"><i class="ph ph-list"></i></button>
+            <div class="search-bar">
+                <input type="text" placeholder="Buscar protocolo, CPF ou paciente...">
+            </div>
+            <div class="user-actions">
+                <div class="notification">
+                    <i class="ph ph-bell"></i>
+                    <span class="badge-alert"></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; border-left: 1px solid var(--border); padding-left: 16px;">
+                    <img src="http://googleusercontent.com/image_collection/image_retrieval/12565594681034692304_0" alt="Perfil Antônio" style="border-radius: 50%; width: 36px; height: 36px; object-fit: cover;">
+                    <div>
+                        <div style="font-size: 14px; font-weight: 600;">Antônio Regulação</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">Administrador</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ================= VIEW 1: DASHBOARD ================= -->
+        <section id="dashboard" class="view-section active">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Visão Geral da Regulação</h1>
+                    <p class="page-subtitle">Monitore prazos e atue nas requisições em tempo real.</p>
+                </div>
+                <button class="btn-primary" onclick="document.querySelectorAll('.nav-item')[1].click()">
+                    <i class="ph ph-plus"></i> Registrar Nova
+                </button>
+            </div>
+
+            <!-- KPIs -->
+            <div class="stats-grid">
+                <div class="card stat-card" style="border-left: 4px solid var(--primary);">
+                    <h3>Total na Fila Ativa</h3>
+                    <div class="value">142</div>
+                </div>
+                <div class="card stat-card" style="border-left: 4px solid var(--success);">
+                    <h3>Agendados (Hoje)</h3>
+                    <div class="value" style="color: var(--success);">18</div>
+                </div>
+                <div class="card stat-card" style="border-left: 4px solid var(--warning);">
+                    <h3>Próximos do Limite (48h)</h3>
+                    <div class="value" style="color: var(--warning);">12</div>
+                </div>
+                <div class="card stat-card" style="border-left: 4px solid var(--danger);">
+                    <h3>SLA Estourado (Atrasos)</h3>
+                    <div class="value" style="color: var(--danger);">3</div>
+                </div>
+            </div>
+
+            <!-- Tabela Fila de Espera -->
+            <div class="card">
+                <div class="card-header" style="padding: 0; border-bottom: none;">
+                    <div class="filter-bar" style="width: 100%; border-radius: 12px 12px 0 0;">
+                        <span style="font-size: 14px; font-weight: 600;"><i class="ph ph-funnel"></i> Filtros:</span>
+                        <select class="filter-select"><option>Todas as Prioridades</option><option>Urgência (Vermelha)</option></select>
+                        <select class="filter-select"><option>Todos os Status</option><option>Em Análise</option><option>Aguardando Vaga</option></select>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Protocolo</th>
+                                <th>Paciente / Contato</th>
+                                <th>Procedimento</th>
+                                <th>Tempo Limite (SLA)</th>
+                                <th>Status Atual</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="font-weight: 600;">#REQ-0992</td>
+                                <td><div>Maria Oliveira Santos</div><div style="font-size: 12px; color: var(--text-muted);"><i class="ph-fill ph-whatsapp-logo" style="color:var(--whatsapp)"></i> (11) 9999-8888</div></td>
+                                <td>Ressonância Magnética</td>
+                                <td><div class="sla-indicator" style="color:var(--danger);"><i class="ph-fill ph-warning-circle"></i> Atrasado (2 dias)</div></td>
+                                <td><span class="badge bg-danger">Em Análise</span></td>
+                                <td><button class="btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="abrirModal('modal-avaliar')">Avaliar Regulação</button></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 600;">#REQ-1004</td>
+                                <td><div>João Pedro Silva</div><div style="font-size: 12px; color: var(--text-muted);"><i class="ph-fill ph-whatsapp-logo" style="color:var(--whatsapp)"></i> (11) 9777-6666</div></td>
+                                <td>Consulta Cardiologia</td>
+                                <td><div class="sla-indicator" style="color:var(--warning);"><i class="ph-fill ph-clock-countdown"></i> Faltam 14 horas</div></td>
+                                <td><span class="badge bg-warning">Aguardando Vaga</span></td>
+                                <td><button class="btn-primary" style="padding: 6px 12px; font-size: 12px; background:var(--success);" onclick="abrirModal('modal-agendar')">Confirmar Vaga</button></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 600;">#REQ-1045</td>
+                                <td><div>Ana Beatriz Costa</div><div style="font-size: 12px; color: var(--text-muted);"><i class="ph ph-envelope-simple"></i> ana.costa@email.com</div></td>
+                                <td>Exame de Sangue</td>
+                                <td><div class="sla-indicator" style="color:var(--success);"><i class="ph-fill ph-check-circle"></i> Faltam 12 dias</div></td>
+                                <td><span class="badge bg-info">Recebido (Fila)</span></td>
+                                <td><button class="btn-primary" style="padding: 6px 12px; font-size: 12px; background:var(--text-muted);" onclick="abrirModal('modal-avaliar')">Avaliar Regulação</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 2: NOVA RECEPÇÃO ================= -->
+        <section id="nova-recepcao" class="view-section">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Recepção de Documentos</h1>
+                    <p class="page-subtitle">Cadastre a requisição, anexe arquivos e dispare o 1º alerta ao paciente.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Formulário de Entrada</div>
+                <div class="card-body">
+                    <form id="form-recepcao" onsubmit="submitRecepcao(event)">
+                        <div class="form-grid">
+                            <div class="form-group"><label class="form-label">Nome Completo</label><input type="text" class="form-control" required></div>
+                            <div class="form-group"><label class="form-label">Cartão SUS ou CPF</label><input type="text" class="form-control" required></div>
+                            <div class="form-group"><label class="form-label">E-mail</label><input type="email" class="form-control"></div>
+
+                            <div class="form-group">
+                                <label class="form-label">Celular / WhatsApp</label>
+                                <input type="text" class="form-control" placeholder="(00) 00000-0000" required>
+                                <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin-top:4px; cursor:pointer;">
+                                    <input type="checkbox" checked>
+                                    <i class="ph-fill ph-whatsapp-logo" style="color:var(--whatsapp); font-size:16px;"></i> Notificar via WhatsApp
+                                </label>
+                            </div>
+
+                            <div class="form-group full-width" style="border-top: 1px solid var(--border); padding-top: 16px;">
+                                <label class="form-label">Tipo de Requisição e Prioridade</label>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                                    <select class="form-control" required><option value="">Selecione o Procedimento...</option><option>Consulta Especializada</option><option>Exame de Imagem</option></select>
+                                    <select class="form-control" required><option value="verde">Rotina (SLA 30 dias)</option><option value="amarelo">Prioridade (SLA 15 dias)</option><option value="vermelho">Urgência (SLA 72 horas)</option></select>
+                                </div>
+                            </div>
+
+                            <!-- Upload de V1 -->
+                            <div class="form-group full-width">
+                                <label class="form-label">Anexar Documentos (Guia médica, fotos, PDFs)</label>
+                                <div class="upload-zone" onclick="document.getElementById('file-upload').click()">
+                                    <i class="ph ph-cloud-arrow-up"></i>
+                                    <p>Arraste arquivos aqui ou <span style="color:var(--primary); font-weight:600;">Clique para buscar</span></p>
+                                    <input type="file" id="file-upload" style="display:none" multiple>
+                                </div>
+                            </div>
+
+                            <div class="form-group full-width" style="display: flex; justify-content: flex-end; gap: 16px; margin-top: 16px;">
+                                <button type="button" class="btn-primary btn-outline" onclick="document.getElementById('form-recepcao').reset()">Limpar</button>
+                                <button type="submit" class="btn-primary"><i class="ph ph-check-circle"></i> Registrar e Gerar Protocolo</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 3: PACIENTES ================= -->
+        <section id="pacientes" class="view-section">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Base de Pacientes</h1>
+                    <p class="page-subtitle">Histórico consolidado de regulações por cidadão.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Paciente</th>
+                                <th>Cartão SUS / CPF</th>
+                                <th>Requisições (Ativas / Total)</th>
+                                <th>Última Atualização</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><div style="font-weight: 600;">Maria Oliveira Santos</div></td>
+                                <td>789.456.123-00</td>
+                                <td><span class="badge bg-warning">1 Ativa</span> / 3 Total</td>
+                                <td>Hoje, 09:41</td>
+                                <td><button class="btn-primary btn-outline" style="padding: 6px 12px; font-size:12px;">Ver Prontuário</button></td>
+                            </tr>
+                            <tr>
+                                <td><div style="font-weight: 600;">Roberto Alves Figueiredo</div></td>
+                                <td>123.456.789-00</td>
+                                <td><span class="badge bg-success">0 Ativas</span> / 5 Total</td>
+                                <td>12/10/2023</td>
+                                <td><button class="btn-primary btn-outline" style="padding: 6px 12px; font-size:12px;">Ver Prontuário</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 4: RELATÓRIOS ================= -->
+        <section id="relatorios" class="view-section">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Relatórios e Desempenho</h1>
+                    <p class="page-subtitle">Análise automática de produtividade e cumprimento de SLAs.</p>
+                </div>
+                <button class="btn-primary btn-outline"><i class="ph ph-download-simple"></i> Exportar PDF</button>
+            </div>
+
+            <div class="charts-grid">
+                <div class="card">
+                    <div class="card-header">Desempenho de Prazos (Este Mês)</div>
+                    <div class="card-body">
+                        <div class="bar-chart-row">
+                            <div class="bar-label">Dentro do Prazo</div>
+                            <div class="bar-track"><div class="bar-fill" style="width: 85%; background: var(--success);"></div></div>
+                            <div class="bar-value">85%</div>
+                        </div>
+                        <div class="bar-chart-row">
+                            <div class="bar-label">Alerta (Próximos)</div>
+                            <div class="bar-track"><div class="bar-fill" style="width: 10%; background: var(--warning);"></div></div>
+                            <div class="bar-value">10%</div>
+                        </div>
+                        <div class="bar-chart-row">
+                            <div class="bar-label">Atrasados</div>
+                            <div class="bar-track"><div class="bar-fill" style="width: 5%; background: var(--danger);"></div></div>
+                            <div class="bar-value">5%</div>
+                        </div>
+                        <p style="margin-top:24px; font-size:13px; color:var(--text-muted);"><i class="ph-fill ph-info"></i> O índice de atrasos caiu 2% em relação ao mês anterior.</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">Volume por Tipo</div>
+                    <div class="card-body" style="display:flex; flex-direction:column; gap:16px;">
+                        <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:8px;">
+                            <span style="color:var(--text-muted);">Consultas</span><span style="font-weight:600;">450</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:8px;">
+                            <span style="color:var(--text-muted);">Exames Imagem</span><span style="font-weight:600;">280</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:8px;">
+                            <span style="color:var(--text-muted);">Procedimentos</span><span style="font-weight:600;">115</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 5: DISPAROS / TIMELINE ================= -->
+        <section id="emails" class="view-section">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Central de Disparos Automáticos</h1>
+                    <p class="page-subtitle">Rastreabilidade completa de comunicação com pacientes e equipe.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body timeline">
+
+                    <!-- Notificação WhatsApp -->
+                    <div class="timeline-item">
+                        <div class="timeline-icon" style="background:var(--whatsapp-bg); color:var(--whatsapp);"><i class="ph-fill ph-whatsapp-logo"></i></div>
+                        <div class="timeline-content">
+                            <div class="timeline-header">
+                                <span class="timeline-title">WhatsApp: Agendamento Confirmado</span>
+                                <span class="timeline-time">Hoje, 10:14</span>
+                            </div>
+                            <div style="color:var(--text-muted); font-size:14px; line-height:1.5;">
+                                <strong>Para:</strong> João Pedro Silva (+55 11 9777-6666)<br>
+                                <strong>Mensagem:</strong> <em>"Olá João! Sua consulta de Cardiologia foi agendada para o dia 12/10 às 09:00 no Hospital Municipal. Responda SIM para confirmar."</em><br>
+                                <strong>Status:</strong> <span style="color:var(--success); font-weight:600;">Entregue e Lido (Tick Azul)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notificação Email Normal -->
+                    <div class="timeline-item">
+                        <div class="timeline-icon" style="background:var(--info-bg); color:var(--info);"><i class="ph ph-envelope-open"></i></div>
+                        <div class="timeline-content">
+                            <div class="timeline-header">
+                                <span class="timeline-title">E-mail: Requisição Recebida (#REQ-1045)</span>
+                                <span class="timeline-time">Hoje, 08:30</span>
+                            </div>
+                            <div style="color:var(--text-muted); font-size:14px; line-height:1.5;">
+                                <strong>Para:</strong> ana.costa@email.com<br>
+                                <strong>Assunto:</strong> A Secretaria de Saúde recebeu sua requisição.<br>
+                                <strong>Status:</strong> <span style="color:var(--success); font-weight:600;">Entregue</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notificação Interna Erro/SLA -->
+                    <div class="timeline-item">
+                        <div class="timeline-icon" style="background:var(--danger-bg); color:var(--danger);"><i class="ph ph-warning"></i></div>
+                        <div class="timeline-content" style="border-color: var(--danger-bg); background: var(--danger-bg);">
+                            <div class="timeline-header">
+                                <span class="timeline-title" style="color: var(--danger);">ALERTA INTERNO: SLA Estourado</span>
+                                <span class="timeline-time">Ontem, 23:59</span>
+                            </div>
+                            <div style="color:var(--text-main); font-size:14px; line-height:1.5;">
+                                <strong>Para:</strong> Equipe de Regulação (antonio@secretaria.gov.br)<br>
+                                <strong>Motivo:</strong> Protocolo #REQ-0992 excedeu o tempo limite de 15 dias (Prioridade Amarela). Ação imediata necessária.
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ================= MODAIS ================= -->
+    <!-- Modal Avaliar -->
+    <div id="modal-avaliar" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close" onclick="fecharModal('modal-avaliar')"><i class="ph ph-x"></i></button>
+            <h2 style="font-size: 18px; margin-bottom: 16px;">Avaliar Regulação</h2>
+            <div style="background:var(--bg-color); padding:12px; border-radius:8px; margin-bottom:16px; font-size:14px; border:1px solid var(--border);">
+                <strong>Paciente:</strong> Maria Oliveira<br>
+                <strong>Procedimento:</strong> Ressonância Magnética
+            </div>
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label class="form-label">Alterar Status para:</label>
+                <select class="form-control" id="select-status">
+                    <option>Aprovado (Aguardando Vaga)</option>
+                    <option>Devolvido (Falta Documento)</option>
+                </select>
+            </div>
+            <p style="font-size:12px; color:var(--text-muted); margin-bottom:24px;"><i class="ph-fill ph-whatsapp-logo" style="color:var(--whatsapp)"></i> O paciente será notificado automaticamente.</p>
+            <button class="btn-primary" style="width: 100%;" onclick="salvarModal('modal-avaliar', 'Status atualizado com sucesso!')">Salvar e Notificar</button>
+        </div>
+    </div>
+
+    <!-- Modal Agendar -->
+    <div id="modal-agendar" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close" onclick="fecharModal('modal-agendar')"><i class="ph ph-x"></i></button>
+            <h2 style="font-size: 18px; margin-bottom: 16px; color:var(--success); display:flex; align-items:center; gap:8px;"><i class="ph-fill ph-check-circle"></i> Confirmar Vaga</h2>
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label class="form-label">Data e Hora</label>
+                <input type="datetime-local" class="form-control">
+            </div>
+            <div class="form-group" style="margin-bottom: 24px;">
+                <label class="form-label">Local / Hospital / Clínica</label>
+                <input type="text" class="form-control" placeholder="Ex: Hospital Municipal">
+            </div>
+            <button class="btn-primary" style="width: 100%; background:var(--success);" onclick="salvarModal('modal-agendar', 'Vaga agendada! WhatsApp enviado ao paciente.')"><i class="ph-fill ph-whatsapp-logo"></i> Agendar e Enviar WhatsApp</button>
+        </div>
+    </div>
+
+    <!-- ================= TOAST (NOTIFICAÇÃO) ================= -->
+    <div id="toast" class="toast">
+        <i id="toast-icon" class="ph-fill ph-check-circle toast-icon"></i>
+        <div>
+            <h4 id="toast-title" style="margin:0; font-size:14px; font-weight:600; color:var(--text-main);">Sucesso!</h4>
+            <p id="toast-desc" style="margin:0; font-size:13px; color:var(--text-muted); margin-top:2px;">Ação realizada com sucesso.</p>
+        </div>
+    </div>
+
+    <!-- ================= SCRIPTS ================= -->
+    <script>
+      // Manter as funções switchView, abrirModal, fecharModal, showToast...
+
+// ----------------------------------------------------
+// INTEGRAÇÃO COM A API PYTHON (BACKEND)
+// ----------------------------------------------------
+
+async function carregarFilaEspera() {
+    const tbody = document.getElementById('tabela-fila-espera');
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Buscando fila no servidor...</td></tr>';
+
+    try {
+        // Supondo que a Unidade de Vigia tem um ID salvo no cache/sessão após o login
+        const unidadeId = localStorage.getItem('unidade_id') || 'ID_DA_UNIDADE_AQUI';
+        const response = await fetch(`/api/tenant/regulacoes?unidade_id=${unidadeId}`);
+        const data = await response.json();
+
+        if (data.sucesso) {
+            tbody.innerHTML = '';
+
+            data.regulacoes.forEach(req => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight: 600;">#${req.protocolo}</td>
+                    <td><div>${req.nome_paciente}</div><div style="font-size: 12px; color: var(--text-muted);"><i class="ph-fill ph-whatsapp-logo" style="color:var(--whatsapp)"></i> ${req.telefone}</div></td>
+                    <td>${req.procedimento}</td>
+                    <td><div class="sla-indicator"><i class="ph-fill ph-clock"></i> Prioridade: ${req.prioridade}</div></td>
+                    <td><span class="badge bg-warning">${req.status_atual}</span></td>
+                    <td><button class="btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="abrirModal('modal-avaliar', '${req._id}')">Avaliar</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    } catch (error) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">Falha ao carregar fila.</td></tr>';
+    }
+}
+
+// Substituir a função submitRecepcao antiga por esta real
+async function submitRecepcao(e) {
+    e.preventDefault();
+
+    const payload = {
+        unidade_id: localStorage.getItem('unidade_id') || 'ID_DA_UNIDADE_AQUI',
+        nome_paciente: document.getElementById('req-nome').value,
+        cpf: document.getElementById('req-cpf').value,
+        telefone: document.getElementById('req-telefone').value,
+        procedimento: document.getElementById('req-procedimento').value,
+        prioridade: document.getElementById('req-prioridade').value
+    };
+
+    try {
+        const response = await fetch('/api/tenant/regulacoes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (data.sucesso) {
+            showToast('Protocolo Gerado!', `Protocolo #${data.protocolo} salvo no banco.`);
+            document.getElementById('form-recepcao').reset();
+
+            setTimeout(() => {
+                switchView('dashboard', document.querySelectorAll('.nav-item')[0]);
+                carregarFilaEspera(); // Recarrega a tabela real
+            }, 2000);
+        }
+    } catch (error) {
+        alert('Erro ao enviar requisição.');
+    }
+}
+
+// Carregar a fila assim que o painel abrir
+document.addEventListener("DOMContentLoaded", () => {
+    carregarFilaEspera();
+});
+    </script>
+</body>
+</html>
