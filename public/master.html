@@ -210,63 +210,72 @@
 
                 <div class="card">
                     <form id="form-novo-cliente" class="form-grid">
-                        <div class="section-divider">Dados Comerciais e Gestão</div>
 
-                        <div class="form-group">
-                            <label class="form-label">Nome da Empresa / Secretaria</label>
-                            <input type="text" id="input-nome-empresa" class="form-control" required placeholder="Ex: Secretaria de Saúde de Vigia">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">CNPJ / CPF</label>
-                            <input type="text" id="input-cnpj" class="form-control" required placeholder="00.000.000/0001-00">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Nome do Responsável / Gestor</label>
-                            <input type="text" id="input-gestor" class="form-control" required placeholder="Ex: Antônio Regulação">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Data de Início (Contrato)</label>
-                            <input type="date" id="input-data-inicio" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Telefone</label>
-                            <input type="text" id="input-telefone" class="form-control" required placeholder="(91) 99999-9999">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">E-mail de Contato</label>
-                            <input type="email" id="input-email" class="form-control" required placeholder="contato@empresa.com">
-                        </div>
-                        <div class="form-group full">
-                            <label class="form-label">Endereço Completo</label>
-                            <input type="text" id="input-endereco" class="form-control" required placeholder="Av. Principal, nº 100 - Centro">
-                        </div>
+                    <!-- Dados da Empresa -->
+                    <div class="section-divider">Dados Comerciais e Gestão</div>
 
-                        <div class="section-divider">Configurações White-Label</div>
+                    <div class="form-group">
+                        <label class="form-label">Nome da Empresa / Secretaria</label>
+                        <input type="text" id="input-nome-empresa" class="form-control" required placeholder="Ex: Secretaria de Saúde de Vigia">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">CNPJ / CPF</label>
+                        <input type="text" id="input-cnpj" class="form-control" required placeholder="00.000.000/0001-00">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nome do Responsável / Gestor</label>
+                        <input type="text" id="input-gestor" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Data de Início (Contrato)</label>
+                        <input type="date" id="input-data-inicio" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Telefone</label>
+                        <input type="text" id="input-telefone" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">E-mail de Contato</label>
+                        <input type="email" id="input-email" class="form-control" required>
+                    </div>
+                    <div class="form-group full">
+                        <label class="form-label">Endereço Completo</label>
+                        <input type="text" id="input-endereco" class="form-control" required>
+                    </div>
 
-                        <div class="form-group">
-                            <label class="form-label">Slogan do Sistema</label>
-                            <input type="text" id="input-slogan" class="form-control" placeholder="Ex: Regulação Rápida e Eficiente">
-                        </div>
+                    <!-- Configurações White-Label (Personalização) -->
+                    <div class="section-divider">Configurações do Sistema (White-Label)</div>
 
-                        <div class="form-group">
-                            <label class="form-label">Cor Primária (Tema)</label>
-                            <input type="color" id="input-cor-primaria" value="#2563eb">
-                        </div>
+                    <div class="form-group">
+                        <label class="form-label">Slogan do Sistema para a Unidade</label>
+                        <input type="text" id="input-slogan" class="form-control" placeholder="Ex: Regulação Rápida e Eficiente">
+                    </div>
 
-                        <div class="form-group full">
-                            <label class="form-label">Logo da Unidade (Supabase Storage)</label>
-                            <div class="upload-logo" onclick="document.getElementById('input-logo').click()">
-                                <i class="ph ph-upload-simple" style="font-size: 32px; color: var(--text-muted);"></i>
-                                <p id="text-logo-filename" style="font-size: 14px; color: var(--text-muted); margin-top: 8px;">Clique para selecionar a imagem</p>
-                                <input type="file" id="input-logo" accept="image/*" style="display:none" onchange="document.getElementById('text-logo-filename').innerText = this.files[0] ? this.files[0].name : 'Clique para selecionar';">
+                    <div class="form-group">
+                        <label class="form-label">Temas (Cor Primária)</label>
+                        <div class="color-pickers">
+                            <div class="color-item">
+                                <input type="color" id="input-tema-primaria" value="#2563eb" title="Cor Primária (Botões e Menus)">
+                                <span style="font-size: 13px; color: var(--text-muted);">Cor Primária</span>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="form-group full" style="display: flex; justify-content: flex-end; gap: 16px; margin-top: 16px;">
-                            <button type="button" class="btn-outline" onclick="switchView('lista-clientes', document.querySelectorAll('.nav-item')[1])">Cancelar</button>
-                            <button type="submit" class="btn-primary"><i class="ph ph-floppy-disk"></i> Salvar no Banco de Dados</button>
+                    <div class="form-group full">
+                        <label class="form-label">Logo da Unidade (Upload)</label>
+                        <div class="upload-logo" onclick="document.getElementById('input-logo').click()">
+                            <i class="ph ph-upload-simple" style="font-size: 32px; color: var(--text-muted);"></i>
+                            <p id="nome-arquivo-logo" style="font-size: 14px; color: var(--text-muted); margin-top: 8px;">Arraste a logo PNG do cliente aqui ou clique para selecionar</p>
+                            <!-- Input de arquivo oculto milimetricamente inserido -->
+                            <input type="file" id="input-logo" accept="image/*" style="display: none;" onchange="document.getElementById('nome-arquivo-logo').innerText = this.files[0] ? this.files[0].name : 'Nenhum arquivo selecionado';">
                         </div>
-                    </form>
+                    </div>
+
+                    <div class="form-group full" style="display: flex; justify-content: flex-end; gap: 16px; margin-top: 16px;">
+                        <button type="button" class="btn-outline" onclick="switchView('lista-clientes', document.querySelectorAll('.nav-item')[1])">Cancelar</button>
+                        <button type="submit" class="btn-primary" id="btn-salvar-cliente"><i class="ph ph-floppy-disk"></i> Salvar Cliente e Gerar Acesso</button>
+                    </div>
+                </form>
                 </div>
             </section>
         </main>
@@ -399,55 +408,63 @@
         }
 
         // 3. ENVIO REAL PARA A API PYTHON
-        document.getElementById('form-novo-cliente').addEventListener('submit', async function(e) {
-            e.preventDefault();
+        // Intercepta o formulário de novo cliente e envia pro Python usando FormData (Suporta Arquivos)
+document.getElementById('form-novo-cliente').addEventListener('submit', async function(e) {
+    e.preventDefault();
 
-            const btn = this.querySelector('button[type="submit"]');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = 'Salvando no MongoDB...';
-            btn.disabled = true;
+    const btnSalvar = document.getElementById('btn-salvar-cliente');
+    const textoOriginal = btnSalvar.innerHTML;
+    btnSalvar.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Salvando...';
+    btnSalvar.disabled = true;
 
-            const formData = new FormData();
-            formData.append('nome_empresa', document.getElementById('input-nome-empresa').value);
-            formData.append('cnpj', document.getElementById('input-cnpj').value);
-            formData.append('gestor', document.getElementById('input-gestor').value);
-            formData.append('data_inicio', document.getElementById('input-data-inicio').value);
-            formData.append('telefone', document.getElementById('input-telefone').value);
-            formData.append('email', document.getElementById('input-email').value);
-            formData.append('endereco', document.getElementById('input-endereco').value);
-            formData.append('slogan', document.getElementById('input-slogan').value);
-            formData.append('tema_primaria', document.getElementById('input-cor-primaria').value);
-            formData.append('senha_acesso', Math.random().toString(36).slice(-8).toUpperCase());
+    try {
+        // FormData permite enviar textos E arquivos juntos!
+        const formData = new FormData();
+        formData.append('nome_empresa', document.getElementById('input-nome-empresa').value);
+        formData.append('cnpj', document.getElementById('input-cnpj').value);
+        formData.append('gestor', document.getElementById('input-gestor').value);
+        formData.append('data_inicio', document.getElementById('input-data-inicio').value);
+        formData.append('telefone', document.getElementById('input-telefone').value);
+        formData.append('email', document.getElementById('input-email').value);
+        formData.append('endereco', document.getElementById('input-endereco').value);
+        formData.append('slogan', document.getElementById('input-slogan').value);
+        formData.append('tema_primaria', document.getElementById('input-tema-primaria').value);
+        
+        // Gera a senha aleatória
+        formData.append('senha_acesso', Math.random().toString(36).slice(-8));
 
-            const fileInput = document.getElementById('input-logo');
-            if (fileInput.files.length > 0) {
-                formData.append('logo', fileInput.files[0]);
-            }
+        // Anexa o arquivo físico da logo, se o usuário selecionou um
+        const arquivoLogo = document.getElementById('input-logo').files[0];
+        if (arquivoLogo) {
+            formData.append('logo', arquivoLogo);
+        }
 
-            try {
-                const response = await fetch('/api/master/unidades', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.sucesso) {
-                    alert('Unidade salva no MongoDB Atlas!');
-                    this.reset();
-                    document.getElementById('text-logo-filename').innerText = "Clique para selecionar a imagem";
-                    switchView('lista-clientes', document.querySelectorAll('.nav-item')[1]);
-                    carregarUnidades();
-                } else {
-                    alert('Erro no banco: ' + (data.erro || 'Falha ao salvar.'));
-                }
-            } catch (error) {
-                alert('Erro de comunicação com o servidor.');
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
+        // ATENÇÃO MILIMÉTRICA: Ao usar FormData com fetch, NÃO colocamos 'Content-Type' no header. 
+        // O próprio navegador se encarrega de colocar o 'multipart/form-data' e o boundary correto.
+        const response = await fetch('/api/master/unidades', {
+            method: 'POST',
+            body: formData
         });
+
+        const data = await response.json();
+
+        if (data.sucesso) {
+            alert('Unidade cadastrada com sucesso no Banco de Dados!');
+            this.reset(); // Limpa o form
+            document.getElementById('nome-arquivo-logo').innerText = "Arraste a logo PNG do cliente aqui ou clique para selecionar";
+            switchView('lista-clientes', document.querySelectorAll('.nav-item')[1]); // Muda de tela
+            carregarUnidades(); // Atualiza a tabela buscando do MongoDB
+        } else {
+            alert('Erro ao salvar: ' + (data.erro || 'Motivo desconhecido'));
+        }
+    } catch (error) {
+        console.error(error);
+        alert('Erro de comunicação com a API.');
+    } finally {
+        btnSalvar.innerHTML = textoOriginal;
+        btnSalvar.disabled = false;
+    }
+});
 
         async function alternarStatus(id, statusAtual) {
             const novoStatus = statusAtual === 'ativa' ? 'inativa' : 'ativa';
