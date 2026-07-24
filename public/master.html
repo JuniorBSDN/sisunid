@@ -206,9 +206,9 @@
     <!-- SCRIPTS MANTIDOS E ATUALIZADOS -->
     <script>
         // 1. LOGIN
-        document.getElementById('form-login-master').addEventListener('submit', async function(e) {
+       document.getElementById('form-login-master').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const senha = document.getElementById('master-senha').value;
+            const senha = document.getElementById('master-senha').value.trim();
             const btn = this.querySelector('button');
             btn.innerHTML = 'Verificando...';
 
@@ -218,12 +218,25 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ senha })
                 });
-                const data = await response.json();
-                if (data.sucesso) { sessionStorage.setItem('master_auth', 'true'); iniciarMaster(); }
-                else { alert('Acesso negado.'); btn.innerHTML = 'Acessar Painel Central'; }
+
+                // Tenta ler o JSON devolvido pelo Python
+                const data = await response.json().catch(() => null);
+
+                if (response.ok && data && data.sucesso) {
+                    sessionStorage.setItem('master_auth', 'true');
+                    iniciarMaster();
+                } else if (data && data.erro) {
+                    // Erro retornado propositalmente pelo Python (ex: "Senha incorreta")
+                    alert('Aviso: ' + data.erro);
+                } else {
+                    // Erro de servidor (ex: status 500)
+                    alert(`O servidor Python falhou com status ${response.status}. Verifique as Variáveis na Vercel.`);
+                }
             } catch (error) {
-                if(senha === 'admin') { sessionStorage.setItem('master_auth', 'true'); iniciarMaster(); }
-                else { alert('Senha incorreta.'); btn.innerHTML = 'Acessar Painel Central'; }
+                console.error("Erro na requisição:", error);
+                alert('Erro de rede ou falha ao se conectar com a API.');
+            } finally {
+                btn.innerHTML = 'Acessar Painel Central';
             }
         });
 
