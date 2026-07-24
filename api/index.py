@@ -8,22 +8,32 @@ from bson.objectid import ObjectId
 app = Flask(__name__)
 
 # ==========================================
-# 1. CONEXÕES COM BANCOS E VARIÁVEIS (VERCEL)
+# 1. CONEXÕES COM BANCOS E VARIÁVEIS (PROTEGIDAS)
 # ==========================================
-MONGO_URI = os.environ.get("MONGO_URI")
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-MASTER_PASSWORD = os.environ.get("MASTER_PASSWORD").strip()
+MONGO_URI = os.environ.get("MONGO_URI", "").strip()
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "").strip()
 
-# Inicializa MongoDB
-mongo_client = MongoClient(MONGO_URI)
-db = mongo_client["sisunid"] # Nome do banco de dados
+# Trata a senha master com valor fallback para não quebrar no boot
+MASTER_PASSWORD = (os.environ.get("MASTER_PASSWORD") or "admin").strip()
 
-# Inicializa Supabase
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-BUCKET_NAME = "uploads" # O nome do Bucket que você deve criar no Supabase Storage
+db = None
+if MONGO_URI and "<db_username>" not in MONGO_URI:
+    try:
+        mongo_client = MongoClient(MONGO_URI)
+        db = mongo_client["sisunid"]
+    except Exception as e:
+        print("Erro ao conectar no MongoDB:", str(e))
 
-# Helper para converter ObjectId do Mongo para String (JSON amigável)
+supabase: Client = None
+if SUPABASE_URL and SUPABASE_KEY:
+    try:
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    except Exception as e:
+        print("Aviso: Falha ao inicializar Supabase:", str(e))
+
+BUCKET_NAME = "uploads"
+
 def format_mongo_doc(doc):
     if doc and '_id' in doc:
         doc['_id'] = str(doc['_id'])
@@ -35,16 +45,19 @@ def format_mongo_doc(doc):
 
 @app.route('/api/master/login', methods=['POST'])
 def master_login():
-    data = request.json
-    if data.get('senha') == MASTER_PASSWORD:
+    data = request.get_json(silent=True) or {}
+    senha = str(data.get('senha', '')).strip()
+    
+    if senha == MASTER_PASSWORD:
         return jsonify({"sucesso": True})
     return jsonify({"sucesso": False, "erro": "Senha incorreta"}), 401
 
 @app.route('/api/master/unidades', methods=['GET'])
 def get_unidades():
+    if db is None:
+        return jsonify({"sucesso": False, "erro": "Banco de dados offline. Verifique a MONGO_URI."}), 500
     try:
-        # Busca todas as unidades no Mongo
-        unidades = list(db.unidades.find())
+        unidades = list(db.unidades.find().sort("_id", -1))
         unidades_formatadas = [format_mongo_doc(u) for u in unidades]
         return jsonify({"sucesso": True, "unidades": unidades_formatadas})
     except Exception as e:
@@ -52,8 +65,10 @@ def get_unidades():
 
 @app.route('/api/master/unidades', methods=['POST'])
 def criar_unidade():
+    if db is None:
+        return jsonify({"sucesso": False, "erro": "Banco de dados offline."}), 500
+
     try:
-        # 1. Captura os textos do FormData
         nome_empresa = request.form.get('nome_empresa')
         cnpj = request.form.get('cnpj')
         gestor = request.form.get('gestor')
@@ -67,26 +82,23 @@ def criar_unidade():
         
         logo_url = None
         
-        # 2. Captura a imagem, se houver
-        if 'logo' in request.files:
+        if 'logo' in request.files and supabase is not None:
             file = request.files['logo']
-            if file.filename != '':
-                # Gera um nome único para não sobreescrever
+            if file and file.filename != '':
                 file_ext = file.filename.split('.')[-1]
-                unique_filename = f"{uuid.uuid4()}.{file_ext}"
-                
-                # Lê os bytes e envia pro Supabase
+                unique_filename = f"logos/{uuid.uuid4().hex}.{file_ext}"
                 file_bytes = file.read()
-                res = supabase.storage.from_(BUCKET_NAME).upload(
-                    path=unique_filename,
-                    file=file_bytes,
-                    file_options={"content-type": file.content_type}
-                )
                 
-                # Pega o link público da imagem gerada
-                logo_url = supabase.storage.from_(BUCKET_NAME).get_public_url(unique_filename)
+                try:
+                    supabase.storage.from_(BUCKET_NAME).upload(
+                        path=unique_filename,
+                        file=file_bytes,
+                        file_options={"content-type": file.content_type}
+                    )
+                    logo_url = supabase.storage.from_(BUCKET_NAME).get_public_url(unique_filename)
+                except Exception as err_supa:
+                    print("Erro no upload do Supabase:", str(err_supa))
 
-        # 3. Salva tudo no MongoDB
         nova_unidade = {
             "nome_empresa": nome_empresa,
             "cnpj": cnpj,
@@ -106,8 +118,23 @@ def criar_unidade():
         return jsonify({"sucesso": True, "mensagem": "Unidade criada com sucesso!"})
 
     except Exception as e:
-        # Se quebrar, a Vercel joga isso nos Logs e nosso front-end alerta
-        print("Erro Crítico ao Salvar:", str(e))
+        print("Erro ao Salvar Unidade:", str(e))
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
+
+@app.route('/api/master/unidades/<id>/status', methods=['PATCH'])
+def alterar_status_unidade(id):
+    if db is None:
+        return jsonify({"sucesso": False, "erro": "Banco offline."}), 500
+    try:
+        data = request.get_json(silent=True) or {}
+        novo_status = data.get('status')
+        
+        db.unidades.update_one(
+            {"_id": ObjectId(id)},
+            {"$set": {"status": novo_status}}
+        )
+        return jsonify({"sucesso": True})
+    except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
 # ==========================================
@@ -116,11 +143,13 @@ def criar_unidade():
 
 @app.route('/api/tenant/login', methods=['POST'])
 def tenant_login():
-    data = request.json
+    if db is None:
+        return jsonify({"sucesso": False, "erro": "Banco offline."}), 500
+
+    data = request.get_json(silent=True) or {}
     cnpj = data.get('cnpj')
     senha = data.get('senha')
     
-    # Busca a empresa pelo CNPJ e Senha
     unidade = db.unidades.find_one({"cnpj": cnpj, "senha_acesso": senha, "status": "ativa"})
     
     if unidade:
@@ -139,13 +168,15 @@ def tenant_login():
 
 @app.route('/api/tenant/regulacoes', methods=['GET'])
 def get_regulacoes():
+    if db is None:
+        return jsonify({"sucesso": False, "erro": "Banco offline."}), 500
+
     unidade_id = request.args.get('unidade_id')
     if not unidade_id:
         return jsonify({"sucesso": False, "erro": "ID da unidade é obrigatório"}), 400
         
     try:
-        # Busca apenas os pacientes daquela unidade específica
-        regulacoes = list(db.regulacoes.find({"unidade_id": unidade_id}))
+        regulacoes = list(db.regulacoes.find({"unidade_id": unidade_id}).sort("_id", -1))
         regs_formatadas = [format_mongo_doc(r) for r in regulacoes]
         return jsonify({"sucesso": True, "regulacoes": regs_formatadas})
     except Exception as e:
@@ -153,9 +184,11 @@ def get_regulacoes():
 
 @app.route('/api/tenant/regulacoes', methods=['POST'])
 def criar_regulacao():
-    data = request.json
+    if db is None:
+        return jsonify({"sucesso": False, "erro": "Banco offline."}), 500
+
+    data = request.get_json(silent=True) or {}
     try:
-        # Gera um número de protocolo simples (Ex: REQ-A1B2)
         protocolo = f"REQ-{str(uuid.uuid4())[:4].upper()}"
         
         novo_paciente = {
@@ -176,6 +209,5 @@ def criar_regulacao():
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
-# Necessário para a Vercel entender como rodar o app Flask
 if __name__ == '__main__':
     app.run(debug=True)
