@@ -343,6 +343,18 @@
                 btn.disabled = false;
             }
         });
+
+            // Sistema de Busca (Filtro em Tempo Real)
+document.querySelector('.search-input').addEventListener('input', function(e) {
+    const termo = e.target.value.toLowerCase();
+    const linhas = document.querySelectorAll('#tabela-clientes tr');
+    
+    linhas.forEach(linha => {
+        const textoLinha = linha.innerText.toLowerCase();
+        // Se o texto da linha contém o termo buscado, mostra; senão, esconde.
+        linha.style.display = textoLinha.includes(termo) ? '' : 'none';
+    });
+});
     </script>
 </body>
 </html>
