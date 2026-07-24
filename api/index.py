@@ -1,11 +1,26 @@
 import os
 import uuid
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory, send_file
 from pymongo import MongoClient
 from supabase import create_client, Client
 from bson.objectid import ObjectId
 
 app = Flask(__name__)
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# ==========================================
+# 0. ROTAS DO FRONT-END (Telas)
+# ==========================================
+@app.route('/')
+def serve_tenant():
+    # Serve o index.html (tela do cliente) que está dentro da pasta public/
+    return send_from_directory(os.path.join(BASE_DIR, 'public'), 'index.html')
+
+@app.route('/master')
+def serve_master():
+    # Serve o master.html (tela do admin) que está na raiz
+    return send_file(os.path.join(BASE_DIR, 'master.html'))
 
 # ==========================================
 # 1. CONEXÕES COM BANCOS E VARIÁVEIS (PROTEGIDAS)
