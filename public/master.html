@@ -247,14 +247,37 @@
         async function carregarUnidades() {
             const tbody = document.getElementById('tabela-clientes');
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Buscando...</td></tr>';
-            try {
-                const response = await fetch('/api/master/unidades');
-                if(response.ok) {
-                    const data = await response.json();
-                    if(data.sucesso) renderTabelaMaster(data.unidades, tbody);
+           try {
+                const response = await fetch('/api/master/unidades', {
+                    method: 'POST',
+                    body: formData 
+                });
+                
+                // NOVO: Verifica se o servidor quebrou e devolveu HTML de erro em vez de JSON
+                const contentType = response.headers.get("content-type");
+                if (!contentType || !contentType.includes("application/json")) {
+                    const textError = await response.text();
+                    console.error("Erro Crítico no Python:", textError);
+                    throw new Error("O servidor Python na Vercel falhou (Erro 500). Verifique os Logs da Vercel.");
                 }
-            } catch (error) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Erro ao carregar dados</td></tr>'; }
-        }
+
+                const data = await response.json();
+                
+                if (data.sucesso) {
+                    alert('Unidade salva! A senha de acesso é: ' + senhaGerada);
+                    formElement.reset();
+                    document.getElementById('nome-arquivo').innerText = 'Arraste a logo ou clique aqui para buscar';
+                    switchView('lista-clientes', document.querySelectorAll('.nav-item')[1]);
+                } else {
+                    alert('Erro reportado pela API: ' + data.erro);
+                }
+            } catch (error) {
+                console.error(error);
+                alert(error.message || 'Erro de conexão com a API.');
+            } finally {
+                btn.innerHTML = '<i class="ph ph-floppy-disk"></i> Salvar e Gerar Acesso';
+                btn.disabled = false;
+            }
 
         function renderTabelaMaster(dados, tbody) {
             tbody.innerHTML = '';
