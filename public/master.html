@@ -142,7 +142,10 @@
                     <button class="btn-primary" onclick="document.querySelectorAll('.nav-item')[2].click()"><i class="ph ph-plus"></i> Novo Cliente</button>
                 </div>
                 <div class="card">
-                    <div class="search-bar"><input type="text" class="search-input" placeholder="Buscar por Empresa, CNPJ..."></div>
+                    <div class="search-bar">
+                        <input type="text" class="search-input" placeholder="Buscar por Empresa, CNPJ...">
+                        <button class="btn-outline" onclick="imprimirRelatorio()"><i class="ph ph-printer"></i> Imprimir</button>
+                    </div>
                     <div style="overflow-x: auto;">
                         <table>
                             <thead>
@@ -181,14 +184,12 @@
                             <input type="color" id="input-color-primary" name="tema_primaria" value="#2563eb" style="width: 40px; height: 40px; border-radius: 8px; border:none; cursor:pointer;">
                         </div>
                         
-                        <!-- BOTÃO DE UPLOAD REFORMULADO -->
+                        <!-- BOTÃO DE UPLOAD -->
                         <div class="form-group full">
                             <label class="form-label">Logo da Unidade (Upload)</label>
-                            <!-- Clicar na div irá acionar o input hidden -->
                             <div class="upload-logo" onclick="document.getElementById('input-logo').click()">
                                 <i class="ph ph-upload-simple" style="font-size: 32px; color: var(--text-muted);"></i>
                                 <p id="nome-arquivo" style="font-size: 14px; margin-top: 8px;">Arraste a logo ou clique aqui para buscar</p>
-                                <!-- O input real que faz o upload fica invisível -->
                                 <input type="file" id="input-logo" name="logo" accept="image/png, image/jpeg" style="display: none;" onchange="document.getElementById('nome-arquivo').innerText = this.files[0] ? this.files[0].name : 'Nenhum arquivo selecionado';">
                             </div>
                         </div>
@@ -202,8 +203,9 @@
         </main>
     </div>
 
-    <!-- SCRIPTS MANTIDOS E ATUALIZADOS PARA UPLOAD -->
+    <!-- SCRIPTS MANTIDOS E ATUALIZADOS -->
     <script>
+        // 1. LOGIN
         document.getElementById('form-login-master').addEventListener('submit', async function(e) {
             e.preventDefault();
             const senha = document.getElementById('master-senha').value;
@@ -234,6 +236,7 @@
         function fazerLogoutMaster() { sessionStorage.removeItem('master_auth'); window.location.reload(); }
         window.onload = function() { if(sessionStorage.getItem('master_auth') === 'true') iniciarMaster(); }
 
+        // 2. NAVEGAÇÃO
         function switchView(viewId, navElement) {
             document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
             if (navElement) {
@@ -244,16 +247,76 @@
             if (viewId === 'lista-clientes') carregarUnidades();
         }
 
+        // 3. BUSCAR UNIDADES E RENDERIZAR TABELA
         async function carregarUnidades() {
             const tbody = document.getElementById('tabela-clientes');
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Buscando...</td></tr>';
-           try {
+            try {
+                const response = await fetch('/api/master/unidades');
+                if(response.ok) {
+                    const data = await response.json();
+                    if(data.sucesso) renderTabelaMaster(data.unidades, tbody);
+                }
+            } catch (error) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Erro ao carregar dados</td></tr>'; }
+        }
+
+        function renderTabelaMaster(dados, tbody) {
+            tbody.innerHTML = '';
+            let total = dados.length;
+            let ativas = dados.filter(d => d.status === 'ativa').length;
+            document.getElementById('dash-total').innerText = total;
+            document.getElementById('dash-ativas').innerText = ativas;
+            document.getElementById('dash-inativas').innerText = total - ativas;
+
+            dados.forEach(unidade => {
+                const imgTag = unidade.logo_url ? `<img src="${unidade.logo_url}" style="width:32px; height:32px; border-radius:4px; object-fit:cover;">` : `<div style="width:32px; height:32px; background:#e2e8f0; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px;">Sem Logo</div>`;
+                const badge = unidade.status === 'ativa' ? 'bg-success' : 'bg-danger';
+                
+                const idUnidade = unidade._id ? `'${unidade._id}'` : 'null';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="display:flex; align-items:center; gap:12px;">
+                        ${imgTag}
+                        <div><div style="font-weight: 600;">${unidade.nome_empresa}</div><div style="font-size: 12px; color: var(--text-muted);">CNPJ: ${unidade.cnpj}</div></div>
+                    </td>
+                    <td><div>${unidade.gestor}</div><div style="font-size: 12px; color: var(--text-muted);">${unidade.telefone}</div></td>
+                    <td><span style="font-family: monospace; background:#f1f5f9; padding:4px 8px; border-radius:4px;">*${unidade.senha_acesso}*</span></td>
+                    <td><span class="badge ${badge}">${unidade.status.toUpperCase()}</span></td>
+                    <td>
+                        <div class="action-group">
+                            <button class="btn-action" title="Gerar Recibo" onclick="gerarRecibo(${idUnidade})"><i class="ph ph-receipt"></i></button>
+                            <button class="btn-action" title="Visualizar Contrato" onclick="visualizarContrato(${idUnidade})"><i class="ph ph-file-text"></i></button>
+                            <button class="btn-action" title="Alterar Cadastro" onclick="alterarUnidade(${idUnidade})"><i class="ph ph-pencil-simple"></i></button>
+                            <button class="btn-action ${unidade.status === 'ativa' ? 'danger' : ''}" title="${unidade.status === 'ativa' ? 'Bloquear Acesso' : 'Ativar Acesso'}" onclick="bloquearAtivar(${idUnidade}, '${unidade.status}')">
+                                <i class="ph ${unidade.status === 'ativa' ? 'ph-lock-key' : 'ph-lock-key-open'}"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 4. ENVIAR FORMULÁRIO
+        document.getElementById('form-novo-cliente').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-salvar');
+            btn.innerHTML = 'Enviando foto e salvando...';
+            btn.disabled = true;
+            
+            const formElement = document.getElementById('form-novo-cliente');
+            const formData = new FormData(formElement);
+            
+            const senhaGerada = Math.random().toString(36).slice(-8);
+            formData.append('senha_acesso', senhaGerada);
+
+            try {
                 const response = await fetch('/api/master/unidades', {
                     method: 'POST',
                     body: formData 
                 });
                 
-                // NOVO: Verifica se o servidor quebrou e devolveu HTML de erro em vez de JSON
                 const contentType = response.headers.get("content-type");
                 if (!contentType || !contentType.includes("application/json")) {
                     const textError = await response.text();
@@ -278,96 +341,48 @@
                 btn.innerHTML = '<i class="ph ph-floppy-disk"></i> Salvar e Gerar Acesso';
                 btn.disabled = false;
             }
-
-        function renderTabelaMaster(dados, tbody) {
-    tbody.innerHTML = '';
-    let total = dados.length;
-    let ativas = dados.filter(d => d.status === 'ativa').length;
-    document.getElementById('dash-total').innerText = total;
-    document.getElementById('dash-ativas').innerText = ativas;
-    document.getElementById('dash-inativas').innerText = total - ativas;
-
-    dados.forEach(unidade => {
-        const imgTag = unidade.logo_url ? `<img src="${unidade.logo_url}" style="width:32px; height:32px; border-radius:4px; object-fit:cover;">` : `<div style="width:32px; height:32px; background:#e2e8f0; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px;">Sem Logo</div>`;
-        const badge = unidade.status === 'ativa' ? 'bg-success' : 'bg-danger';
-        
-        // Passando o ID do Mongo para a string (se existir) para podermos usar nas funções
-        const idUnidade = unidade._id ? `'${unidade._id}'` : 'null';
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td style="display:flex; align-items:center; gap:12px;">
-                ${imgTag}
-                <div><div style="font-weight: 600;">${unidade.nome_empresa}</div><div style="font-size: 12px; color: var(--text-muted);">CNPJ: ${unidade.cnpj}</div></div>
-            </td>
-            <td><div>${unidade.gestor}</div><div style="font-size: 12px; color: var(--text-muted);">${unidade.telefone}</div></td>
-            <td><span style="font-family: monospace; background:#f1f5f9; padding:4px 8px; border-radius:4px;">*${unidade.senha_acesso}*</span></td>
-            <td><span class="badge ${badge}">${unidade.status.toUpperCase()}</span></td>
-            <td>
-                <div class="action-group">
-                    <button class="btn-action" title="Gerar Recibo" onclick="gerarRecibo(${idUnidade})"><i class="ph ph-receipt"></i></button>
-                    <button class="btn-action" title="Visualizar Contrato" onclick="visualizarContrato(${idUnidade})"><i class="ph ph-file-text"></i></button>
-                    <button class="btn-action" title="Alterar Cadastro" onclick="alterarUnidade(${idUnidade})"><i class="ph ph-pencil-simple"></i></button>
-                    <button class="btn-action ${unidade.status === 'ativa' ? 'danger' : ''}" title="${unidade.status === 'ativa' ? 'Bloquear Acesso' : 'Ativar Acesso'}" onclick="bloquearAtivar(${idUnidade}, '${unidade.status}')">
-                        <i class="ph ${unidade.status === 'ativa' ? 'ph-lock-key' : 'ph-lock-key-open'}"></i>
-                    </button>
-                </div>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
-
-        // --- MUDANÇA AQUI: ENVIAR FORMULÁRIO COM ARQUIVO (FORMDATA) ---
-        document.getElementById('form-novo-cliente').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const btn = document.getElementById('btn-salvar');
-            btn.innerHTML = 'Enviando foto e salvando...';
-            btn.disabled = true;
-            
-            // O FormData coleta todos os inputs que possuem a propriedade "name", incluindo o input type="file"
-            const formElement = document.getElementById('form-novo-cliente');
-            const formData = new FormData(formElement);
-            
-            // Adiciona a senha gerada aleatoriamente
-            const senhaGerada = Math.random().toString(36).slice(-8);
-            formData.append('senha_acesso', senhaGerada);
-
-            try {
-                // Removemos o 'Content-Type': 'application/json' porque o navegador configura o FormData automaticamente
-                const response = await fetch('/api/master/unidades', {
-                    method: 'POST',
-                    body: formData 
-                });
-                const data = await response.json();
-                
-                if (data.sucesso) {
-                    alert('Unidade salva! A senha de acesso é: ' + senhaGerada);
-                    formElement.reset();
-                    document.getElementById('nome-arquivo').innerText = 'Arraste a logo ou clique aqui para buscar';
-                    switchView('lista-clientes', document.querySelectorAll('.nav-item')[1]);
-                } else {
-                    alert('Erro: ' + data.erro);
-                }
-            } catch (error) {
-                alert('Erro de conexão ao enviar o formulário.');
-            } finally {
-                btn.innerHTML = '<i class="ph ph-floppy-disk"></i> Salvar e Gerar Acesso';
-                btn.disabled = false;
-            }
         });
 
-            // Sistema de Busca (Filtro em Tempo Real)
-document.querySelector('.search-input').addEventListener('input', function(e) {
-    const termo = e.target.value.toLowerCase();
-    const linhas = document.querySelectorAll('#tabela-clientes tr');
-    
-    linhas.forEach(linha => {
-        const textoLinha = linha.innerText.toLowerCase();
-        // Se o texto da linha contém o termo buscado, mostra; senão, esconde.
-        linha.style.display = textoLinha.includes(termo) ? '' : 'none';
-    });
-});
+        // 5. SISTEMA DE BUSCA (FILTRO EM TEMPO REAL)
+        document.querySelector('.search-input').addEventListener('input', function(e) {
+            const termo = e.target.value.toLowerCase();
+            const linhas = document.querySelectorAll('#tabela-clientes tr');
+            
+            linhas.forEach(linha => {
+                const textoLinha = linha.innerText.toLowerCase();
+                linha.style.display = textoLinha.includes(termo) ? '' : 'none';
+            });
+        });
+
+        // 6. FUNÇÕES DOS BOTÕES DE AÇÃO
+        function gerarRecibo(id) {
+            if(!id) return alert('ID inválido.');
+            alert('Função acionada: Gerando Recibo PDF para o ID ' + id);
+        }
+
+        function visualizarContrato(id) {
+            if(!id) return alert('ID inválido.');
+            alert('Função acionada: Abrindo Contrato do ID ' + id);
+        }
+
+        function alterarUnidade(id) {
+            if(!id) return alert('ID inválido.');
+            alert('Função acionada: Abrir modal de edição para o ID ' + id);
+        }
+
+        async function bloquearAtivar(id, statusAtual) {
+            if(!id) return alert('ID inválido.');
+            const novoStatus = statusAtual === 'ativa' ? 'inativa' : 'ativa';
+            const confirmacao = confirm(`Deseja realmente mudar o status desta unidade para ${novoStatus.toUpperCase()}?`);
+            
+            if (confirmacao) {
+                alert(`O status será alterado para ${novoStatus} no banco de dados.`);
+            }
+        }
+
+        function imprimirRelatorio() {
+            window.print();
+        }
     </script>
 </body>
 </html>
