@@ -1,271 +1,233 @@
-from http.server import BaseHTTPRequestHandler
-import json
 import os
-import urllib.request
-import urllib.error
-import mimetypes
-import base64
+import uuid
+from flask import Flask, request, jsonify, send_from_directory, send_file
+from pymongo import MongoClient
+from supabase import create_client, Client
+from bson.objectid import ObjectId
 
+app = Flask(__name__)
 
-class handler(BaseHTTPRequestHandler):
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    def _set_headers(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'application/json')
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
-        self.end_headers()
+# ==========================================
+# 0. ROTAS DO FRONT-END (Telas)
+# ==========================================
+@app.route('/')
+def serve_tenant():
+    # Serve o index.html (tela do cliente) que está dentro da pasta public/
+    return send_from_directory(os.path.join(BASE_DIR, 'public'), 'index.html')
 
-    def do_OPTIONS(self):
-        self._set_headers()
+@app.route('/master')
+def serve_master():
+    # Serve o master.html (tela do admin) que está na raiz
+    return send_file(os.path.join(BASE_DIR, 'master.html'))
 
-    def _obter_url_supabase(self):
-        return os.environ.get('SUPABASE_URL', "https://scotyvkhwptckrvrjzdi.supabase.co")
+# ==========================================
+# 1. CONEXÕES COM BANCOS E VARIÁVEIS (PROTEGIDAS)
+# ==========================================
+MONGO_URI = os.environ.get("MONGO_URI", "").strip()
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "").strip()
 
-    def _safe_int(self, value):
-        try:
-            return int(value) if value else None
-        except Exception:
-            return None
+# Trata a senha master com valor fallback para não quebrar no boot
+MASTER_PASSWORD = (os.environ.get("MASTER_PASSWORD") or "admin").strip()
 
-    def do_POST(self):
-        self._set_headers()
-        try:
-            content_length = int(self.headers.get('Content-Length', 0))
-            if content_length == 0:
-                self.wfile.write(json.dumps({"erro": "Sem payload"}).encode('utf-8'))
-                return
+db = None
+if MONGO_URI and "<db_username>" not in MONGO_URI:
+    try:
+        # Usa os certificados atualizados do certifi para ignorar o erro de handshake TLS
+        mongo_client = MongoClient(
+            MONGO_URI,
+            tlsCAFile=certifi.where(),
+            serverSelectionTimeoutMS=5000
+        )
+        db = mongo_client["sisunid"]
+    except Exception as e:
+        print("Erro ao conectar no MongoDB:", str(e))
 
-            post_data = self.rfile.read(content_length)
-            
-            # Decodificação blindada: 'errors=ignore' impede queda por byte 0xff/binário
-            payload_str = post_data.decode('utf-8', errors='ignore')
-            
-            try:
-                dados = json.loads(payload_str)
-            except json.JSONDecodeError:
-                self.wfile.write(json.dumps({
-                    "erro": "Os dados enviados não estão em formato JSON válido. Verifique o envio de imagens."
-                }).encode('utf-8'))
-                return
+supabase: Client = None
+if SUPABASE_URL and SUPABASE_KEY:
+    try:
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    except Exception as e:
+        print("Aviso: Falha ao inicializar Supabase:", str(e))
 
-            action = dados.get('action')
+BUCKET_NAME = "uploads"
 
-            sb_url = self._obter_url_supabase()
-            sb_key = os.environ.get('SUPABASE_SERVICE_KEY', '')
-            senha_mestra = os.environ.get('USER_SENHA', '')
+def format_mongo_doc(doc):
+    if doc and '_id' in doc:
+        doc['_id'] = str(doc['_id'])
+    return doc
 
-            # ==========================================
-            # ROTAS MASTER / UNIDADES
-            # ==========================================
-            if action == 'verificar_senha_master':
-                senha_digitada = dados.get('senha')
-                self.wfile.write(json.dumps({"autorizado": senha_digitada == senha_mestra}).encode('utf-8'))
-                return
+# ==========================================
+# 2. ROTAS DO PAINEL MASTER (SUPER ADMIN)
+# ==========================================
 
-            elif action == 'upload_logo':
-                file_base64 = dados.get('file_base64')
-                filename = dados.get('filename')
-                if not file_base64 or "," not in file_base64:
-                    self.wfile.write(json.dumps({"erro": "String Base64 inválida."}).encode('utf-8'))
-                    return
+@app.route('/api/master/login', methods=['POST'])
+def master_login():
+    data = request.get_json(silent=True) or {}
+    senha = str(data.get('senha', '')).strip()
+    
+    if senha == MASTER_PASSWORD:
+        return jsonify({"sucesso": True})
+    return jsonify({"sucesso": False, "erro": "Senha incorreta"}), 401
 
-                file_bytes = base64.b64decode(file_base64.split(",")[-1])
-                url_storage = f"{sb_url}/storage/v1/object/logos/{filename}"
-                content_type = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+@app.route('/api/master/unidades', methods=['GET'])
+def get_unidades():
+    if db is None:
+        return jsonify({"sucesso": False, "erro": "Banco de dados offline. Verifique a MONGO_URI."}), 500
+    try:
+        unidades = list(db.unidades.find().sort("_id", -1))
+        unidades_formatadas = [format_mongo_doc(u) for u in unidades]
+        return jsonify({"sucesso": True, "unidades": unidades_formatadas})
+    except Exception as e:
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
 
-                req = urllib.request.Request(
-                    url_storage, data=file_bytes,
-                    headers={'apikey': sb_key, 'Authorization': f'Bearer {sb_key}', 'Content-Type': content_type},
-                    method='POST'
-                )
-                try:
-                    with urllib.request.urlopen(req):
-                        pass
-                except urllib.error.HTTPError as e:
-                    if e.code == 404:
-                        self.wfile.write(json.dumps({"erro": "A pasta 'logos' não existe no Storage do Supabase."}).encode('utf-8'))
-                        return
-                    else:
-                        self.wfile.write(json.dumps({"erro": f"Erro Storage Logos: {e.code}"}).encode('utf-8'))
-                        return
+@app.route('/api/master/unidades', methods=['POST'])
+def criar_unidade():
+    if db is None:
+        return jsonify({"sucesso": False, "erro": "Banco de dados offline."}), 500
 
-                url_publica = f"{sb_url}/storage/v1/object/public/logos/{filename}"
-                self.wfile.write(json.dumps({"sucesso": True, "url_logo": url_publica}).encode('utf-8'))
-                return
-
-            elif action in ['cadastrar_gestor', 'cadastrar_unidade']:
-                url = f"{sb_url}/rest/v1/gestores"
-                payload = json.dumps({
-                    "nome_gestor": dados.get('nome_gestor') or dados.get('nome_responsavel'),
-                    "nome_campanha_gabinete": dados.get('nome_gabinete') or dados.get('nome_unidade'),
-                    "whatsapp": dados.get('whatsapp'),
-                    "email": dados.get('email'),
-                    "documento": dados.get('documento'),
-                    "data_inicio": dados.get('data_inicio'),
-                    "endereco": dados.get('endereco'),
-                    "senha_admin": dados.get('senha_admin'),
-                    "cor_layout": dados.get('cor_layout'),
-                    "url_logo": dados.get('url_logo'),
-                    "status": "Ativo"
-                }).encode('utf-8')
+    try:
+        nome_empresa = request.form.get('nome_empresa')
+        cnpj = request.form.get('cnpj')
+        gestor = request.form.get('gestor')
+        data_inicio = request.form.get('data_inicio')
+        telefone = request.form.get('telefone')
+        email = request.form.get('email')
+        endereco = request.form.get('endereco')
+        slogan = request.form.get('slogan')
+        tema_primaria = request.form.get('tema_primaria')
+        senha_acesso = request.form.get('senha_acesso')
+        
+        logo_url = None
+        
+        if 'logo' in request.files and supabase is not None:
+            file = request.files['logo']
+            if file and file.filename != '':
+                file_ext = file.filename.split('.')[-1]
+                unique_filename = f"logos/{uuid.uuid4().hex}.{file_ext}"
+                file_bytes = file.read()
                 
-                req = urllib.request.Request(
-                    url, data=payload,
-                    headers={'apikey': sb_key, 'Authorization': f'Bearer {sb_key}', 'Content-Type': 'application/json'},
-                    method='POST'
-                )
-                with urllib.request.urlopen(req):
-                    pass
-                self.wfile.write(json.dumps({"sucesso": True}).encode('utf-8'))
-                return
-
-            elif action == 'dados_dashboard_master':
-                url = f"{sb_url}/rest/v1/gestores?select=id,nome_gestor,nome_campanha_gabinete,status,cor_layout,url_logo,whatsapp,email,documento,data_inicio,endereco,senha_admin&order=id.desc"
-                req = urllib.request.Request(
-                    url, headers={'apikey': sb_key, 'Authorization': f'Bearer {sb_key}'}, method='GET'
-                )
-                with urllib.request.urlopen(req) as response:
-                    gestores = json.loads(response.read().decode('utf-8'))
-                self.wfile.write(json.dumps({"gestores": gestores, "unidades": gestores}).encode('utf-8'))
-                return
-
-            elif action in ['editar_gestor', 'editar_unidade']:
-                gid = dados.get('id')
-                url = f"{sb_url}/rest/v1/gestores?id=eq.{gid}"
-                body = {
-                    "nome_gestor": dados.get('nome_gestor') or dados.get('nome_responsavel'),
-                    "nome_campanha_gabinete": dados.get('nome_gabinete') or dados.get('nome_unidade'),
-                    "whatsapp": dados.get('whatsapp'),
-                    "email": dados.get('email'),
-                    "documento": dados.get('documento'),
-                    "data_inicio": dados.get('data_inicio'),
-                    "endereco": dados.get('endereco'),
-                    "cor_layout": dados.get('cor_layout')
-                }
-                if dados.get('url_logo'):
-                    body["url_logo"] = dados.get('url_logo')
-                
-                payload = json.dumps(body).encode('utf-8')
-                req = urllib.request.Request(
-                    url, data=payload,
-                    headers={'apikey': sb_key, 'Authorization': f'Bearer {sb_key}', 'Content-Type': 'application/json'},
-                    method='PATCH'
-                )
-                with urllib.request.urlopen(req):
-                    pass
-                self.wfile.write(json.dumps({"sucesso": True}).encode('utf-8'))
-                return
-
-            elif action in ['alterar_status_gestor', 'alterar_status_unidade']:
-                gid = dados.get('id')
-                url = f"{sb_url}/rest/v1/gestores?id=eq.{gid}"
-                payload = json.dumps({"status": dados.get('status')}).encode('utf-8')
-                req = urllib.request.Request(
-                    url, data=payload,
-                    headers={'apikey': sb_key, 'Authorization': f'Bearer {sb_key}', 'Content-Type': 'application/json'},
-                    method='PATCH'
-                )
-                with urllib.request.urlopen(req):
-                    pass
-                self.wfile.write(json.dumps({"sucesso": True}).encode('utf-8'))
-                return
-
-            elif action in ['excluir_gestor', 'excluir_unidade']:
-                gid = dados.get('id')
-                url = f"{sb_url}/rest/v1/gestores?id=eq.{gid}"
-                req = urllib.request.Request(
-                    url, headers={'apikey': sb_key, 'Authorization': f'Bearer {sb_key}'}, method='DELETE'
-                )
-                with urllib.request.urlopen(req):
-                    pass
-                self.wfile.write(json.dumps({"sucesso": True}).encode('utf-8'))
-                return
-
-            # ==========================================
-            # ROTAS OPERACIONAIS
-            # ==========================================
-            elif action in ['verificar_login_gestor', 'verificar_login_unidade']:
-                senha_input = dados.get('senha')
-                url = f"{sb_url}/rest/v1/gestores?senha_admin=eq.{senha_input}&status=eq.Ativo&select=id,nome_campanha_gabinete,cor_layout,url_logo"
-                req = urllib.request.Request(
-                    url, headers={'apikey': sb_key, 'Authorization': f'Bearer {sb_key}'}, method='GET'
-                )
-                with urllib.request.urlopen(req) as response:
-                    res_data = json.loads(response.read().decode('utf-8'))
-                if res_data:
-                    self.wfile.write(json.dumps({"autorizado": True, "gestor": res_data[0], "unidade": res_data[0]}).encode('utf-8'))
-                else:
-                    self.wfile.write(json.dumps({"autorizado": False, "mensagem": "Acesso suspenso ou inválido."}).encode('utf-8'))
-                return
-
-            # --- FUNCIONÁRIOS / COLABORADORES ---
-            elif action in ['listar_funcionarios', 'listar_colaboradores']:
-                gestor_id = dados.get('gestor_id') or dados.get('unidade_id')
-                url = f"{sb_url}/rest/v1/funcionarios?gestor_id=eq.{gestor_id}&order=id.desc"
-                req = urllib.request.Request(
-                    url, headers={'apikey': sb_key, 'Authorization': f'Bearer {sb_key}'}, method='GET'
-                )
-                with urllib.request.urlopen(req) as response:
-                    funcs = json.loads(response.read().decode('utf-8'))
-                self.wfile.write(json.dumps({"funcionarios": funcs, "colaboradores": funcs}).encode('utf-8'))
-                return
-
-            elif action in ['cadastrar_funcionario', 'cadastrar_colaborador']:
-                url = f"{sb_url}/rest/v1/funcionarios"
-                payload = json.dumps({
-                    "nome": dados.get('nome'),
-                    "cargo": dados.get('cargo'),
-                    "whatsapp": dados.get('whatsapp'),
-                    "email": dados.get('email'),
-                    "documento": dados.get('documento'),
-                    "endereco": dados.get('endereco'),
-                    "conta_bancaria": dados.get('conta_bancaria'),
-                    "url_foto": dados.get('url_foto'),
-                    "gestor_id": self._safe_int(dados.get('gestor_id') or dados.get('unidade_id')),
-                    "status": "Ativo"
-                }).encode('utf-8')
-                headers = {
-                    'apikey': sb_key, 'Authorization': f'Bearer {sb_key}',
-                    'Content-Type': 'application/json', 'Prefer': 'return=representation'
-                }
-                req = urllib.request.Request(url, data=payload, headers=headers, method='POST')
-                with urllib.request.urlopen(req):
-                    pass
-                self.wfile.write(json.dumps({"sucesso": True}).encode('utf-8'))
-                return
-
-            # --- DOCUMENTOS & STORAGE ---
-            elif action == 'upload_documento':
-                file_base64 = dados.get('file_base64')
-                filename = dados.get('filename')
-                file_bytes = base64.b64decode(file_base64.split(",")[-1])
-                url_storage = f"{sb_url}/storage/v1/object/documentos/{filename}"
-                content_type = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
-
-                req = urllib.request.Request(
-                    url_storage, data=file_bytes,
-                    headers={'apikey': sb_key, 'Authorization': f'Bearer {sb_key}', 'Content-Type': content_type},
-                    method='POST'
-                )
                 try:
-                    with urllib.request.urlopen(req):
-                        pass
-                except urllib.error.HTTPError as e:
-                    if e.code == 404:
-                        self.wfile.write(json.dumps({"erro": "A pasta (Bucket) 'documentos' não existe no Supabase."}).encode('utf-8'))
-                        return
-                    else:
-                        self.wfile.write(json.dumps({"erro": f"Erro Storage Documentos: {e.code}"}).encode('utf-8'))
-                        return
+                    supabase.storage.from_(BUCKET_NAME).upload(
+                        path=unique_filename,
+                        file=file_bytes,
+                        file_options={"content-type": file.content_type}
+                    )
+                    logo_url = supabase.storage.from_(BUCKET_NAME).get_public_url(unique_filename)
+                except Exception as err_supa:
+                    print("Erro no upload do Supabase:", str(err_supa))
 
-                url_publica = f"{sb_url}/storage/v1/object/public/documentos/{filename}"
-                self.wfile.write(json.dumps({"sucesso": True, "url_arquivo": url_publica}).encode('utf-8'))
-                return
+        nova_unidade = {
+            "nome_empresa": nome_empresa,
+            "cnpj": cnpj,
+            "gestor": gestor,
+            "data_inicio": data_inicio,
+            "telefone": telefone,
+            "email": email,
+            "endereco": endereco,
+            "slogan": slogan,
+            "tema": {"primaria": tema_primaria},
+            "senha_acesso": senha_acesso,
+            "logo_url": logo_url,
+            "status": "ativa"
+        }
+        
+        db.unidades.insert_one(nova_unidade)
+        return jsonify({"sucesso": True, "mensagem": "Unidade criada com sucesso!"})
 
-            else:
-                self.wfile.write(json.dumps({"erro": f"Ação '{action}' não encontrada."}).encode('utf-8'))
+    except Exception as e:
+        print("Erro ao Salvar Unidade:", str(e))
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
 
-        except Exception as e:
-            self.wfile.write(json.dumps({"erro": str(e)}).encode('utf-8'))
+@app.route('/api/master/unidades/<id>/status', methods=['PATCH'])
+def alterar_status_unidade(id):
+    if db is None:
+        return jsonify({"sucesso": False, "erro": "Banco offline."}), 500
+    try:
+        data = request.get_json(silent=True) or {}
+        novo_status = data.get('status')
+        
+        db.unidades.update_one(
+            {"_id": ObjectId(id)},
+            {"$set": {"status": novo_status}}
+        )
+        return jsonify({"sucesso": True})
+    except Exception as e:
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
+
+# ==========================================
+# 3. ROTAS DO PAINEL DO CLIENTE (TENANT)
+# ==========================================
+
+@app.route('/api/tenant/login', methods=['POST'])
+def tenant_login():
+    if db is None:
+        return jsonify({"sucesso": False, "erro": "Banco offline."}), 500
+
+    data = request.get_json(silent=True) or {}
+    cnpj = data.get('cnpj')
+    senha = data.get('senha')
+    
+    unidade = db.unidades.find_one({"cnpj": cnpj, "senha_acesso": senha, "status": "ativa"})
+    
+    if unidade:
+        return jsonify({
+            "sucesso": True,
+            "unidade_id": str(unidade['_id']),
+            "empresa": {
+                "nome": unidade.get('nome_empresa'),
+                "gestor": unidade.get('gestor'),
+                "slogan": unidade.get('slogan'),
+                "tema": unidade.get('tema'),
+                "logo_url": unidade.get('logo_url')
+            }
+        })
+    return jsonify({"sucesso": False, "erro": "CNPJ ou Senha inválidos, ou unidade bloqueada."}), 401
+
+@app.route('/api/tenant/regulacoes', methods=['GET'])
+def get_regulacoes():
+    if db is None:
+        return jsonify({"sucesso": False, "erro": "Banco offline."}), 500
+
+    unidade_id = request.args.get('unidade_id')
+    if not unidade_id:
+        return jsonify({"sucesso": False, "erro": "ID da unidade é obrigatório"}), 400
+        
+    try:
+        regulacoes = list(db.regulacoes.find({"unidade_id": unidade_id}).sort("_id", -1))
+        regs_formatadas = [format_mongo_doc(r) for r in regulacoes]
+        return jsonify({"sucesso": True, "regulacoes": regs_formatadas})
+    except Exception as e:
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
+
+@app.route('/api/tenant/regulacoes', methods=['POST'])
+def criar_regulacao():
+    if db is None:
+        return jsonify({"sucesso": False, "erro": "Banco offline."}), 500
+
+    data = request.get_json(silent=True) or {}
+    try:
+        protocolo = f"REQ-{str(uuid.uuid4())[:4].upper()}"
+        
+        novo_paciente = {
+            "unidade_id": data.get("unidade_id"),
+            "protocolo": protocolo,
+            "nome_paciente": data.get("nome_paciente"),
+            "cpf": data.get("cpf"),
+            "email": data.get("email"),
+            "telefone": data.get("telefone"),
+            "procedimento": data.get("procedimento"),
+            "prioridade": data.get("prioridade"),
+            "status_atual": "Em Análise"
+        }
+        
+        db.regulacoes.insert_one(novo_paciente)
+        return jsonify({"sucesso": True, "protocolo": protocolo})
+        
+    except Exception as e:
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(debug=True)
