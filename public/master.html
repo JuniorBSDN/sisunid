@@ -344,33 +344,33 @@
 
         // 2. BUSCA REAL NO BANCO DE DADOS
        
-        // Função auxiliar para converter o arquivo em Base64
+// 1. Conversor utilitário de arquivo para Base64
 const toBase64 = file => new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.readAsDataURL(file); // Lê a imagem e gera a string Base64
+    reader.readAsDataURL(file);
     reader.onload = () => resolve(reader.result);
     reader.onerror = error => reject(error);
 });
 
-// Exemplo de chamada na hora do salvamento:
-async function salvarUnidade(e) {
+// 2. Substitua a sua função de cadastro/edição por esta:
+async function realizarCadastro(e) {
     e.preventDefault();
+    
+    const btn = e.target.querySelector('button[type="submit"]') || document.getElementById('btn-gravar');
+    const txtOriginal = btn ? btn.innerText : "Salvar";
+    if (btn) { btn.innerText = "Processando imagem..."; btn.disabled = true; }
 
-    const btnSalvar = document.getElementById('btn-salvar'); // Ajuste para o ID do seu botão
-    if (btnSalvar) {
-        btnSalvar.innerText = "Salvando...";
-        btnSalvar.disabled = true;
-    }
+    let urlLogoFinal = "";
+    
+    // Captura o input de arquivo da logo (ajuste o ID se no seu HTML for diferente)
+    const fileInput = document.getElementById('cad-logo-file') || document.getElementById('edit-logo-file');
 
     try {
-        let urlLogoFinal = "";
-        const fileInput = document.getElementById('cad-logo-file'); // Ajuste para o ID do input file da logo
-
-        // 1. SE HOUVER ARQUIVO, ENVE PRIMEIRO A LOGO VIA BASE64
+        // Se houver arquivo selecionado, faz a conversão obrigatória antes do envio
         if (fileInput && fileInput.files.length > 0) {
             const file = fileInput.files[0];
             
-            // Converte o arquivo .jpg/.png em string Base64 válida
+            // CONVERSÃO ASSÍNCRONA OBRIGATÓRIA
             const base64Str = await toBase64(file);
 
             const uploadRes = await fetch('/api', {
@@ -387,47 +387,47 @@ async function salvarUnidade(e) {
 
             if (uploadData.erro) {
                 alert("Erro no upload da logo: " + uploadData.erro);
+                if (btn) { btn.innerText = txtOriginal; btn.disabled = false; }
                 return;
             }
 
             urlLogoFinal = uploadData.url_logo;
         }
 
-        // 2. MONTA O PAYLOAD DA UNIDADE COM A URL DA LOGO RETORNADA
-        const payload = {
-            action: 'cadastrar_unidade', // Ou 'editar_unidade'
-            nome_responsavel: document.getElementById('cad-nome').value,
-            nome_unidade: document.getElementById('cad-gabinete').value,
-            whatsapp: document.getElementById('cad-whats').value,
-            email: document.getElementById('cad-email').value,
-            endereco: document.getElementById('cad-endereco').value,
-            slogan: document.getElementById('cad-slogan')?.value || '',
-            cor_layout: document.getElementById('cad-cor').value,
-            url_logo: urlLogoFinal
-        };
+        if (btn) btn.innerText = "Salvando registro...";
 
-        // 3. ENVIA OS DADOS EM FORMATO JSON VÁLIDO (TEXTO UTF-8)
+        // Envio final dos dados cadastrais em JSON puro
         const res = await fetch('/api', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+                action: 'cadastrar_unidade',
+                nome_responsavel: document.getElementById('cad-nome')?.value || '',
+                nome_gabinete: document.getElementById('cad-gabinete')?.value || '',
+                whatsapp: document.getElementById('cad-whats')?.value || '',
+                email: document.getElementById('cad-email')?.value || '',
+                documento: document.getElementById('cad-doc')?.value || '',
+                data_inicio: document.getElementById('cad-data')?.value || '',
+                endereco: document.getElementById('cad-endereco')?.value || '',
+                senha_admin: document.getElementById('cad-senha')?.value || '',
+                cor_layout: document.getElementById('cad-cor')?.value || '',
+                url_logo: urlLogoFinal
+            })
         });
 
         const d = await res.json();
 
         if (d.sucesso) {
-            alert("Unidade e configurações salvas com sucesso!");
+            alert("Salvo com sucesso!");
+            location.reload();
         } else {
-            alert("Erro ao salvar: " + (d.erro || "Falha desconhecida"));
+            alert("Erro do servidor: " + (d.erro || "Falha ao gravar"));
         }
 
     } catch (err) {
-        alert("Erro de comunicação com a rede ao tentar salvar.");
+        alert("Falha de conexão com a API.");
     } finally {
-        if (btnSalvar) {
-            btnSalvar.innerText = "Salvar";
-            btnSalvar.disabled = false;
-        }
+        if (btn) { btn.innerText = txtOriginal; btn.disabled = false; }
     }
 }
 
