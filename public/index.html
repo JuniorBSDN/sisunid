@@ -372,15 +372,21 @@
         }
 
         function iniciarSistemaTenant() {
-            document.getElementById('login-tenant-screen').style.display = 'none';
-            document.getElementById('tenant-app-container').style.display = 'flex';
-            
-            // Se já logou e recarregou a página, puxa os dados do session e reaplica o tema
-            const empresaStr = sessionStorage.getItem('empresa_data');
-            if(empresaStr) aplicarWhiteLabel(JSON.parse(empresaStr));
-
-            carregarRegulacoes();
+    document.getElementById('login-tenant-screen').style.display = 'none';
+    document.getElementById('tenant-app-container').style.display = 'flex';
+    
+    // Puxa e reaplica o tema sempre que o app for exibido
+    const empresaStr = sessionStorage.getItem('empresa_data');
+    if (empresaStr) {
+        try {
+            aplicarWhiteLabel(JSON.parse(empresaStr));
+        } catch (e) {
+            console.error("Erro ao aplicar tema da sessão:", e);
         }
+    }
+
+    carregarRegulacoes();
+}
 
         function fazerLogoutTenant() {
             sessionStorage.clear();
