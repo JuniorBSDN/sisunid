@@ -3,349 +3,354 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Admin - Gestão de Unidades</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <title>Painel Master - Gestão de Clientes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root {
-            --primary: #0f172a;
-            --primary-hover: #1e293b;
-            --bg-color: #f1f5f9;
-            --surface: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
-            --danger: #ef4444;
-            --success: #10b981;
-            --warning: #f59e0b;
+        /* Oculta o corpo até que a senha master seja validada[cite: 4] */
+        body { display: none; }
+        @media print {
+            aside, header, form, .no-print, button, .modal-open { display: none !important; }
+            body { display: block !important; background: white !important; color: black !important; }
+            .print-area { display: block !important; width: 100% !important; position: absolute; left: 0; top: 0; }
+            table { width: 100% !important; border-collapse: collapse !important; }
+            th, td { border: 1px solid #cbd5e1 !important; color: black !important; padding: 8px !important; }
         }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
-
-        /* Sidebar */
-        .sidebar { width: 260px; background-color: var(--primary); color: white; display: flex; flex-direction: column; }
-        .logo { padding: 24px; font-size: 20px; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 12px; }
-        .nav-menu { padding: 24px 16px; display: flex; flex-direction: column; gap: 8px; }
-        .nav-item { padding: 12px 16px; border-radius: 8px; color: #cbd5e1; text-decoration: none; display: flex; align-items: center; gap: 12px; font-weight: 500; transition: all 0.2s; cursor: pointer; border: none; background: transparent; width: 100%; text-align: left; }
-        .nav-item i { font-size: 20px; }
-        .nav-item:hover, .nav-item.active { background-color: rgba(255,255,255,0.1); color: white; }
-
-        /* Main Content */
-        .main-content { flex: 1; overflow-y: auto; padding: 32px; }
-        .view-section { display: none; max-width: 1200px; margin: 0 auto; animation: fadeIn 0.3s ease; }
-        .view-section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Components */
-        .page-title { font-size: 24px; font-weight: 700; margin-bottom: 24px; color: var(--text-main); }
-        .card { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; overflow: hidden; }
-        .card-header { padding: 20px 24px; border-bottom: 1px solid var(--border); font-weight: 600; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; }
-        .card-body { padding: 24px; }
-        
-        .btn { padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; border: none; font-size: 14px; transition: 0.2s; }
-        .btn-primary { background-color: var(--primary); color: white; }
-        .btn-primary:hover { background-color: var(--primary-hover); }
-        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
-        .btn-danger { background-color: var(--danger); color: white; }
-        .btn-success { background-color: var(--success); color: white; }
-
-        /* Dashboard Widgets */
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 24px; }
-        .stat-card { padding: 24px; background: white; border-radius: 12px; border: 1px solid var(--border); }
-        .stat-card h3 { color: var(--text-muted); font-size: 14px; margin-bottom: 8px; }
-        .stat-card .value { font-size: 32px; font-weight: 700; }
-
-        /* Forms */
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .form-group { display: flex; flex-direction: column; gap: 8px; }
-        .form-group.full { grid-column: 1 / -1; }
-        .form-group.colors { display: flex; flex-direction: row; gap: 24px; }
-        .form-label { font-size: 14px; font-weight: 600; color: var(--text-main); }
-        .form-control { padding: 10px 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; width: 100%; outline: none; }
-        .form-control:focus { border-color: var(--primary); }
-        
-        /* Table */
-        .toolbar { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
-        .search-input { padding: 10px 16px; border: 1px solid var(--border); border-radius: 8px; width: 300px; }
-        table { width: 100%; border-collapse: collapse; text-align: left; }
-        th, td { padding: 16px; border-bottom: 1px solid var(--border); font-size: 14px; }
-        th { background-color: #f8fafc; color: var(--text-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; }
-        .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        .badge.active { background: #dcfce7; color: #166534; }
-        .badge.blocked { background: #fee2e2; color: #991b1b; }
-        .action-buttons { display: flex; gap: 8px; }
-        .btn-icon { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid var(--border); background: white; cursor: pointer; color: var(--text-muted); }
-        .btn-icon:hover { background: var(--bg-color); color: var(--primary); }
     </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800 font-sans flex h-screen overflow-hidden">
 
-    <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="logo">
-            <i class="ph-fill ph-shield-check"></i> Master Admin
+    <!-- MENU LATERAL[cite: 4] -->
+    <aside class="w-64 bg-[#0f1e36] text-slate-300 flex flex-col justify-between flex-shrink-0">
+        <div>
+            <div class="p-5 flex items-center gap-3 border-b border-slate-700/40">
+                <div class="bg-blue-600 text-white font-extrabold text-lg px-2.5 py-1.5 rounded-lg"><i class="fa-solid fa-shield-halved"></i></div>
+                <div>
+                    <h1 class="text-white font-bold text-sm leading-tight tracking-wide">Painel Master</h1>
+                    <span class="text-blue-400 text-xs font-medium">Gestão SaaS</span>
+                </div>
+            </div>
+            <nav class="p-4 space-y-1">
+                <button onclick="navegarPara('aba-dashboard')" id="btn-aba-dashboard" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl bg-slate-700/40 text-white transition">
+                    <i class="fa-solid fa-chart-simple text-base"></i> Dashboard Geral
+                </button>
+                <button onclick="navegarPara('aba-cadastro')" id="btn-aba-cadastro" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl hover:bg-slate-700/20 hover:text-white transition text-slate-400">
+                    <i class="fa-solid fa-user-plus text-base"></i> Cadastrar Cliente
+                </button>
+                <button onclick="navegarPara('aba-lista')" id="btn-aba-lista" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl hover:bg-slate-700/20 hover:text-white transition text-slate-400">
+                    <i class="fa-solid fa-table-list text-base"></i> Lista de Clientes
+                </button>
+            </nav>
         </div>
-        <nav class="nav-menu">
-            <button class="nav-item active" onclick="switchView('dashboard', this)">
-                <i class="ph ph-squares-four"></i> Dashboard
-            </button>
-            <button class="nav-item" onclick="switchView('clientes', this)">
-                <i class="ph ph-buildings"></i> Empresas / Clientes
-            </button>
-        </nav>
+        <div class="p-4 text-center text-[11px] text-slate-500 border-t border-slate-700/20">Versão 2.0</div>
     </aside>
 
-    <main class="main-content">
-        
-        <!-- DASHBOARD VIEW -->
-        <section id="dashboard" class="view-section active">
-            <h1 class="page-title">Visão Geral do Sistema</h1>
-            
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <h3>Total de Unidades (Clientes)</h3>
-                    <div class="value" id="widget-total">0</div>
-                </div>
-                <div class="stat-card" style="border-bottom: 4px solid var(--success);">
-                    <h3>Status: Ativas</h3>
-                    <div class="value" id="widget-ativas">0</div>
-                </div>
-                <div class="stat-card" style="border-bottom: 4px solid var(--danger);">
-                    <h3>Status: Desativadas</h3>
-                    <div class="value" id="widget-desativadas">0</div>
-                </div>
+    <!-- CONTEÚDO PRINCIPAL[cite: 4] -->
+    <div class="flex-1 flex flex-col h-full bg-[#f4f6f9] overflow-hidden">
+        <header class="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between flex-shrink-0">
+            <h2 id="titulo-pagina" class="font-bold text-slate-800 text-lg">Dashboard Geral</h2>
+            <div class="text-right text-xs font-bold text-slate-800"><i class="fa-solid fa-user-shield text-blue-600 mr-2"></i>Admin Global</div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-8 max-w-7xl w-full mx-auto">
+
+            <!-- DASHBOARD (Métricas)[cite: 4] -->
+            <div id="aba-dashboard" class="tab-content grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-2xl border shadow-sm"><span class="text-[11px] text-slate-400 font-bold uppercase">Total de Clientes</span><div id="card-total" class="text-3xl font-extrabold text-slate-800">0</div></div>
+                <div class="bg-white p-6 rounded-2xl border shadow-sm"><span class="text-[11px] text-slate-400 font-bold uppercase">Clientes Ativos</span><div id="card-ativos" class="text-3xl font-extrabold text-blue-600">0</div></div>
+                <div class="bg-white p-6 rounded-2xl border shadow-sm"><span class="text-[11px] text-slate-400 font-bold uppercase">Clientes Inativos/Bloqueados</span><div id="card-inativos" class="text-3xl font-extrabold text-rose-500">0</div></div>
             </div>
 
-            <div class="card">
-                <div class="card-header">Relatórios Gerenciais</div>
-                <div class="card-body">
-                    <form class="form-grid" style="align-items: end;">
-                        <div class="form-group">
-                            <label class="form-label">Data Inicial</label>
-                            <input type="date" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Data Final</label>
-                            <input type="date" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Tipo de Relatório</label>
-                            <select class="form-control">
-                                <option>Geral de Unidades</option>
-                                <option>Apenas Ativas</option>
-                                <option>Apenas Bloqueadas/Desativadas</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <button type="button" class="btn btn-primary"><i class="ph ph-printer"></i> Imprimir Relatório</button>
-                        </div>
-                    </form>
+            <!-- FORMULÁRIO DE CADASTRO -->
+            <div id="aba-cadastro" class="tab-content hidden max-w-3xl bg-white p-6 rounded-2xl border shadow-sm">
+                <div class="mb-6 pb-4 border-b">
+                    <h3 class="font-bold text-lg text-slate-800">Cadastrar Novo Cliente</h3>
+                    <p class="text-xs text-slate-500">Preencha os dados abaixo. O CPF/CNPJ será usado pelo cliente para fazer login no sistema.</p>
                 </div>
-            </div>
-        </section>
 
-        <!-- CADASTRAR CLIENTES VIEW -->
-        <section id="clientes" class="view-section">
-            <h1 class="page-title">Gestão de Empresas e Clientes</h1>
-            
-            <!-- Lista e Busca -->
-            <div class="card">
-                <div class="card-header">
-                    Base de Clientes Cadastrados
-                    <button class="btn btn-outline" style="font-size: 13px;"><i class="ph ph-printer"></i> Imprimir Lista</button>
-                </div>
-                <div class="card-body">
-                    <div class="toolbar">
-                        <input type="text" id="searchInput" class="search-input" placeholder="Buscar por cliente, empresa ou CNPJ..." onkeyup="filtrarTabela()">
+                <form id="form-cadastro-cliente" onsubmit="realizarCadastro(event)" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nome do Responsável *</label>
+                            <input type="text" id="cad-nome" required class="w-full border rounded-xl px-4 py-2 text-sm bg-slate-50 focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nome da Empresa / Unidade *</label>
+                            <input type="text" id="cad-empresa" required class="w-full border rounded-xl px-4 py-2 text-sm bg-slate-50 focus:outline-none focus:border-blue-500">
+                        </div>
                     </div>
-                    <div style="overflow-x: auto;">
-                        <table id="tabelaClientes">
-                            <thead>
-                                <tr>
-                                    <th>Gestor / Responsável</th>
-                                    <th>Nome da Empresa</th>
-                                    <th>Senha Admin</th>
-                                    <th>Status</th>
-                                    <th style="text-align: right;">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tbodyClientes">
-                                <!-- Preenchido via JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Formulário de Cadastro -->
-            <div class="card">
-                <div class="card-header">Cadastrar Nova Empresa / Cliente</div>
-                <div class="card-body">
-                    <form id="formCadastro" onsubmit="salvarEmpresa(event)">
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label class="form-label">Nome da Empresa</label>
-                                <input type="text" id="nomeEmpresa" class="form-control" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">CNPJ / CPF</label>
-                                <input type="text" id="cnpj" class="form-control" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="form-label">Nome do Responsável / Gestor</label>
-                                <input type="text" id="nomeGestor" class="form-control" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">E-mail</label>
-                                <input type="email" id="email" class="form-control" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label">Telefone</label>
-                                <input type="text" id="telefone" class="form-control">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Data de Início (Contrato)</label>
-                                <input type="date" id="dataInicio" class="form-control" required>
-                            </div>
-
-                            <div class="form-group full">
-                                <label class="form-label">Endereço Completo</label>
-                                <input type="text" id="endereco" class="form-control">
-                            </div>
-
-                            <div class="form-group full">
-                                <label class="form-label">Slogan da Unidade</label>
-                                <input type="text" id="slogan" class="form-control" placeholder="Ex: Cuidando da sua saúde">
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label">Logo (Upload do Arquivo)</label>
-                                <input type="file" id="logo" class="form-control" accept="image/*">
-                            </div>
-                            
-                            <div class="form-group colors">
-                                <div>
-                                    <label class="form-label">Cor Primária</label>
-                                    <input type="color" id="cor1" class="form-control" style="height: 40px; padding: 2px;">
-                                </div>
-                                <div>
-                                    <label class="form-label">Cor Secundária</label>
-                                    <input type="color" id="cor2" class="form-control" style="height: 40px; padding: 2px;">
-                                </div>
-                            </div>
-                            
-                            <div class="form-group full" style="align-items: flex-end; margin-top: 16px;">
-                                <button type="submit" class="btn btn-primary"><i class="ph ph-check"></i> Salvar Cliente</button>
-                            </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-blue-600 uppercase mb-1">CPF ou CNPJ (Chave de Login) *</label>
+                            <input type="text" id="cad-cpf" required placeholder="Apenas números (Ex: 12345678900)" class="w-full border-2 border-blue-200 rounded-xl px-4 py-2 text-sm bg-blue-50/30 focus:outline-none focus:border-blue-500">
                         </div>
-                    </form>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data de Início (Contrato)</label>
+                            <input type="date" id="cad-data" class="w-full border rounded-xl px-4 py-2 text-sm bg-slate-50 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">WhatsApp</label>
+                            <input type="tel" id="cad-whats" class="w-full border rounded-xl px-4 py-2 text-sm bg-slate-50 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">E-mail</label>
+                            <input type="email" id="cad-email" class="w-full border rounded-xl px-4 py-2 text-sm bg-slate-50 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Endereço Completo</label>
+                        <input type="text" id="cad-endereco" class="w-full border rounded-xl px-4 py-2 text-sm bg-slate-50 focus:outline-none">
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-4 border-t pt-4">
+                        <div class="col-span-1">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Cor Primária do Cliente</label>
+                            <input type="color" id="cad-cor" value="#2563eb" class="w-full h-10 border rounded-xl p-1 bg-slate-50 cursor-pointer">
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Upload da Logo da Empresa</label>
+                            <input type="file" id="cad-logo-file" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-slate-100 file:text-slate-700">
+                        </div>
+                    </div>
+
+                    <button type="submit" id="btn-gravar" class="w-full bg-blue-600 text-white text-sm font-bold py-3 rounded-xl transition hover:bg-blue-700 mt-4">
+                        <i class="fa-solid fa-check-circle mr-2"></i> Gravar e Ativar Cliente
+                    </button>
+                </form>
+            </div>
+
+            <!-- LISTAGEM DE CLIENTES[cite: 4] -->
+            <div id="aba-lista" class="tab-content hidden bg-white rounded-2xl border shadow-sm overflow-hidden print-area">
+                <div class="p-4 bg-slate-50 border-b flex justify-between items-center no-print">
+                    <span class="text-xs text-slate-500 font-bold uppercase">Gestão da Carteira de Clientes</span>
+                    <button onclick="window.print()" class="bg-slate-800 text-white font-bold text-xs px-4 py-2 rounded-xl transition hover:bg-slate-700">
+                        <i class="fa-solid fa-print mr-2"></i> Imprimir Tabela
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-50 border-b text-slate-400 uppercase font-bold">
+                            <tr>
+                                <th class="p-3">Logo</th>
+                                <th class="p-3">Responsável</th>
+                                <th class="p-3">Empresa / Unidade</th>
+                                <th class="p-3">CPF/CNPJ (Login)</th>
+                                <th class="p-3 text-center">Status</th>
+                                <th class="p-3 text-center no-print">Ações do Admin</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-clientes" class="divide-y"></tbody>
+                    </table>
                 </div>
             </div>
-        </section>
-    </main>
 
+        </main>
+    </div>
+
+    <!-- SCRIPTS DE LÓGICA E CONEXÃO COM A API -->
     <script>
-        // 1. Navegação de Abas
-        function switchView(viewId, navElement) {
-            document.querySelectorAll('.view-section').forEach(view => view.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
-            document.getElementById(viewId).classList.add('active');
-            navElement.classList.add('active');
-        }
+        let listaClientesGlobais = [];
 
-        // 2. Banco de Dados Local (Simulando API Real)
-        let empresas = JSON.parse(localStorage.getItem('db_empresas')) || [
-            // Dados fictícios iniciais caso esteja vazio
-            { id: 1, gestor: 'Carlos Almeida', empresa: 'Clínica Saúde Mais', senha: 'gerada_auto', status: 'ativo' },
-            { id: 2, gestor: 'Ana Beatriz', empresa: 'Hospital Central', senha: 'gerada_auto', status: 'bloqueado' }
-        ];
-
-        // 3. Atualizar Interface
-        function atualizarDashboard() {
-            const total = empresas.length;
-            const ativas = empresas.filter(e => e.status === 'ativo').length;
-            const desativadas = empresas.filter(e => e.status === 'bloqueado').length;
-
-            document.getElementById('widget-total').innerText = total;
-            document.getElementById('widget-ativas').innerText = ativas;
-            document.getElementById('widget-desativadas').innerText = desativadas;
-        }
-
-        function renderizarTabela() {
-            const tbody = document.getElementById('tbodyClientes');
-            tbody.innerHTML = '';
-
-            empresas.forEach(emp => {
-                const tr = document.createElement('tr');
-                const badgeClass = emp.status === 'ativo' ? 'active' : 'blocked';
-                const statusTexto = emp.status === 'ativo' ? 'Ativa' : 'Bloqueada';
-                const iconBloqueio = emp.status === 'ativo' ? 'ph-lock-key' : 'ph-lock-key-open';
+        // 1. AUTENTICAÇÃO INICIAL DO MASTER[cite: 4]
+        async function autenticarMaster() {
+            const senha = prompt("Acesso Restrito. Digite a Senha Master:");
+            if (!senha) { window.location.href = "index.html"; return; }
+            
+            try {
+                const res = await fetch('/api', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'verificar_senha_master', senha: senha })
+                });
+                const d = await res.json();
                 
-                tr.innerHTML = `
-                    <td style="font-weight: 500;">${emp.gestor}</td>
-                    <td>${emp.empresa}</td>
-                    <td><span style="font-family: monospace; background: #e2e8f0; padding: 4px 8px; border-radius: 4px;">***${emp.id}Xy</span></td>
-                    <td><span class="badge ${badgeClass}">${statusTexto}</span></td>
-                    <td style="text-align: right;">
-                        <div class="action-buttons" style="justify-content: flex-end;">
-                            <button class="btn-icon" title="Gerar Recibo"><i class="ph ph-receipt"></i></button>
-                            <button class="btn-icon" title="Alterar Cadastro"><i class="ph ph-pencil-simple"></i></button>
-                            <button class="btn-icon" title="Bloquear/Ativar" onclick="alternarStatus(${emp.id})"><i class="ph ${iconBloqueio}"></i></button>
-                            <button class="btn-icon" title="Visualizar Contrato"><i class="ph ph-file-text"></i></button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(tr);
+                if (d.autorizado) { 
+                    // Libera a tela se a senha estiver correta no backend
+                    document.body.style.display = "flex"; 
+                    atualizarDashboard(); 
+                } else { 
+                    alert("Acesso negado: Senha incorreta."); 
+                    window.location.href = "index.html"; 
+                }
+            } catch (e) { 
+                alert("Erro de conexão com o servidor."); 
+            }
+        }
+
+        // 2. NAVEGAÇÃO DE ABAS[cite: 4]
+        function navegarPara(idAba) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(idAba).classList.remove('hidden');
+            
+            // Controle de Menu Ativo
+            document.querySelectorAll('nav button').forEach(btn => {
+                btn.classList.remove('bg-slate-700/40', 'text-white');
+                btn.classList.add('text-slate-400');
             });
-            atualizarDashboard();
+            const btnAtivo = document.getElementById('btn-' + idAba);
+            btnAtivo.classList.remove('text-slate-400');
+            btnAtivo.classList.add('bg-slate-700/40', 'text-white');
+
+            const titulos = { 'aba-dashboard': 'Dashboard Geral', 'aba-cadastro': 'Cadastrar Cliente', 'aba-lista': 'Gestão de Clientes' };
+            document.getElementById('titulo-pagina').innerText = titulos[idAba];
         }
 
-        // 4. Lógica de Negócio (CRUD)
-        function salvarEmpresa(event) {
-            event.preventDefault();
-            
-            const novaEmpresa = {
-                id: Date.now(), // Gera um ID único
-                gestor: document.getElementById('nomeGestor').value,
-                empresa: document.getElementById('nomeEmpresa').value,
-                cnpj: document.getElementById('cnpj').value,
-                status: 'ativo' // Toda empresa nova nasce ativa
-            };
+        // 3. CONVERSÃO DE IMAGEM PARA BASE64[cite: 4]
+        const toBase64 = file => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
 
-            empresas.push(novaEmpresa);
-            localStorage.setItem('db_empresas', JSON.stringify(empresas)); // Salva no storage
+        // 4. CADASTRAR NOVO CLIENTE (Envia para o Python/Supabase)[cite: 4]
+        async function realizarCadastro(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-gravar');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Processando...'; 
+            btn.disabled = true;
             
-            document.getElementById('formCadastro').reset();
-            renderizarTabela();
-            alert('Empresa cadastrada e acesso liberado com sucesso!');
-        }
+            let urlLogoFinal = "";
+            const fileInput = document.getElementById('cad-logo-file');
 
-        function alternarStatus(id) {
-            const index = empresas.findIndex(e => e.id === id);
-            if(index !== -1) {
-                // Alterna entre ativo e bloqueado
-                empresas[index].status = empresas[index].status === 'ativo' ? 'bloqueado' : 'ativo';
-                localStorage.setItem('db_empresas', JSON.stringify(empresas));
-                renderizarTabela();
+            try {
+                // Se houver logo, envia primeiro para o Storage[cite: 4]
+                if(fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    const base64Str = await toBase64(file);
+                    const uploadRes = await fetch('/api', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'upload_logo', file_base64: base64Str, filename: Date.now() + "_" + file.name.replace(/\s+/g, '_') })
+                    });
+                    const uploadData = await uploadRes.json();
+                    if(uploadData.url_logo) urlLogoFinal = uploadData.url_logo;
+                }
+
+                // Limpa a formatação do CPF/CNPJ para salvar só números
+                const cpfLimpo = document.getElementById('cad-cpf').value.replace(/\D/g, '');
+
+                // Cadastra os dados textuais no banco de dados[cite: 4]
+                const res = await fetch('/api', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'cadastrar_gestor', // Mantendo a action do seu backend
+                        nome_gestor: document.getElementById('cad-nome').value,
+                        nome_gabinete: document.getElementById('cad-empresa').value,
+                        documento: cpfLimpo, // Enviando o CPF Limpo
+                        whatsapp: document.getElementById('cad-whats').value,
+                        email: document.getElementById('cad-email').value,
+                        data_inicio: document.getElementById('cad-data').value,
+                        endereco: document.getElementById('cad-endereco').value,
+                        cor_layout: document.getElementById('cad-cor').value,
+                        url_logo: urlLogoFinal,
+                        status: 'Ativo'
+                    })
+                });
+                const d = await res.json();
+                
+                if(d.sucesso) {
+                    alert("Cliente cadastrado com sucesso! Ele já pode acessar o sistema usando o CPF/CNPJ.");
+                    document.getElementById('form-cadastro-cliente').reset();
+                    atualizarDashboard(); 
+                    navegarPara('aba-lista');
+                } else {
+                    alert("Erro do servidor: " + (d.erro || "Falha desconhecida"));
+                }
+            } catch(err) {
+                alert("Erro de comunicação com o servidor.");
+            } finally { 
+                btn.innerHTML = '<i class="fa-solid fa-check-circle mr-2"></i> Gravar e Ativar Cliente'; 
+                btn.disabled = false; 
             }
         }
 
-        // 5. Filtro de Busca
-        function filtrarTabela() {
-            const input = document.getElementById("searchInput").value.toLowerCase();
-            const trs = document.getElementById("tbodyClientes").getElementsByTagName("tr");
+        // 5. ATUALIZAR DASHBOARD E LISTA[cite: 4]
+        async function atualizarDashboard() {
+            try {
+                const res = await fetch('/api', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'dados_dashboard_master' })
+                });
+                const d = await res.json();
+                listaClientesGlobais = d.gestores || [];
 
-            for (let i = 0; i < trs.length; i++) {
-                const text = trs[i].textContent.toLowerCase();
-                trs[i].style.display = text.includes(input) ? "" : "none";
+                // Atualiza Widgets
+                document.getElementById('card-total').innerText = listaClientesGlobais.length;
+                const ativos = listaClientesGlobais.filter(c => c.status === 'Ativo').length;
+                document.getElementById('card-ativos').innerText = ativos;
+                document.getElementById('card-inativos').innerText = listaClientesGlobais.length - ativos;
+
+                // Constrói a Tabela
+                const tbody = document.getElementById('tabela-clientes');
+                tbody.innerHTML = '';
+                
+                listaClientesGlobais.forEach(cliente => {
+                    const imgLogo = cliente.url_logo ? `<img src="${cliente.url_logo}" class="w-8 h-8 rounded border object-cover bg-white shadow-sm">` : `<div class="w-8 h-8 rounded border bg-slate-100 flex items-center justify-center text-slate-400"><i class="fa-solid fa-building"></i></div>`;
+                    const badgeColor = cliente.status === 'Ativo' ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-rose-50 text-rose-600 border-rose-200';
+                    const iconToggle = cliente.status === 'Ativo' ? 'fa-ban' : 'fa-check';
+                    const btnToggleColor = cliente.status === 'Ativo' ? 'text-amber-500 hover:bg-amber-50' : 'text-emerald-500 hover:bg-emerald-50';
+
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                            <td class="p-3">${imgLogo}</td>
+                            <td class="p-3 font-semibold text-slate-700">${cliente.nome_gestor || '---'}</td>
+                            <td class="p-3 text-slate-500">${cliente.nome_campanha_gabinete || '---'}</td>
+                            <td class="p-3 font-mono font-bold text-slate-800">${cliente.documento || 'Sem CPF'}</td>
+                            <td class="p-3 text-center"><span class="px-2 py-1 rounded text-[10px] font-bold border ${badgeColor}">${cliente.status || 'Ativo'}</span></td>
+                            <td class="p-3 flex justify-center gap-2 no-print">
+                                <button onclick="alternarStatus(${cliente.id}, '${cliente.status}')" title="Bloquear/Desbloquear" class="border bg-white px-2.5 py-1.5 rounded shadow-sm text-[12px] ${btnToggleColor}"><i class="fa-solid ${iconToggle}"></i></button>
+                                <button onclick="excluirRegistro(${cliente.id})" title="Excluir Definitivamente" class="border bg-white hover:bg-rose-50 text-rose-500 px-2.5 py-1.5 rounded shadow-sm text-[12px]"><i class="fa-solid fa-trash"></i></button>
+                            </td>
+                        </tr>`;
+                });
+            } catch (e) {
+                console.error("Erro ao puxar os dados do dashboard", e);
             }
         }
 
-        // Inicializa a tela carregando os dados
-        window.onload = renderizarTabela;
+        // 6. BLOQUEAR / ATIVAR CLIENTE[cite: 4]
+        async function alternarStatus(id, statusAtual) {
+            const novo = statusAtual === 'Ativo' ? 'Inativo' : 'Ativo';
+            if(!confirm(`Deseja alterar o status do cliente para ${novo}? Ele ${novo === 'Inativo' ? 'perderá' : 'terá'} o acesso ao sistema.`)) return;
+            
+            try {
+                const res = await fetch('/api', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'alterar_status_gestor', id: id, status: novo })
+                });
+                const d = await res.json();
+                if(d.sucesso) atualizarDashboard();
+            } catch (e) { alert("Falha na rede."); }
+        }
+
+        // 7. EXCLUIR CLIENTE[cite: 4]
+        async function excluirRegistro(id) {
+            if(!confirm("ALERTA CRÍTICO: A exclusão apagará este cliente permanentemente. Confirmar?")) return;
+            try {
+                const res = await fetch('/api', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'excluir_gestor', id: id })
+                });
+                const d = await res.json();
+                if(d.sucesso) { 
+                    alert("Cliente removido com sucesso."); 
+                    atualizarDashboard(); 
+                }
+            } catch (e) { alert("Falha ao excluir."); }
+        }
+
+        // Inicia pedindo a senha ao carregar a página[cite: 4]
+        window.onload = autenticarMaster;
     </script>
 </body>
 </html>
