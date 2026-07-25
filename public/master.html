@@ -3,565 +3,349 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>sisUnid - Painel Master</title>
+    <title>Master Admin - Gestão de Unidades</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
         :root {
-            --master-primary: #4f46e5;
-            --master-hover: #4338ca;
-            --master-dark: #1e1b4b;
+            --primary: #0f172a;
+            --primary-hover: #1e293b;
             --bg-color: #f1f5f9;
             --surface: #ffffff;
             --text-main: #0f172a;
             --text-muted: #64748b;
             --border: #e2e8f0;
-            --success: #10b981;
             --danger: #ef4444;
+            --success: #10b981;
             --warning: #f59e0b;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
 
-        /* --- TELA DE LOGIN MASTER --- */
-        #login-master-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--master-dark); z-index: 9999;
-            display: flex; align-items: center; justify-content: center;
-        }
-
-        .login-card {
-            background: var(--surface); width: 100%; max-width: 380px;
-            padding: 40px 32px; border-radius: 12px;
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); border: 1px solid var(--border);
-        }
-
-        #master-app-container { display: none; width: 100%; height: 100%; }
-
-        /* --- SIDEBAR --- */
-        .sidebar { width: 260px; background-color: var(--master-dark); color: white; display: flex; flex-direction: column; z-index: 20; }
-        .logo { padding: 24px; font-size: 22px; font-weight: 700; color: white; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        /* Sidebar */
+        .sidebar { width: 260px; background-color: var(--primary); color: white; display: flex; flex-direction: column; }
+        .logo { padding: 24px; font-size: 20px; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 12px; }
         .nav-menu { padding: 24px 16px; display: flex; flex-direction: column; gap: 8px; }
-        .nav-item { padding: 12px 16px; border-radius: 8px; color: #cbd5e1; display: flex; align-items: center; gap: 12px; font-weight: 500; cursor: pointer; border: none; background: transparent; width: 100%; text-align: left; font-size: 15px; transition: all 0.2s ease; }
-        .nav-item:hover { background-color: rgba(255,255,255,0.1); color: white; }
-        .nav-item.active { background-color: var(--master-primary); color: white; }
+        .nav-item { padding: 12px 16px; border-radius: 8px; color: #cbd5e1; text-decoration: none; display: flex; align-items: center; gap: 12px; font-weight: 500; transition: all 0.2s; cursor: pointer; border: none; background: transparent; width: 100%; text-align: left; }
+        .nav-item i { font-size: 20px; }
+        .nav-item:hover, .nav-item.active { background-color: rgba(255,255,255,0.1); color: white; }
 
-        /* --- MAIN --- */
-        .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
-        .topbar { background-color: var(--surface); padding: 16px 32px; display: flex; justify-content: flex-end; align-items: center; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
-
-        .user-profile { display: flex; align-items: center; gap: 12px; }
-        .avatar { width: 36px; height: 36px; background: var(--master-primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; }
-
-        .view-section { display: none; padding: 32px; max-width: 1200px; margin: 0 auto; width: 100%; animation: fadeIn 0.3s ease; }
+        /* Main Content */
+        .main-content { flex: 1; overflow-y: auto; padding: 32px; }
+        .view-section { display: none; max-width: 1200px; margin: 0 auto; animation: fadeIn 0.3s ease; }
         .view-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .page-header { margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; }
-        .page-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        /* Components */
+        .page-title { font-size: 24px; font-weight: 700; margin-bottom: 24px; color: var(--text-main); }
+        .card { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; overflow: hidden; }
+        .card-header { padding: 20px 24px; border-bottom: 1px solid var(--border); font-weight: 600; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; }
+        .card-body { padding: 24px; }
+        
+        .btn { padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; border: none; font-size: 14px; transition: 0.2s; }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-success { background-color: var(--success); color: white; }
 
-        .btn-primary { background-color: var(--master-primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; transition: 0.2s; }
-        .btn-primary:hover { background-color: var(--master-hover); }
-        .btn-outline { background: transparent; color: var(--text-main); border: 1px solid var(--border); padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; }
-
-        .card { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; }
-
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px; }
-        .stat-card { padding: 24px; background: var(--surface); border-radius: 12px; border: 1px solid var(--border); }
-        .stat-card h3 { color: var(--text-muted); font-size: 14px; font-weight: 500; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        /* Dashboard Widgets */
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 24px; }
+        .stat-card { padding: 24px; background: white; border-radius: 12px; border: 1px solid var(--border); }
+        .stat-card h3 { color: var(--text-muted); font-size: 14px; margin-bottom: 8px; }
         .stat-card .value { font-size: 32px; font-weight: 700; }
 
-        .search-bar { display: flex; gap: 16px; padding: 16px 24px; background: #f8fafc; border-bottom: 1px solid var(--border); align-items: center; }
-        .search-input { flex: 1; padding: 10px 16px 10px 40px; border-radius: 8px; border: 1px solid var(--border); outline: none; background: white url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%2364748b" viewBox="0 0 256 256"><path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"></path></svg>') no-repeat 12px center; }
-
-        table { width: 100%; border-collapse: collapse; text-align: left; }
-        th, td { padding: 16px 24px; border-bottom: 1px solid var(--border); font-size: 14px; }
-        th { background-color: #f8fafc; color: var(--text-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; }
-        tr:hover { background-color: #f8fafc; }
-
-        .badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        .badge.bg-success { background: #ecfdf5; color: var(--success); }
-        .badge.bg-danger { background: #fef2f2; color: var(--danger); }
-
-        .action-group { display: flex; gap: 8px; }
-        .btn-action { background: none; border: 1px solid var(--border); padding: 6px; border-radius: 6px; color: var(--text-muted); cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
-        .btn-action:hover { color: var(--master-primary); border-color: var(--master-primary); background: var(--bg-color); }
-        .btn-action.danger:hover { color: var(--danger); border-color: var(--danger); }
-
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 24px; }
+        /* Forms */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .form-group { display: flex; flex-direction: column; gap: 8px; }
         .form-group.full { grid-column: 1 / -1; }
-        .form-label { font-size: 14px; font-weight: 500; color: var(--text-main); }
-        .form-control { padding: 10px 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; }
-        .form-control:focus { border-color: var(--master-primary); }
-
-        .upload-logo { border: 2px dashed var(--border); border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; background: #f8fafc; }
-        .upload-logo:hover { border-color: var(--master-primary); }
-
-        .section-divider { border-top: 1px solid var(--border); margin: 24px 0; padding-top: 16px; font-weight: 600; color: var(--text-muted); grid-column: 1 / -1; }
+        .form-group.colors { display: flex; flex-direction: row; gap: 24px; }
+        .form-label { font-size: 14px; font-weight: 600; color: var(--text-main); }
+        .form-control { padding: 10px 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; width: 100%; outline: none; }
+        .form-control:focus { border-color: var(--primary); }
+        
+        /* Table */
+        .toolbar { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+        .search-input { padding: 10px 16px; border: 1px solid var(--border); border-radius: 8px; width: 300px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 16px; border-bottom: 1px solid var(--border); font-size: 14px; }
+        th { background-color: #f8fafc; color: var(--text-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge.active { background: #dcfce7; color: #166534; }
+        .badge.blocked { background: #fee2e2; color: #991b1b; }
+        .action-buttons { display: flex; gap: 8px; }
+        .btn-icon { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid var(--border); background: white; cursor: pointer; color: var(--text-muted); }
+        .btn-icon:hover { background: var(--bg-color); color: var(--primary); }
     </style>
 </head>
 <body>
 
-    <!-- TELA DE LOGIN MASTER -->
-    <div id="login-master-screen">
-        <div class="login-card">
-            <div style="text-align: center; margin-bottom: 24px;">
-                <i class="ph-fill ph-rocket-launch" style="font-size: 48px; color: var(--master-primary);"></i>
-                <h2 style="margin-top: 12px; color: var(--text-main);">sisUnid Super Admin</h2>
-                <p style="color: var(--text-muted); font-size: 13px;">Insira a Senha Master para continuar.</p>
-            </div>
-            <form id="form-login-master">
-                <div class="form-group" style="margin-bottom: 20px;">
-                    <label class="form-label">Senha Master</label>
-                    <input type="password" id="master-senha" class="form-control" required placeholder="******">
-                </div>
-                <button type="submit" class="btn-primary" style="width: 100%; padding: 12px; justify-content: center;">Acessar Painel Central</button>
-            </form>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">
+            <i class="ph-fill ph-shield-check"></i> Master Admin
         </div>
-    </div>
+        <nav class="nav-menu">
+            <button class="nav-item active" onclick="switchView('dashboard', this)">
+                <i class="ph ph-squares-four"></i> Dashboard
+            </button>
+            <button class="nav-item" onclick="switchView('clientes', this)">
+                <i class="ph ph-buildings"></i> Empresas / Clientes
+            </button>
+        </nav>
+    </aside>
 
-    <!-- PAINEL PRINCIPAL -->
-    <div id="master-app-container">
-        <aside class="sidebar">
-            <div class="logo">
-                <i class="ph-fill ph-rocket-launch"></i> sisUnid
+    <main class="main-content">
+        
+        <!-- DASHBOARD VIEW -->
+        <section id="dashboard" class="view-section active">
+            <h1 class="page-title">Visão Geral do Sistema</h1>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total de Unidades (Clientes)</h3>
+                    <div class="value" id="widget-total">0</div>
+                </div>
+                <div class="stat-card" style="border-bottom: 4px solid var(--success);">
+                    <h3>Status: Ativas</h3>
+                    <div class="value" id="widget-ativas">0</div>
+                </div>
+                <div class="stat-card" style="border-bottom: 4px solid var(--danger);">
+                    <h3>Status: Desativadas</h3>
+                    <div class="value" id="widget-desativadas">0</div>
+                </div>
             </div>
-            <nav class="nav-menu">
-                <button class="nav-item active" onclick="switchView('dashboard', this)"><i class="ph ph-chart-pie-slice"></i> Dashboard Master</button>
-                <button class="nav-item" onclick="switchView('lista-clientes', this)"><i class="ph ph-buildings"></i> Clientes / Empresas</button>
-                <button class="nav-item" onclick="switchView('form-cliente', this)"><i class="ph ph-plus-circle"></i> Cadastrar Novo</button>
-            </nav>
-        </aside>
 
-        <main class="main-content">
-            <header class="topbar">
-                <div class="user-profile">
-                    <div style="text-align: right;">
-                        <div style="font-size: 14px; font-weight: 600;">CEO / Super Admin</div>
-                        <button onclick="fazerLogoutMaster()" style="background:none; border:none; color:var(--danger); font-size:12px; cursor:pointer; padding:0;">Sair do Painel</button>
-                    </div>
-                    <div class="avatar">SA</div>
+            <div class="card">
+                <div class="card-header">Relatórios Gerenciais</div>
+                <div class="card-body">
+                    <form class="form-grid" style="align-items: end;">
+                        <div class="form-group">
+                            <label class="form-label">Data Inicial</label>
+                            <input type="date" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Data Final</label>
+                            <input type="date" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Tipo de Relatório</label>
+                            <select class="form-control">
+                                <option>Geral de Unidades</option>
+                                <option>Apenas Ativas</option>
+                                <option>Apenas Bloqueadas/Desativadas</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <button type="button" class="btn btn-primary"><i class="ph ph-printer"></i> Imprimir Relatório</button>
+                        </div>
+                    </form>
                 </div>
-            </header>
+            </div>
+        </section>
 
-            <!-- VIEW 1: DASHBOARD -->
-            <section id="dashboard" class="view-section active">
-                <div class="page-header">
-                    <div>
-                        <h1 class="page-title">Visão Geral - sisUnid</h1>
-                        <p style="color:var(--text-muted);">Monitoramento em tempo real da base de dados.</p>
-                    </div>
+        <!-- CADASTRAR CLIENTES VIEW -->
+        <section id="clientes" class="view-section">
+            <h1 class="page-title">Gestão de Empresas e Clientes</h1>
+            
+            <!-- Lista e Busca -->
+            <div class="card">
+                <div class="card-header">
+                    Base de Clientes Cadastrados
+                    <button class="btn btn-outline" style="font-size: 13px;"><i class="ph ph-printer"></i> Imprimir Lista</button>
                 </div>
-
-                <div class="stats-grid">
-                    <div class="stat-card" style="border-left: 4px solid var(--master-primary);">
-                        <h3>Total de Unidades</h3>
-                        <div class="value" id="kpi-master-total">0</div>
+                <div class="card-body">
+                    <div class="toolbar">
+                        <input type="text" id="searchInput" class="search-input" placeholder="Buscar por cliente, empresa ou CNPJ..." onkeyup="filtrarTabela()">
                     </div>
-                    <div class="stat-card" style="border-left: 4px solid var(--success);">
-                        <h3>Status: Ativas</h3>
-                        <div class="value" style="color: var(--success);" id="kpi-master-ativas">0</div>
-                    </div>
-                    <div class="stat-card" style="border-left: 4px solid var(--danger);">
-                        <h3>Status: Inativas</h3>
-                        <div class="value" style="color: var(--danger);" id="kpi-master-inativas">0</div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- VIEW 2: LISTA DE CLIENTES -->
-            <section id="lista-clientes" class="view-section">
-                <div class="page-header">
-                    <h1 class="page-title">Gestão de Empresas/Clientes</h1>
-                    <button class="btn-primary" onclick="document.querySelectorAll('.nav-item')[2].click()"><i class="ph ph-plus"></i> Novo Cliente</button>
-                </div>
-
-                <div class="card">
-                    <div class="search-bar">
-                        <input type="text" id="input-busca-master" class="search-input" placeholder="Buscar por Empresa, CNPJ ou Gestor...">
-                    </div>
-
                     <div style="overflow-x: auto;">
-                        <table>
+                        <table id="tabelaClientes">
                             <thead>
                                 <tr>
-                                    <th>Nome Empresa</th>
-                                    <th>Responsável/Gestor</th>
+                                    <th>Gestor / Responsável</th>
+                                    <th>Nome da Empresa</th>
                                     <th>Senha Admin</th>
                                     <th>Status</th>
-                                    <th>Ações Gerenciais</th>
+                                    <th style="text-align: right;">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody id="tabela-clientes">
-                                <tr><td colspan="5" style="text-align:center;">Carregando dados do sistema...</td></tr>
+                            <tbody id="tbodyClientes">
+                                <!-- Preenchido via JS -->
                             </tbody>
                         </table>
                     </div>
                 </div>
-            </section>
+            </div>
 
-            <!-- VIEW 3: CADASTRAR EMPRESA -->
-            <section id="form-cliente" class="view-section">
-                <div class="page-header">
-                    <h1 class="page-title">Cadastrar Nova Unidade / Cliente</h1>
-                </div>
+            <!-- Formulário de Cadastro -->
+            <div class="card">
+                <div class="card-header">Cadastrar Nova Empresa / Cliente</div>
+                <div class="card-body">
+                    <form id="formCadastro" onsubmit="salvarEmpresa(event)">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Nome da Empresa</label>
+                                <input type="text" id="nomeEmpresa" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">CNPJ / CPF</label>
+                                <input type="text" id="cnpj" class="form-control" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Nome do Responsável / Gestor</label>
+                                <input type="text" id="nomeGestor" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">E-mail</label>
+                                <input type="email" id="email" class="form-control" required>
+                            </div>
 
-                <div class="card">
-                    <form id="form-novo-cliente" class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Telefone</label>
+                                <input type="text" id="telefone" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Data de Início (Contrato)</label>
+                                <input type="date" id="dataInicio" class="form-control" required>
+                            </div>
 
-                    <!-- Dados da Empresa -->
-                    <div class="section-divider">Dados Comerciais e Gestão</div>
+                            <div class="form-group full">
+                                <label class="form-label">Endereço Completo</label>
+                                <input type="text" id="endereco" class="form-control">
+                            </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Nome da Empresa / Secretaria</label>
-                        <input type="text" id="input-nome-empresa" class="form-control" required placeholder="Ex: Secretaria de Saúde de Vigia">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">CNPJ / CPF</label>
-                        <input type="text" id="input-cnpj" class="form-control" required placeholder="00.000.000/0001-00">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Nome do Responsável / Gestor</label>
-                        <input type="text" id="input-gestor" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Data de Início (Contrato)</label>
-                        <input type="date" id="input-data-inicio" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Telefone</label>
-                        <input type="text" id="input-telefone" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">E-mail de Contato</label>
-                        <input type="email" id="input-email" class="form-control" required>
-                    </div>
-                    <div class="form-group full">
-                        <label class="form-label">Endereço Completo</label>
-                        <input type="text" id="input-endereco" class="form-control" required>
-                    </div>
+                            <div class="form-group full">
+                                <label class="form-label">Slogan da Unidade</label>
+                                <input type="text" id="slogan" class="form-control" placeholder="Ex: Cuidando da sua saúde">
+                            </div>
 
-                    <!-- Configurações White-Label (Personalização) -->
-                    <div class="section-divider">Configurações do Sistema (White-Label)</div>
-
-                    <div class="form-group">
-                        <label class="form-label">Slogan do Sistema para a Unidade</label>
-                        <input type="text" id="input-slogan" class="form-control" placeholder="Ex: Regulação Rápida e Eficiente">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Temas (Cor Primária)</label>
-                        <div class="color-pickers">
-                            <div class="color-item">
-                                <input type="color" id="input-tema-primaria" value="#2563eb" title="Cor Primária (Botões e Menus)">
-                                <span style="font-size: 13px; color: var(--text-muted);">Cor Primária</span>
+                            <div class="form-group">
+                                <label class="form-label">Logo (Upload do Arquivo)</label>
+                                <input type="file" id="logo" class="form-control" accept="image/*">
+                            </div>
+                            
+                            <div class="form-group colors">
+                                <div>
+                                    <label class="form-label">Cor Primária</label>
+                                    <input type="color" id="cor1" class="form-control" style="height: 40px; padding: 2px;">
+                                </div>
+                                <div>
+                                    <label class="form-label">Cor Secundária</label>
+                                    <input type="color" id="cor2" class="form-control" style="height: 40px; padding: 2px;">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group full" style="align-items: flex-end; margin-top: 16px;">
+                                <button type="submit" class="btn btn-primary"><i class="ph ph-check"></i> Salvar Cliente</button>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="form-group full">
-                        <label class="form-label">Logo da Unidade (Upload)</label>
-                        <div class="upload-logo" onclick="document.getElementById('input-logo').click()">
-                            <i class="ph ph-upload-simple" style="font-size: 32px; color: var(--text-muted);"></i>
-                            <p id="nome-arquivo-logo" style="font-size: 14px; color: var(--text-muted); margin-top: 8px;">Arraste a logo PNG do cliente aqui ou clique para selecionar</p>
-                            <!-- Input de arquivo oculto milimetricamente inserido -->
-                            <input type="file" id="input-logo" accept="image/*" style="display: none;" onchange="document.getElementById('nome-arquivo-logo').innerText = this.files[0] ? this.files[0].name : 'Nenhum arquivo selecionado';">
-                        </div>
-                    </div>
-
-                    <div class="form-group full" style="display: flex; justify-content: flex-end; gap: 16px; margin-top: 16px;">
-                        <button type="button" class="btn-outline" onclick="switchView('lista-clientes', document.querySelectorAll('.nav-item')[1])">Cancelar</button>
-                        <button type="submit" class="btn-primary" id="btn-salvar-cliente"><i class="ph ph-floppy-disk"></i> Salvar Cliente e Gerar Acesso</button>
-                    </div>
-                </form>
+                    </form>
                 </div>
-            </section>
-        </main>
-    </div>
+            </div>
+        </section>
+    </main>
 
-    <!-- JAVASCRIPT REAL CONECTADO AO SUPABASE -->
     <script>
-        // 1. LOGIN REAL VIA API
-        document.getElementById('form-login-master').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const senha = document.getElementById('master-senha').value.trim();
-            const btn = this.querySelector('button');
-            btn.innerHTML = 'Verificando...';
-
-            try {
-                const response = await fetch('/api/master/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ senha })
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.sucesso) {
-                    sessionStorage.setItem('master_auth', 'true');
-                    iniciarMaster();
-                } else {
-                    alert('Erro de login: ' + (data.erro || 'Senha incorreta.'));
-                }
-            } catch (error) {
-                alert('Erro na conexão com o servidor.');
-            } finally {
-                btn.innerHTML = 'Acessar Painel Central';
-            }
-        });
-
-        function iniciarMaster() {
-            document.getElementById('login-master-screen').style.display = 'none';
-            document.getElementById('master-app-container').style.display = 'flex';
-            carregarUnidades();
-        }
-
-        function fazerLogoutMaster() {
-            sessionStorage.removeItem('master_auth');
-            window.location.reload();
-        }
-
-        window.onload = function() {
-            if(sessionStorage.getItem('master_auth') === 'true') {
-                iniciarMaster();
-            }
-        };
-
+        // 1. Navegação de Abas
         function switchView(viewId, navElement) {
-            document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
-            if (navElement) {
-                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-                navElement.classList.add('active');
-            }
+            document.querySelectorAll('.view-section').forEach(view => view.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
             document.getElementById(viewId).classList.add('active');
-
-            if (viewId === 'lista-clientes') {
-                carregarUnidades();
-            }
+            navElement.classList.add('active');
         }
 
-        // 2. BUSCA REAL NO BANCO DE DADOS
-       
-// Função utilitária para converter arquivo para Base64
-const arquivoParaBase64 = file => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = error => reject(error);
-});
+        // 2. Banco de Dados Local (Simulando API Real)
+        let empresas = JSON.parse(localStorage.getItem('db_empresas')) || [
+            // Dados fictícios iniciais caso esteja vazio
+            { id: 1, gestor: 'Carlos Almeida', empresa: 'Clínica Saúde Mais', senha: 'gerada_auto', status: 'ativo' },
+            { id: 2, gestor: 'Ana Beatriz', empresa: 'Hospital Central', senha: 'gerada_auto', status: 'bloqueado' }
+        ];
 
-// Substitua a função de salvamento do formulário White-Label por esta:
-async function salvarConfiguracoesUnidade(e) {
-    e.preventDefault();
+        // 3. Atualizar Interface
+        function atualizarDashboard() {
+            const total = empresas.length;
+            const ativas = empresas.filter(e => e.status === 'ativo').length;
+            const desativadas = empresas.filter(e => e.status === 'bloqueado').length;
 
-    const btnSalvar = e.target.querySelector('button[type="submit"]') || document.getElementById('btn-salvar');
-    if (btnSalvar) {
-        btnSalvar.innerText = "Processando imagem...";
-        btnSalvar.disabled = true;
-    }
-
-    try {
-        let urlLogoFinal = "";
-        
-        // Captura o input file da logo (Ajuste o ID 'cad-logo-file' se o seu HTML usar outro ID)
-        const inputLogo = document.getElementById('cad-logo-file') || document.querySelector('input[type="file"]');
-
-        // 1. SE HOUVER UMA IMAGEM SELECIONADA, CONVERTE PARA BASE64 E FAZ O UPLOAD
-        if (inputLogo && inputLogo.files.length > 0) {
-            const file = inputLogo.files[0];
-
-            // Converte o arquivo .jpg em string UTF-8 Base64 válida
-            const base64Texto = await arquivoParaBase64(file);
-
-            const uploadRes = await fetch('/api', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'upload_logo',
-                    file_base64: base64Texto,
-                    filename: Date.now() + "_" + file.name.replace(/\s+/g, '_')
-                })
-            });
-
-            const uploadData = await uploadRes.json();
-
-            if (uploadData.erro) {
-                alert("Erro no upload da logo: " + uploadData.erro);
-                return;
-            }
-
-            urlLogoFinal = uploadData.url_logo;
+            document.getElementById('widget-total').innerText = total;
+            document.getElementById('widget-ativas').innerText = ativas;
+            document.getElementById('widget-desativadas').innerText = desativadas;
         }
 
-        if (btnSalvar) btnSalvar.innerText = "Salvando configurações...";
-
-        // 2. MONTA O PAYLOAD DA UNIDADE COM A URL DA LOGO RETORNADA
-        const payload = {
-            action: 'cadastrar_gestor', // Ou 'editar_gestor'
-            nome_responsavel: document.getElementById('cad-nome')?.value || '',
-            nome_gabinete: document.getElementById('cad-gabinete')?.value || '',
-            whatsapp: document.getElementById('cad-whats')?.value || '',
-            email: document.getElementById('cad-email')?.value || '',
-            endereco: document.getElementById('cad-endereco')?.value || '',
-            slogan: document.getElementById('cad-slogan')?.value || '',
-            cor_layout: document.getElementById('cad-cor')?.value || '',
-            senha_admin: document.getElementById('cad-senha')?.value || '',
-            url_logo: urlLogoFinal
-        };
-
-        // 3. ENVIA OS DADOS DA UNIDADE EM JSON LIMPO
-        const res = await fetch('/api', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        const resposta = await res.json();
-
-        if (resposta.sucesso) {
-            alert("Configurações salvas com sucesso!");
-            location.reload();
-        } else {
-            alert("Erro do servidor: " + (resposta.erro || "Falha ao gravar"));
-        }
-
-    } catch (err) {
-        alert("Erro de comunicação com a rede ao tentar salvar.");
-    } finally {
-        if (btnSalvar) {
-            btnSalvar.innerText = "Salvar";
-            btnSalvar.disabled = false;
-        }
-    }
-}
-
-
-
-
-        
-        function renderTabelaMaster(unidades, tbody) {
+        function renderizarTabela() {
+            const tbody = document.getElementById('tbodyClientes');
             tbody.innerHTML = '';
 
-            if(!unidades || unidades.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">Nenhuma unidade cadastrada no banco de dados.</td></tr>';
-                document.getElementById('kpi-master-total').innerText = '0';
-                document.getElementById('kpi-master-ativas').innerText = '0';
-                document.getElementById('kpi-master-inativas').innerText = '0';
-                return;
-            }
-
-            let ativas = 0;
-            let inativas = 0;
-
-            unidades.forEach(unidade => {
-                if(unidade.status === 'ativa') ativas++;
-                else inativas++;
-
+            empresas.forEach(emp => {
                 const tr = document.createElement('tr');
+                const badgeClass = emp.status === 'ativo' ? 'active' : 'blocked';
+                const statusTexto = emp.status === 'ativo' ? 'Ativa' : 'Bloqueada';
+                const iconBloqueio = emp.status === 'ativo' ? 'ph-lock-key' : 'ph-lock-key-open';
+                
                 tr.innerHTML = `
-                    <td>
-                        <div style="font-weight: 600;">${unidade.nome_empresa}</div>
-                        <div style="font-size: 12px; color: var(--text-muted);">CNPJ: ${unidade.cnpj}</div>
-                    </td>
-                    <td>
-                        <div>${unidade.gestor}</div>
-                        <div style="font-size: 12px; color: var(--text-muted);">${unidade.telefone || ''}</div>
-                    </td>
-                    <td><span style="font-family: monospace; background:#f1f5f9; padding:4px 8px; border-radius:4px; color: #000;">*${unidade.senha_acesso}*</span></td>
-                    <td><span class="badge ${unidade.status === 'ativa' ? 'bg-success' : 'bg-danger'}">${unidade.status}</span></td>
-                    <td>
-                        <div class="action-group">
-                            <!-- Atualizado para usar o id do Supabase ao invés do _id do Mongo -->
-                            <button class="btn-action ${unidade.status === 'ativa' ? 'danger' : ''}" title="Alternar Status" onclick="alternarStatus('${unidade.id}', '${unidade.status}')">
-                                <i class="ph ${unidade.status === 'ativa' ? 'ph-lock-key' : 'ph-lock-key-open'}"></i>
-                            </button>
+                    <td style="font-weight: 500;">${emp.gestor}</td>
+                    <td>${emp.empresa}</td>
+                    <td><span style="font-family: monospace; background: #e2e8f0; padding: 4px 8px; border-radius: 4px;">***${emp.id}Xy</span></td>
+                    <td><span class="badge ${badgeClass}">${statusTexto}</span></td>
+                    <td style="text-align: right;">
+                        <div class="action-buttons" style="justify-content: flex-end;">
+                            <button class="btn-icon" title="Gerar Recibo"><i class="ph ph-receipt"></i></button>
+                            <button class="btn-icon" title="Alterar Cadastro"><i class="ph ph-pencil-simple"></i></button>
+                            <button class="btn-icon" title="Bloquear/Ativar" onclick="alternarStatus(${emp.id})"><i class="ph ${iconBloqueio}"></i></button>
+                            <button class="btn-icon" title="Visualizar Contrato"><i class="ph ph-file-text"></i></button>
                         </div>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
-
-            document.getElementById('kpi-master-total').innerText = unidades.length;
-            document.getElementById('kpi-master-ativas').innerText = ativas;
-            document.getElementById('kpi-master-inativas').innerText = inativas;
+            atualizarDashboard();
         }
 
-        // 3. ENVIO REAL PARA A API PYTHON
-        // Intercepta o formulário de novo cliente e envia pro Python usando FormData (Suporta Arquivos)
-document.getElementById('form-novo-cliente').addEventListener('submit', async function(e) {
-    e.preventDefault();
+        // 4. Lógica de Negócio (CRUD)
+        function salvarEmpresa(event) {
+            event.preventDefault();
+            
+            const novaEmpresa = {
+                id: Date.now(), // Gera um ID único
+                gestor: document.getElementById('nomeGestor').value,
+                empresa: document.getElementById('nomeEmpresa').value,
+                cnpj: document.getElementById('cnpj').value,
+                status: 'ativo' // Toda empresa nova nasce ativa
+            };
 
-    const btnSalvar = document.getElementById('btn-salvar-cliente');
-    const textoOriginal = btnSalvar.innerHTML;
-    btnSalvar.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Salvando...';
-    btnSalvar.disabled = true;
-
-    try {
-        // FormData permite enviar textos E arquivos juntos!
-        const formData = new FormData();
-        formData.append('nome_empresa', document.getElementById('input-nome-empresa').value);
-        formData.append('cnpj', document.getElementById('input-cnpj').value);
-        formData.append('gestor', document.getElementById('input-gestor').value);
-        formData.append('data_inicio', document.getElementById('input-data-inicio').value);
-        formData.append('telefone', document.getElementById('input-telefone').value);
-        formData.append('email', document.getElementById('input-email').value);
-        formData.append('endereco', document.getElementById('input-endereco').value);
-        formData.append('slogan', document.getElementById('input-slogan').value);
-        formData.append('tema_primaria', document.getElementById('input-tema-primaria').value);
-
-        // Gera a senha aleatória
-        formData.append('senha_acesso', Math.random().toString(36).slice(-8));
-
-        // Anexa o arquivo físico da logo, se o usuário selecionou um
-        const arquivoLogo = document.getElementById('input-logo').files[0];
-        if (arquivoLogo) {
-            formData.append('logo', arquivoLogo);
+            empresas.push(novaEmpresa);
+            localStorage.setItem('db_empresas', JSON.stringify(empresas)); // Salva no storage
+            
+            document.getElementById('formCadastro').reset();
+            renderizarTabela();
+            alert('Empresa cadastrada e acesso liberado com sucesso!');
         }
 
-        // ATENÇÃO MILIMÉTRICA: Ao usar FormData com fetch, NÃO colocamos 'Content-Type' no header.
-        // O próprio navegador se encarrega de colocar o 'multipart/form-data' e o boundary correto.
-        const response = await fetch('/api/master/unidades', {
-            method: 'POST',
-            body: formData
-        });
-
-        const data = await response.json();
-
-        if (data.sucesso) {
-            alert('Unidade cadastrada com sucesso no Banco de Dados!');
-            this.reset(); // Limpa o form
-            document.getElementById('nome-arquivo-logo').innerText = "Arraste a logo PNG do cliente aqui ou clique para selecionar";
-            switchView('lista-clientes', document.querySelectorAll('.nav-item')[1]); // Muda de tela
-            carregarUnidades(); // Atualiza a tabela
-        } else {
-            alert('Erro ao salvar: ' + (data.erro || 'Motivo desconhecido'));
-        }
-    } catch (error) {
-        console.error(error);
-        alert('Erro de comunicação com a API.');
-    } finally {
-        btnSalvar.innerHTML = textoOriginal;
-        btnSalvar.disabled = false;
-    }
-});
-
-        async function alternarStatus(id, statusAtual) {
-            const novoStatus = statusAtual === 'ativa' ? 'inativa' : 'ativa';
-            try {
-                const response = await fetch(`/api/master/unidades/${id}/status`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: novoStatus })
-                });
-                if(response.ok) {
-                    carregarUnidades();
-                }
-            } catch (error) {
-                alert('Erro ao atualizar status.');
+        function alternarStatus(id) {
+            const index = empresas.findIndex(e => e.id === id);
+            if(index !== -1) {
+                // Alterna entre ativo e bloqueado
+                empresas[index].status = empresas[index].status === 'ativo' ? 'bloqueado' : 'ativo';
+                localStorage.setItem('db_empresas', JSON.stringify(empresas));
+                renderizarTabela();
             }
         }
+
+        // 5. Filtro de Busca
+        function filtrarTabela() {
+            const input = document.getElementById("searchInput").value.toLowerCase();
+            const trs = document.getElementById("tbodyClientes").getElementsByTagName("tr");
+
+            for (let i = 0; i < trs.length; i++) {
+                const text = trs[i].textContent.toLowerCase();
+                trs[i].style.display = text.includes(input) ? "" : "none";
+            }
+        }
+
+        // Inicializa a tela carregando os dados
+        window.onload = renderizarTabela;
     </script>
 </body>
 </html>
