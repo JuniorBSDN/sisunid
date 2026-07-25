@@ -367,17 +367,26 @@
             ];
 
             try {
-                const response = await fetch('/api/master/unidades');
-                if(response.ok) {
-                    const data = await response.json();
-                    renderTabela(data.sucesso && data.unidades.length > 0 ? data.unidades : mockData);
+                const response = await fetch('/api/master/unidades', { method: 'POST', body: formData });
+                
+                // Precisamos extrair o JSON da resposta para saber se deu certo
+                const data = await response.json();
+
+                if (response.ok && data.sucesso) {
+                    alert('Cliente cadastrado com sucesso!');
+                    this.reset();
+                    document.getElementById('nome-arquivo-logo').innerText = 'Clique para anexar a Logo';
+                    toggleFormulario();
+                    carregarUnidades(); // Recarrega a tabela real
                 } else {
-                    renderTabela(mockData);
+                    // Aqui ele vai exibir o erro real que o Supabase ou o Python estão devolvendo
+                    alert('Erro ao salvar no banco: ' + (data.erro || 'Desconhecido'));
                 }
-            } catch (e) {
-                renderTabela(mockData);
+            } catch (error) {
+                alert('Erro de conexão com a API. O servidor Python está rodando?');
+            } finally {
+                btnSalvar.innerHTML = '<i class="ph ph-floppy-disk"></i> Salvar Registro';
             }
-        }
 
         function renderTabela(dados) {
             const tbody = document.getElementById('tabela-clientes');
