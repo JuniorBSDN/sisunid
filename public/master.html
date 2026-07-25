@@ -347,7 +347,7 @@
         // Função auxiliar para converter o arquivo em Base64
 const toBase64 = file => new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.readAsDataURL(file); // Lê como Data URL contendo Base64
+    reader.readAsDataURL(file); // Lê a imagem e gera a string Base64
     reader.onload = () => resolve(reader.result);
     reader.onerror = error => reject(error);
 });
@@ -355,26 +355,80 @@ const toBase64 = file => new Promise((resolve, reject) => {
 // Exemplo de chamada na hora do salvamento:
 async function salvarUnidade(e) {
     e.preventDefault();
-    const fileInput = document.getElementById('cad-logo-file'); // Seu input type="file"
-    let logoBase64 = "";
 
-    if (fileInput.files.length > 0) {
-        // Converte a imagem PNG/JPG em string Base64 UTF-8 segura
-        logoBase64 = await toBase64(fileInput.files[0]);
+    const btnSalvar = document.getElementById('btn-salvar'); // Ajuste para o ID do seu botão
+    if (btnSalvar) {
+        btnSalvar.innerText = "Salvando...";
+        btnSalvar.disabled = true;
     }
 
-    const payload = {
-        action: 'upload_logo',
-        file_base64: logoBase64,
-        filename: fileInput.files[0]?.name || 'logo.png'
-    };
+    try {
+        let urlLogoFinal = "";
+        const fileInput = document.getElementById('cad-logo-file'); // Ajuste para o ID do input file da logo
 
-    // Envio seguro via JSON
-    await fetch('/api', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    });
+        // 1. SE HOUVER ARQUIVO, ENVE PRIMEIRO A LOGO VIA BASE64
+        if (fileInput && fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            
+            // Converte o arquivo .jpg/.png em string Base64 válida
+            const base64Str = await toBase64(file);
+
+            const uploadRes = await fetch('/api', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'upload_logo',
+                    file_base64: base64Str,
+                    filename: Date.now() + "_" + file.name.replace(/\s+/g, '_')
+                })
+            });
+
+            const uploadData = await uploadRes.json();
+
+            if (uploadData.erro) {
+                alert("Erro no upload da logo: " + uploadData.erro);
+                return;
+            }
+
+            urlLogoFinal = uploadData.url_logo;
+        }
+
+        // 2. MONTA O PAYLOAD DA UNIDADE COM A URL DA LOGO RETORNADA
+        const payload = {
+            action: 'cadastrar_unidade', // Ou 'editar_unidade'
+            nome_responsavel: document.getElementById('cad-nome').value,
+            nome_unidade: document.getElementById('cad-gabinete').value,
+            whatsapp: document.getElementById('cad-whats').value,
+            email: document.getElementById('cad-email').value,
+            endereco: document.getElementById('cad-endereco').value,
+            slogan: document.getElementById('cad-slogan')?.value || '',
+            cor_layout: document.getElementById('cad-cor').value,
+            url_logo: urlLogoFinal
+        };
+
+        // 3. ENVIA OS DADOS EM FORMATO JSON VÁLIDO (TEXTO UTF-8)
+        const res = await fetch('/api', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const d = await res.json();
+
+        if (d.sucesso) {
+            alert("Unidade e configurações salvas com sucesso!");
+        } else {
+            alert("Erro ao salvar: " + (d.erro || "Falha desconhecida"));
+        }
+
+    } catch (err) {
+        alert("Erro de comunicação com a rede ao tentar salvar.");
+    } finally {
+        if (btnSalvar) {
+            btnSalvar.innerText = "Salvar";
+            btnSalvar.disabled = false;
+        }
+    }
 }
 
         function renderTabelaMaster(unidades, tbody) {
