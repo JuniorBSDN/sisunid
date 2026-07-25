@@ -38,7 +38,18 @@ class handler(BaseHTTPRequestHandler):
                 return
 
             post_data = self.rfile.read(content_length)
-            dados = json.loads(post_data.decode('utf-8'))
+            
+            # Decodificação blindada: 'errors=ignore' impede queda por byte 0xff/binário
+            payload_str = post_data.decode('utf-8', errors='ignore')
+            
+            try:
+                dados = json.loads(payload_str)
+            except json.JSONDecodeError:
+                self.wfile.write(json.dumps({
+                    "erro": "Os dados enviados não estão em formato JSON válido. Verifique o envio de imagens."
+                }).encode('utf-8'))
+                return
+
             action = dados.get('action')
 
             sb_url = self._obter_url_supabase()
