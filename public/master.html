@@ -151,7 +151,7 @@
                 <div class="page-header">
                     <div>
                         <h1 class="page-title">Visão Geral - sisUnid</h1>
-                        <p style="color:var(--text-muted);">Monitoramento em tempo real da base do MongoDB Atlas.</p>
+                        <p style="color:var(--text-muted);">Monitoramento em tempo real da base de dados.</p>
                     </div>
                 </div>
 
@@ -195,7 +195,7 @@
                                 </tr>
                             </thead>
                             <tbody id="tabela-clientes">
-                                <tr><td colspan="5" style="text-align:center;">Carregando dados do MongoDB...</td></tr>
+                                <tr><td colspan="5" style="text-align:center;">Carregando dados do sistema...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -281,7 +281,7 @@
         </main>
     </div>
 
-    <!-- JAVASCRIPT REAL CONECTADO AO MONGODB -->
+    <!-- JAVASCRIPT REAL CONECTADO AO SUPABASE -->
     <script>
         // 1. LOGIN REAL VIA API
         document.getElementById('form-login-master').addEventListener('submit', async function(e) {
@@ -306,7 +306,7 @@
                     alert('Erro de login: ' + (data.erro || 'Senha incorreta.'));
                 }
             } catch (error) {
-                alert('Erro na conexão com o servidor. Verifique os logs da Vercel.');
+                alert('Erro na conexão com o servidor.');
             } finally {
                 btn.innerHTML = 'Acessar Painel Central';
             }
@@ -342,10 +342,10 @@
             }
         }
 
-        // 2. BUSCA REAL NO MONGODB
+        // 2. BUSCA REAL NO BANCO DE DADOS
         async function carregarUnidades() {
             const tbody = document.getElementById('tabela-clientes');
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Carregando do MongoDB Atlas...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Carregando do sistema...</td></tr>';
 
             try {
                 const response = await fetch('/api/master/unidades');
@@ -393,7 +393,8 @@
                     <td><span class="badge ${unidade.status === 'ativa' ? 'bg-success' : 'bg-danger'}">${unidade.status}</span></td>
                     <td>
                         <div class="action-group">
-                            <button class="btn-action ${unidade.status === 'ativa' ? 'danger' : ''}" title="Alternar Status" onclick="alternarStatus('${unidade._id}', '${unidade.status}')">
+                            <!-- Atualizado para usar o id do Supabase ao invés do _id do Mongo -->
+                            <button class="btn-action ${unidade.status === 'ativa' ? 'danger' : ''}" title="Alternar Status" onclick="alternarStatus('${unidade.id}', '${unidade.status}')">
                                 <i class="ph ${unidade.status === 'ativa' ? 'ph-lock-key' : 'ph-lock-key-open'}"></i>
                             </button>
                         </div>
@@ -429,7 +430,7 @@ document.getElementById('form-novo-cliente').addEventListener('submit', async fu
         formData.append('endereco', document.getElementById('input-endereco').value);
         formData.append('slogan', document.getElementById('input-slogan').value);
         formData.append('tema_primaria', document.getElementById('input-tema-primaria').value);
-        
+
         // Gera a senha aleatória
         formData.append('senha_acesso', Math.random().toString(36).slice(-8));
 
@@ -439,7 +440,7 @@ document.getElementById('form-novo-cliente').addEventListener('submit', async fu
             formData.append('logo', arquivoLogo);
         }
 
-        // ATENÇÃO MILIMÉTRICA: Ao usar FormData com fetch, NÃO colocamos 'Content-Type' no header. 
+        // ATENÇÃO MILIMÉTRICA: Ao usar FormData com fetch, NÃO colocamos 'Content-Type' no header.
         // O próprio navegador se encarrega de colocar o 'multipart/form-data' e o boundary correto.
         const response = await fetch('/api/master/unidades', {
             method: 'POST',
@@ -453,7 +454,7 @@ document.getElementById('form-novo-cliente').addEventListener('submit', async fu
             this.reset(); // Limpa o form
             document.getElementById('nome-arquivo-logo').innerText = "Arraste a logo PNG do cliente aqui ou clique para selecionar";
             switchView('lista-clientes', document.querySelectorAll('.nav-item')[1]); // Muda de tela
-            carregarUnidades(); // Atualiza a tabela buscando do MongoDB
+            carregarUnidades(); // Atualiza a tabela
         } else {
             alert('Erro ao salvar: ' + (data.erro || 'Motivo desconhecido'));
         }
