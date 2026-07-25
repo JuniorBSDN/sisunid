@@ -23,17 +23,18 @@ def serve_master():
 # ==========================================
 # 1. CONEXÕES SUPABASE (Bando de Dados e Storage)
 # ==========================================
+
+MASTER_PASSWORD = (os.environ.get("MASTER_PASSWORD") or "admin").strip()
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "").strip()
-MASTER_PASSWORD = (os.environ.get("MASTER_PASSWORD") or "admin").strip()
-BUCKET_NAME = "uploads"
 
 supabase: Client = None
+
 if SUPABASE_URL and SUPABASE_KEY:
     try:
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
     except Exception as e:
-        print("Aviso: Falha ao inicializar Supabase:", str(e))
+        print("Erro ao inicializar Supabase:", str(e))
 
 
 # ==========================================
