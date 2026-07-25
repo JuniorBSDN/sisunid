@@ -344,7 +344,7 @@
 
         // 2. BUSCA REAL NO BANCO DE DADOS
        
-// 1. Conversor utilitário de arquivo para Base64
+// Conversor Base64 idêntico ao modelo SISJESS
 const toBase64 = file => new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -352,25 +352,19 @@ const toBase64 = file => new Promise((resolve, reject) => {
     reader.onerror = error => reject(error);
 });
 
-// 2. Substitua a sua função de cadastro/edição por esta:
 async function realizarCadastro(e) {
     e.preventDefault();
-    
-    const btn = e.target.querySelector('button[type="submit"]') || document.getElementById('btn-gravar');
-    const txtOriginal = btn ? btn.innerText : "Salvar";
-    if (btn) { btn.innerText = "Processando imagem..."; btn.disabled = true; }
+    const btn = document.getElementById('btn-gravar');
+    btn.innerText = "Processando Imagem e Gravando...";
+    btn.disabled = true;
 
     let urlLogoFinal = "";
-    
-    // Captura o input de arquivo da logo (ajuste o ID se no seu HTML for diferente)
-    const fileInput = document.getElementById('cad-logo-file') || document.getElementById('edit-logo-file');
+    const fileInput = document.getElementById('cad-logo-file');
 
     try {
-        // Se houver arquivo selecionado, faz a conversão obrigatória antes do envio
+        // 1. Se houver arquivo selecionado, converte em Base64 e faz o upload
         if (fileInput && fileInput.files.length > 0) {
             const file = fileInput.files[0];
-            
-            // CONVERSÃO ASSÍNCRONA OBRIGATÓRIA
             const base64Str = await toBase64(file);
 
             const uploadRes = await fetch('/api', {
@@ -384,53 +378,52 @@ async function realizarCadastro(e) {
             });
 
             const uploadData = await uploadRes.json();
-
-            if (uploadData.erro) {
-                alert("Erro no upload da logo: " + uploadData.erro);
-                if (btn) { btn.innerText = txtOriginal; btn.disabled = false; }
+            if (uploadData.url_logo) {
+                urlLogoFinal = uploadData.url_logo;
+            } else if (uploadData.erro) {
+                alert("Erro no upload da imagem: " + uploadData.erro);
+                btn.innerText = "Gravar e Ativar Cliente";
+                btn.disabled = false;
                 return;
             }
-
-            urlLogoFinal = uploadData.url_logo;
         }
 
-        if (btn) btn.innerText = "Salvando registro...";
-
-        // Envio final dos dados cadastrais em JSON puro
+        // 2. Envia o cadastro para a rota POST com a action cadastrar_gestor
         const res = await fetch('/api', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                action: 'cadastrar_unidade',
-                nome_responsavel: document.getElementById('cad-nome')?.value || '',
-                nome_gabinete: document.getElementById('cad-gabinete')?.value || '',
-                whatsapp: document.getElementById('cad-whats')?.value || '',
-                email: document.getElementById('cad-email')?.value || '',
-                documento: document.getElementById('cad-doc')?.value || '',
-                data_inicio: document.getElementById('cad-data')?.value || '',
-                endereco: document.getElementById('cad-endereco')?.value || '',
-                senha_admin: document.getElementById('cad-senha')?.value || '',
-                cor_layout: document.getElementById('cad-cor')?.value || '',
+                action: 'cadastrar_gestor',
+                nome_gestor: document.getElementById('cad-nome').value,
+                nome_gabinete: document.getElementById('cad-gabinete').value,
+                whatsapp: document.getElementById('cad-whats').value,
+                email: document.getElementById('cad-email').value,
+                documento: document.getElementById('cad-doc').value,
+                data_inicio: document.getElementById('cad-data').value,
+                endereco: document.getElementById('cad-endereco').value,
+                senha_admin: document.getElementById('cad-senha').value,
+                cor_layout: document.getElementById('cad-cor').value,
                 url_logo: urlLogoFinal
             })
         });
 
         const d = await res.json();
-
         if (d.sucesso) {
-            alert("Salvo com sucesso!");
-            location.reload();
+            alert("Cliente cadastrado com sucesso!");
+            document.getElementById('form-cadastro-gestor').reset();
+            if (typeof gerarSenhaAleatoria === 'function') gerarSenhaAleatoria();
+            if (typeof atualizarDashboard === 'function') atualizarDashboard();
+            if (typeof navegarPara === 'function') navegarPara('aba-dashboard');
         } else {
-            alert("Erro do servidor: " + (d.erro || "Falha ao gravar"));
+            alert("Erro retornado pelo servidor: " + (d.erro || "Falha desconhecida"));
         }
-
     } catch (err) {
-        alert("Falha de conexão com a API.");
+        alert("Erro de comunicação com a rede ao tentar gravar.");
     } finally {
-        if (btn) { btn.innerText = txtOriginal; btn.disabled = false; }
+        btn.innerText = "Gravar e Ativar Cliente";
+        btn.disabled = false;
     }
 }
-
         function renderTabelaMaster(unidades, tbody) {
             tbody.innerHTML = '';
 
