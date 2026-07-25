@@ -1,247 +1,250 @@
+from http.server import BaseHTTPRequestHandler
+import json
 import os
-import uuid
-from flask import Flask, request, jsonify, send_from_directory, send_file
-from supabase import create_client, Client
-
-app = Flask(__name__)
-
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+import urllib.request
+import urllib.error
+import mimetypes
+import base64
 
 
-# ==========================================
-# 0. ROTAS DO FRONT-END (Telas)
-# ==========================================
-@app.route('/')
-def serve_tenant():
-    # Serve o index.html (tela do cliente) que está dentro da pasta public/
-    return send_from_directory(os.path.join(BASE_DIR, 'public'), 'index.html')
+class handler(BaseHTTPRequestHandler):
 
+    def _set_headers(self, status=200):
+        self.send_response(status)
+        self.send_header('Content-type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()
 
-@app.route('/master')
-def serve_master():
-    # Serve o master.html (tela do admin) que está na raiz
-    return send_file(os.path.join(BASE_DIR, 'master.html'))
+    def do_OPTIONS(self):
+        self._set_headers(200)
 
+    def _obter_url_supabase(self):
+        return os.environ.get('SUPABASE_URL', "https://scotyvkhwptckrvrjzdi.supabase.co")
 
-# ==========================================
-# 1. CONEXÕES COM BANCOS E VARIÁVEIS (PROTEGIDAS)
-# ==========================================
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "").strip()
+    def _safe_int(self, value):
+        try:
+            return int(value) if value else None
+        except Exception:
+            return None
 
-# Trata a senha master com valor fallback para não quebrar no boot
-MASTER_PASSWORD = (os.environ.get("MASTER_PASSWORD") or "admin").strip()
+    def _executar_requisicao(self, url, method='GET', payload=None, headers_extra=None):
+        sb_key = os.environ.get('SUPABASE_SERVICE_KEY', '')
+        headers = {
+            'apikey': sb_key,
+            'Authorization': f'Bearer {sb_key}',
+            'Content-Type': 'application/json'
+        }
+        if headers_extra:
+            headers.update(headers_extra)
 
-supabase: Client = None
-if SUPABASE_URL and SUPABASE_KEY:
-    try:
-        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-    except Exception as e:
-        print("Aviso: Falha ao inicializar Supabase:", str(e))
-
-BUCKET_NAME = "uploads"
-
-
-def adaptar_id_para_frontend(doc):
-    """
-    Mantém a compatibilidade com o Frontend que esperava o '_id' do MongoDB.
-    Clona a chave 'id' do Supabase para '_id'.
-    """
-    if doc and 'id' in doc:
-        doc['_id'] = str(doc['id'])
-    return doc
-
-
-# ==========================================
-# 2. ROTAS DO PAINEL MASTER (SUPER ADMIN)
-# ==========================================
-
-@app.route('/api/master/login', methods=['POST'])
-def master_login():
-    data = request.get_json(silent=True) or {}
-    senha = str(data.get('senha', '')).strip()
-
-    if senha == MASTER_PASSWORD:
-        return jsonify({"sucesso": True})
-    return jsonify({"sucesso": False, "erro": "Senha incorreta"}), 401
-
-
-@app.route('/api/master/unidades', methods=['GET'])
-def get_unidades():
-    if supabase is None:
-        return jsonify({"sucesso": False, "erro": "Banco de dados Supabase offline."}), 500
-    try:
-        # Busca ordenando pelo ID de forma decrescente (mais recentes primeiro)
-        response = supabase.table("unidades").select("*").order("id", desc=True).execute()
-        unidades = response.data
+        data = json.dumps(payload).encode('utf-8') if payload else None
+        req = urllib.request.Request(url, data=data, headers=headers, method=method)
         
-        unidades_formatadas = [adaptar_id_para_frontend(u) for u in unidades]
-        return jsonify({"sucesso": True, "unidades": unidades_formatadas})
-    except Exception as e:
-        return jsonify({"sucesso": False, "erro": str(e)}), 500
+        with urllib.request.urlopen(req) as response:
+            res_body = response.read().decode('utf-8')
+            return json.loads(res_body) if res_body else {}
 
+    def do_POST(self):
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length == 0:
+                self._set_headers(400)
+                self.wfile.write(json.dumps({"erro": "Payload ausente na requisição"}).encode('utf-8'))
+                return
 
-@app.route('/api/master/unidades', methods=['POST'])
-def criar_unidade():
-    if supabase is None:
-        return jsonify({"sucesso": False, "erro": "Banco de dados Supabase offline."}), 500
+            post_data = self.rfile.read(content_length)
+            dados = json.loads(post_data.decode('utf-8'))
+            action = dados.get('action')
 
-    try:
-        nome_empresa = request.form.get('nome_empresa')
-        cnpj = request.form.get('cnpj')
-        gestor = request.form.get('gestor')
-        data_inicio = request.form.get('data_inicio')
-        telefone = request.form.get('telefone')
-        email = request.form.get('email')
-        endereco = request.form.get('endereco')
-        slogan = request.form.get('slogan')
-        tema_primaria = request.form.get('tema_primaria')
-        senha_acesso = request.form.get('senha_acesso')
+            sb_url = self._obter_url_supabase()
+            sb_key = os.environ.get('SUPABASE_SERVICE_KEY', '')
+            senha_mestra = os.environ.get('USER_SENHA', '')
 
-        logo_url = None
+            self._set_headers(200)
 
-        if 'logo' in request.files:
-            file = request.files['logo']
-            if file and file.filename != '':
-                file_ext = file.filename.split('.')[-1]
-                unique_filename = f"logos/{uuid.uuid4().hex}.{file_ext}"
-                file_bytes = file.read()
+            # ==========================================
+            # 1. ROTAS PAINEL MASTER (SUPER ADMIN)
+            # ==========================================
+            if action == 'verificar_senha_master':
+                senha_digitada = dados.get('senha')
+                self.wfile.write(json.dumps({"autorizado": senha_digitada == senha_mestra}).encode('utf-8'))
+                return
 
+            elif action == 'upload_logo':
+                file_base64 = dados.get('file_base64')
+                filename = dados.get('filename')
+                file_bytes = base64.b64decode(file_base64.split(",")[-1])
+                url_storage = f"{sb_url}/storage/v1/object/logos/{filename}"
+                content_type = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+
+                req = urllib.request.Request(
+                    url_storage, data=file_bytes,
+                    headers={'apikey': sb_key, 'Authorization': f'Bearer {sb_key}', 'Content-Type': content_type},
+                    method='POST'
+                )
                 try:
-                    supabase.storage.from_(BUCKET_NAME).upload(
-                        path=unique_filename,
-                        file=file_bytes,
-                        file_options={"content-type": file.content_type}
-                    )
-                    logo_url = supabase.storage.from_(BUCKET_NAME).get_public_url(unique_filename)
-                except Exception as err_supa:
-                    print("Erro no upload do Supabase:", str(err_supa))
+                    with urllib.request.urlopen(req):
+                        pass
+                except urllib.error.HTTPError as e:
+                    if e.code == 404:
+                        self.wfile.write(json.dumps({"erro": "O bucket 'logos' não existe no Supabase."}).encode('utf-8'))
+                        return
+                    raise e
 
-        nova_unidade = {
-            "nome_empresa": nome_empresa,
-            "cnpj": cnpj,
-            "gestor": gestor,
-            "data_inicio": data_inicio,
-            "telefone": telefone,
-            "email": email,
-            "endereco": endereco,
-            "slogan": slogan,
-            "tema": {"primaria": tema_primaria},
-            "senha_acesso": senha_acesso,
-            "logo_url": logo_url,
-            "status": "ativa"
-        }
+                url_publica = f"{sb_url}/storage/v1/object/public/logos/{filename}"
+                self.wfile.write(json.dumps({"sucesso": True, "url_logo": url_publica}).encode('utf-8'))
+                return
 
-        supabase.table("unidades").insert(nova_unidade).execute()
-        return jsonify({"sucesso": True, "mensagem": "Unidade criada com sucesso!"})
-
-    except Exception as e:
-        print("Erro ao Salvar Unidade:", str(e))
-        return jsonify({"sucesso": False, "erro": str(e)}), 500
-
-
-@app.route('/api/master/unidades/<id>/status', methods=['PATCH'])
-def alterar_status_unidade(id):
-    if supabase is None:
-        return jsonify({"sucesso": False, "erro": "Banco offline."}), 500
-    try:
-        data = request.get_json(silent=True) or {}
-        novo_status = data.get('status')
-
-        supabase.table("unidades").update({"status": novo_status}).eq("id", id).execute()
-        
-        return jsonify({"sucesso": True})
-    except Exception as e:
-        return jsonify({"sucesso": False, "erro": str(e)}), 500
-
-
-# ==========================================
-# 3. ROTAS DO PAINEL DO CLIENTE (TENANT)
-# ==========================================
-
-@app.route('/api/tenant/login', methods=['POST'])
-def tenant_login():
-    if supabase is None:
-        return jsonify({"sucesso": False, "erro": "Banco offline."}), 500
-
-    data = request.get_json(silent=True) or {}
-    cnpj = data.get('cnpj')
-    senha = data.get('senha')
-
-    try:
-        response = supabase.table("unidades").select("*")\
-            .eq("cnpj", cnpj)\
-            .eq("senha_acesso", senha)\
-            .eq("status", "ativa")\
-            .execute()
-            
-        unidades = response.data
-
-        if unidades and len(unidades) > 0:
-            unidade = unidades[0]
-            return jsonify({
-                "sucesso": True,
-                "unidade_id": str(unidade['id']),  # Mantido string para o JS
-                "empresa": {
-                    "nome": unidade.get('nome_empresa'),
-                    "gestor": unidade.get('gestor'),
-                    "slogan": unidade.get('slogan'),
-                    "tema": unidade.get('tema'),
-                    "logo_url": unidade.get('logo_url')
+            elif action == 'cadastrar_unidade':
+                url = f"{sb_url}/rest/v1/unidades"
+                payload = {
+                    "nome_responsavel": dados.get('nome_responsavel'),
+                    "nome_unidade": dados.get('nome_unidade'),
+                    "whatsapp": dados.get('whatsapp'),
+                    "email": dados.get('email'),
+                    "documento": dados.get('documento'),
+                    "data_inicio": dados.get('data_inicio'),
+                    "endereco": dados.get('endereco'),
+                    "senha_admin": dados.get('senha_admin'),
+                    "cor_layout": dados.get('cor_layout'),
+                    "url_logo": dados.get('url_logo'),
+                    "status": "Ativo"
                 }
-            })
-            
-        return jsonify({"sucesso": False, "erro": "CNPJ ou Senha inválidos, ou unidade bloqueada."}), 401
-    except Exception as e:
-        return jsonify({"sucesso": False, "erro": str(e)}), 500
+                self._executar_requisicao(url, method='POST', payload=payload)
+                self.wfile.write(json.dumps({"sucesso": True}).encode('utf-8'))
+                return
 
+            elif action == 'dados_dashboard_master':
+                url = f"{sb_url}/rest/v1/unidades?select=id,nome_responsavel,nome_unidade,status,cor_layout,url_logo,whatsapp,email,documento,data_inicio,endereco,senha_admin&order=id.desc"
+                unidades = self._executar_requisicao(url, method='GET')
+                self.wfile.write(json.dumps({"unidades": unidades}).encode('utf-8'))
+                return
 
-@app.route('/api/tenant/regulacoes', methods=['GET'])
-def get_regulacoes():
-    if supabase is None:
-        return jsonify({"sucesso": False, "erro": "Banco offline."}), 500
+            elif action == 'editar_unidade':
+                uid = dados.get('id')
+                url = f"{sb_url}/rest/v1/unidades?id=eq.{uid}"
+                body = {
+                    "nome_responsavel": dados.get('nome_responsavel'),
+                    "nome_unidade": dados.get('nome_unidade'),
+                    "whatsapp": dados.get('whatsapp'),
+                    "email": dados.get('email'),
+                    "documento": dados.get('documento'),
+                    "data_inicio": dados.get('data_inicio'),
+                    "endereco": dados.get('endereco'),
+                    "cor_layout": dados.get('cor_layout')
+                }
+                if dados.get('url_logo'):
+                    body["url_logo"] = dados.get('url_logo')
 
-    unidade_id = request.args.get('unidade_id')
-    if not unidade_id:
-        return jsonify({"sucesso": False, "erro": "ID da unidade é obrigatório"}), 400
+                self._executar_requisicao(url, method='PATCH', payload=body)
+                self.wfile.write(json.dumps({"sucesso": True}).encode('utf-8'))
+                return
 
-    try:
-        response = supabase.table("regulacoes").select("*").eq("unidade_id", unidade_id).order("id", desc=True).execute()
-        regulacoes = response.data
-        
-        regs_formatadas = [adaptar_id_para_frontend(r) for r in regulacoes]
-        return jsonify({"sucesso": True, "regulacoes": regs_formatadas})
-    except Exception as e:
-        return jsonify({"sucesso": False, "erro": str(e)}), 500
+            elif action == 'alterar_status_unidade':
+                uid = dados.get('id')
+                url = f"{sb_url}/rest/v1/unidades?id=eq.{uid}"
+                self._executar_requisicao(url, method='PATCH', payload={"status": dados.get('status')})
+                self.wfile.write(json.dumps({"sucesso": True}).encode('utf-8'))
+                return
 
+            elif action == 'excluir_unidade':
+                uid = dados.get('id')
+                url = f"{sb_url}/rest/v1/unidades?id=eq.{uid}"
+                self._executar_requisicao(url, method='DELETE')
+                self.wfile.write(json.dumps({"sucesso": True}).encode('utf-8'))
+                return
 
-@app.route('/api/tenant/regulacoes', methods=['POST'])
-def criar_regulacao():
-    if supabase is None:
-        return jsonify({"sucesso": False, "erro": "Banco offline."}), 500
+            # ==========================================
+            # 2. ROTAS PAINEL OPERACIONAL DA UNIDADE
+            # ==========================================
+            elif action == 'verificar_login_unidade':
+                senha_input = dados.get('senha')
+                url = f"{sb_url}/rest/v1/unidades?senha_admin=eq.{senha_input}&status=eq.Ativo&select=id,nome_unidade,cor_layout,url_logo"
+                res_data = self._executar_requisicao(url, method='GET')
 
-    data = request.get_json(silent=True) or {}
-    try:
-        protocolo = f"REQ-{str(uuid.uuid4())[:4].upper()}"
+                if res_data and len(res_data) > 0:
+                    self.wfile.write(json.dumps({"autorizado": True, "unidade": res_data[0]}).encode('utf-8'))
+                else:
+                    self.wfile.write(json.dumps({"autorizado": False, "mensagem": "Acesso suspenso ou credencial inválida."}).encode('utf-8'))
+                return
 
-        novo_paciente = {
-            "unidade_id": data.get("unidade_id"),
-            "protocolo": protocolo,
-            "nome_paciente": data.get("nome_paciente"),
-            "cpf": data.get("cpf"),
-            "email": data.get("email"),
-            "telefone": data.get("telefone"),
-            "procedimento": data.get("procedimento"),
-            "prioridade": data.get("prioridade"),
-            "status_atual": "Em Análise"
-        }
+            # --- COLABORADORES / EQUIPE ---
+            elif action == 'listar_colaboradores':
+                unidade_id = dados.get('unidade_id')
+                url = f"{sb_url}/rest/v1/colaboradores?unidade_id=eq.{unidade_id}&order=id.desc"
+                colabs = self._executar_requisicao(url, method='GET')
+                self.wfile.write(json.dumps({"colaboradores": colabs}).encode('utf-8'))
+                return
 
-        supabase.table("regulacoes").insert(novo_paciente).execute()
-        return jsonify({"sucesso": True, "protocolo": protocolo})
+            elif action == 'cadastrar_colaborador':
+                url = f"{sb_url}/rest/v1/colaboradores"
+                payload = {
+                    "nome": dados.get('nome'),
+                    "cargo": dados.get('cargo'),
+                    "whatsapp": dados.get('whatsapp'),
+                    "email": dados.get('email'),
+                    "documento": dados.get('documento'),
+                    "data_nascimento": dados.get('data_nascimento'),
+                    "endereco": dados.get('endereco'),
+                    "conta_bancaria": dados.get('conta_bancaria'),
+                    "url_foto": dados.get('url_foto'),
+                    "unidade_id": self._safe_int(dados.get('unidade_id')),
+                    "status": "Ativo"
+                }
+                self._executar_requisicao(url, method='POST', payload=payload, headers_extra={'Prefer': 'return=representation'})
+                self.wfile.write(json.dumps({"sucesso": True}).encode('utf-8'))
+                return
 
-    except Exception as e:
-        return jsonify({"sucesso": False, "erro": str(e)}), 500
+            # --- CLIENTES / LEADS ---
+            elif action == 'salvar_cliente':
+                url = f"{sb_url}/rest/v1/clientes"
+                payload = {
+                    "nome": dados.get('nome'),
+                    "whatsapp": dados.get('whatsapp'),
+                    "bairro": dados.get('bairro'),
+                    "documento_cliente": dados.get('documento_cliente'),
+                    "historico_demanda": dados.get('demanda'),
+                    "unidade_id": self._safe_int(dados.get('unidade_id')),
+                    "status": "Ativo"
+                }
+                self._executar_requisicao(url, method='POST', payload=payload, headers_extra={'Prefer': 'return=representation'})
+                self.wfile.write(json.dumps({"sucesso": True}).encode('utf-8'))
+                return
 
+            elif action == 'listar_clientes_unidade':
+                unidade_id = dados.get('unidade_id')
+                url = f"{sb_url}/rest/v1/clientes?unidade_id=eq.{unidade_id}&order=id.desc"
+                clientes = self._executar_requisicao(url, method='GET')
+                self.wfile.write(json.dumps({"clientes": clientes}).encode('utf-8'))
+                return
 
-if __name__ == '__main__':
-    app.run(debug=True)
+            # --- AGENDA / COMPROMISSOS ---
+            elif action == 'listar_agenda_unidade':
+                unidade_id = dados.get('unidade_id')
+                url = f"{sb_url}/rest/v1/agenda?unidade_id=eq.{unidade_id}&order=data_evento.asc,hora_evento.asc"
+                agenda = self._executar_requisicao(url, method='GET')
+                self.wfile.write(json.dumps({"agenda": agenda}).encode('utf-8'))
+                return
+
+            elif action == 'cadastrar_agenda':
+                url = f"{sb_url}/rest/v1/agenda"
+                payload = {
+                    "titulo": dados.get('titulo'),
+                    "tipo": 'Compromisso',
+                    "data_evento": dados.get('data'),
+                    "hora_evento": dados.get('hora'),
+                    "unidade_id": self._safe_int(dados.get('unidade_id')),
+                    "status": 'Confirmado'
+                }
+                self._executar_requisicao(url, method='POST', payload=payload, headers_extra={'Prefer': 'return=representation'})
+                self.wfile.write(json.dumps({"sucesso": True}).encode('utf-8'))
+                return
+
+            else:
+                self.wfile.write(json.dumps({"erro": f"Ação desconhecida: {action}"}).encode('utf-8'))
+
+        except Exception as e:
+            self._set_headers(500)
+            self.wfile.write(json.dumps({"erro": f"Erro interno do servidor: {str(e)}"}).encode('utf-8'))
