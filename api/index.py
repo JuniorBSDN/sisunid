@@ -41,30 +41,30 @@ class handler(BaseHTTPRequestHandler):
 
         data = json.dumps(payload).encode('utf-8') if payload else None
         req = urllib.request.Request(url, data=data, headers=headers, method=method)
-        
+
         with urllib.request.urlopen(req) as response:
             res_body = response.read().decode('utf-8')
             return json.loads(res_body) if res_body else {}
 
     def do_POST(self):
-    try:
-        content_length = int(self.headers.get('Content-Length', 0))
-        if content_length == 0:
-            self._set_headers(400)
-            self.wfile.write(json.dumps({"erro": "Payload ausente"}).encode('utf-8'))
-            return
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length == 0:
+                self._set_headers(400)
+                self.wfile.write(json.dumps({"erro": "Payload ausente"}).encode('utf-8'))
+                return
 
-        post_data = self.rfile.read(content_length)
+            post_data = self.rfile.read(content_length)
 
-        # Trata o decode prevenindo estouro de exceção por bytes binários brutos
-    try:
-        payload_str = post_data.decode('utf-8')
-        except UnicodeDecodeError:
-            self._set_headers(400)
-            self.wfile.write(json.dumps({
-                "erro": "O arquivo enviado não está no formato Base64 correto."
-            }).encode('utf-8'))
-            return
+            # Trata o decode prevenindo estouro de exceção por bytes binários brutos
+            try:
+                payload_str = post_data.decode('utf-8')
+            except UnicodeDecodeError:
+                self._set_headers(400)
+                self.wfile.write(json.dumps({
+                    "erro": "O arquivo enviado não está no formato Base64 correto."
+                }).encode('utf-8'))
+                return
 
             dados = json.loads(payload_str)
             action = dados.get('action')
@@ -72,12 +72,6 @@ class handler(BaseHTTPRequestHandler):
             sb_url = self._obter_url_supabase()
             sb_key = os.environ.get('SUPABASE_SERVICE_KEY', '')
             senha_mestra = os.environ.get('USER_SENHA', '')
-
-        except Exception as e:
-            self._set_headers(500)
-            self.wfile.write(json.dumps({"erro": f"Erro interno do servidor: {str(e)}"}).encode('utf-8'))
-            self._set_headers(200)
-        
 
             # ==========================================
             # 1. ROTAS PAINEL MASTER (SUPER ADMIN)
