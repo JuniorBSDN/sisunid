@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RegulaSaaS - Painel Master</title>
+    <title>sisUnid - Painel Master</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
@@ -105,7 +105,7 @@
     <!-- SIDEBAR -->
     <aside class="sidebar">
         <div class="logo">
-            <i class="ph-fill ph-rocket-launch"></i> RegulaSaaS
+            <i class="ph-fill ph-rocket-launch"></i> sisUnid
         </div>
         <nav class="nav-menu">
             <button class="nav-item active" onclick="switchView('dashboard', this)"><i class="ph ph-chart-pie-slice"></i> Dashboard Master</button>
@@ -121,7 +121,7 @@
             <div class="user-profile">
                 <div style="text-align: right;">
                     <div style="font-size: 14px; font-weight: 600;">CEO / Super Admin</div>
-                    <div style="font-size: 12px; color: var(--text-muted);">regula@saas.com.br</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">admin@sisunid.com.br</div>
                 </div>
                 <div class="avatar">SA</div>
             </div>
@@ -131,7 +131,7 @@
         <section id="dashboard" class="view-section active">
             <div class="page-header">
                 <div>
-                    <h1 class="page-title">Visão Geral - RegulaSaaS</h1>
+                    <h1 class="page-title">Visão Geral - sisUnid</h1>
                     <p style="color:var(--text-muted);">Monitoramento da base de clientes (Tenants).</p>
                 </div>
                 <div style="display: flex; gap: 12px;">
@@ -194,7 +194,7 @@
                                     <div>Antônio Regulação</div>
                                     <div style="font-size: 12px; color: var(--text-muted);">(91) 99999-9999</div>
                                 </td>
-                                <td><span style="font-family: monospace; background:#f1f5f9; padding:4px 8px; border-radius:4px;">*XyZ@2026*</span></td>
+                                <td><span style="font-family: monospace; background:#f1f5f9; padding:4px 8px; border-radius:4px; color: #000;">*XyZ@2026*</span></td>
                                 <td><span class="badge bg-success">Ativa</span></td>
                                 <td>
                                     <div class="action-group">
@@ -214,7 +214,7 @@
                                     <div>Mariana Costa</div>
                                     <div style="font-size: 12px; color: var(--text-muted);">(11) 98888-8888</div>
                                 </td>
-                                <td><span style="font-family: monospace; background:#f1f5f9; padding:4px 8px; border-radius:4px;">*Fz#2025*</span></td>
+                                <td><span style="font-family: monospace; background:#f1f5f9; padding:4px 8px; border-radius:4px; color: #000;">*Fz#2025*</span></td>
                                 <td><span class="badge bg-danger">Desativada</span></td>
                                 <td>
                                     <div class="action-group">
@@ -234,7 +234,7 @@
         <!-- VIEW 3: CADASTRAR EMPRESA (WHITE-LABEL) -->
         <section id="form-cliente" class="view-section">
             <div class="page-header">
-                <h1 class="page-title">Cadastrar Novo Cliente (Tenant)</h1>
+                <h1 class="page-title">Cadastrar Nova Unidade / Cliente</h1>
             </div>
 
             <div class="card">
@@ -252,7 +252,7 @@
                         <input type="text" class="form-control" required placeholder="00.000.000/0001-00">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Nome do Responsável / Gestor (Ex: Antônio)</label>
+                        <label class="form-label">Nome do Responsável / Gestor</label>
                         <input type="text" class="form-control" required>
                     </div>
                     <div class="form-group">
@@ -276,7 +276,7 @@
                     <div class="section-divider">Configurações do Sistema (White-Label)</div>
 
                     <div class="form-group">
-                        <label class="form-label">Slogan do Sistema para o Cliente</label>
+                        <label class="form-label">Slogan do Sistema para a Unidade</label>
                         <input type="text" class="form-control" placeholder="Ex: Regulação Rápida e Eficiente">
                     </div>
                     
@@ -295,7 +295,7 @@
                     </div>
 
                     <div class="form-group full">
-                        <label class="form-label">Logo da Empresa (Upload)</label>
+                        <label class="form-label">Logo da Unidade (Upload)</label>
                         <div class="upload-logo">
                             <i class="ph ph-upload-simple" style="font-size: 32px; color: var(--text-muted);"></i>
                             <p style="font-size: 14px; color: var(--text-muted); margin-top: 8px;">Arraste a logo PNG do cliente aqui</p>
