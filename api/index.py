@@ -88,6 +88,7 @@ def criar_unidade():
                     print("Erro no upload do Supabase:", str(err_supa))
 
         # 2. Prepara os dados para o Banco de Dados
+        # 2. Prepara os dados para o Banco de Dados
         nova_unidade = {
             "nome_empresa": request.form.get('nome_empresa'),
             "cnpj": request.form.get('cnpj'),
@@ -97,7 +98,13 @@ def criar_unidade():
             "email": request.form.get('email'),
             "endereco": request.form.get('endereco'),
             "slogan": request.form.get('slogan'),
-            "tema_primaria": request.form.get('tema_primaria'), # Simplificado para coluna de texto no SQL
+            
+            # CORREÇÃO DO TEMA: Agrupando as cores em um dicionário (JSON)
+            "tema": {
+                "primaria": request.form.get('tema_primaria'),
+                "secundaria": request.form.get('tema_secundaria')
+            },
+            
             "senha_acesso": request.form.get('senha_acesso'),
             "logo_url": logo_url,
             "status": "ativa"
@@ -144,7 +151,7 @@ def tenant_login():
         # Busca a unidade com regras de match exato
         response = supabase.table('unidades').select('*').eq('cnpj', cnpj).eq('senha_acesso', senha).eq('status', 'ativa').execute()
         
-        if len(response.data) > 0:
+       if len(response.data) > 0:
             unidade = response.data[0]
             return jsonify({
                 "sucesso": True,
@@ -153,7 +160,8 @@ def tenant_login():
                     "nome": unidade.get('nome_empresa'),
                     "gestor": unidade.get('gestor'),
                     "slogan": unidade.get('slogan'),
-                    "tema_primaria": unidade.get('tema_primaria'),
+                    # CORREÇÃO: Enviando o JSON do tema para o frontend
+                    "tema": unidade.get('tema'), 
                     "logo_url": unidade.get('logo_url')
                 }
             })
