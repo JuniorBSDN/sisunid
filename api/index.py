@@ -25,25 +25,11 @@ def serve_master():
 # ==========================================
 # 1. CONEXÕES COM BANCOS E VARIÁVEIS (PROTEGIDAS)
 # ==========================================
-MONGO_URI = os.environ.get("MONGO_URI", "").strip()
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "").strip()
 
 # Trata a senha master com valor fallback para não quebrar no boot
 MASTER_PASSWORD = (os.environ.get("MASTER_PASSWORD") or "admin").strip()
-
-db = None
-if MONGO_URI and "<db_username>" not in MONGO_URI:
-    try:
-        # Usa os certificados atualizados do certifi para ignorar o erro de handshake TLS
-        mongo_client = MongoClient(
-            MONGO_URI,
-            tlsCAFile=certifi.where(),
-            serverSelectionTimeoutMS=5000
-        )
-        db = mongo_client["sisunid"]
-    except Exception as e:
-        print("Erro ao conectar no MongoDB:", str(e))
 
 supabase: Client = None
 if SUPABASE_URL and SUPABASE_KEY:
@@ -53,11 +39,6 @@ if SUPABASE_URL and SUPABASE_KEY:
         print("Aviso: Falha ao inicializar Supabase:", str(e))
 
 BUCKET_NAME = "uploads"
-
-def format_mongo_doc(doc):
-    if doc and '_id' in doc:
-        doc['_id'] = str(doc['_id'])
-    return doc
 
 # ==========================================
 # 2. ROTAS DO PAINEL MASTER (SUPER ADMIN)
