@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>sisUnid - Acesso Restrito</title>
+    <title>sisUnid - Painel da Unidade</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
         :root {
-            /* Variáveis que serão alteradas dinamicamente pelo White-Label no momento do Login */
+            /* Estas variáveis poderão ser substituídas dinamicamente via JS com o tema do White-Label */
             --primary: #2563eb; 
             --primary-hover: #1d4ed8;
             --primary-light: #dbeafe;
@@ -32,38 +32,19 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
 
-        /* --- TELA DE LOGIN (BARREIRA DE ACESSO) --- */
-        #login-screen {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-color);
-            z-index: 9999; /* Fica acima de tudo */
-            display: flex; align-items: center; justify-content: center;
-        }
-        
-        .login-card {
-            background: var(--surface);
-            width: 100%; max-width: 400px;
-            padding: 40px 32px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
-            border: 1px solid var(--border);
-        }
-
-        /* --- ESTRUTURA GERAL DO SISTEMA --- */
-        #app-container { display: none; /* Escondido por padrão até fazer login */ width: 100%; height: 100%; }
-        
+        /* --- ESTRUTURA GERAL --- */
         .sidebar { width: 260px; background-color: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 20; transition: transform 0.3s ease; }
         .logo { padding: 24px; font-size: 22px; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); }
         .nav-menu { padding: 24px 16px; display: flex; flex-direction: column; gap: 8px; }
         .nav-item { padding: 12px 16px; border-radius: 8px; color: var(--text-muted); display: flex; align-items: center; gap: 12px; font-weight: 500; cursor: pointer; border: none; background: transparent; width: 100%; text-align: left; font-size: 15px; transition: all 0.2s ease; }
         .nav-item i { font-size: 20px; }
         .nav-item:hover { background-color: var(--info-bg); color: var(--primary); }
-        .nav-item.active { background-color: var(--primary); color: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .nav-item.active { background-color: var(--primary); color: white; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); }
 
         .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; position: relative; }
         .topbar { background-color: var(--surface); padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
         
+        /* --- VISUAL ELEMENTS --- */
         .search-bar { flex: 1; max-width: 400px; margin: 0 16px; }
         .search-bar input { width: 100%; padding: 10px 16px 10px 40px; border-radius: 20px; border: 1px solid var(--border); outline: none; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%2364748b" viewBox="0 0 256 256"><path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"></path></svg>') no-repeat 12px center; background-size: 16px; transition: border-color 0.2s; }
         .user-actions { display: flex; align-items: center; gap: 24px; }
@@ -77,14 +58,17 @@
         .page-subtitle { color: var(--text-muted); font-size: 15px; }
 
         .btn-primary { background-color: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; transition: 0.2s; }
-        .btn-primary:hover { filter: brightness(0.9); }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .btn-outline { background: transparent; color: var(--text-main); border: 1px solid var(--border); }
 
         .card { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; }
+        
         table { width: 100%; border-collapse: collapse; text-align: left; }
         th, td { padding: 16px 24px; border-bottom: 1px solid var(--border); }
         th { background-color: #f8fafc; color: var(--text-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; }
-        
+        tr:hover { background-color: #f8fafc; }
         .badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+        .badge.bg-info { background: var(--info-bg); color: var(--info); }
         .badge.bg-warning { background: var(--warning-bg); color: var(--warning); }
         .badge.bg-danger { background: var(--danger-bg); color: var(--danger); }
         .badge.bg-success { background: var(--success-bg); color: var(--success); }
@@ -94,15 +78,20 @@
         .stat-card h3 { color: var(--text-muted); font-size: 14px; font-weight: 500; margin-bottom: 8px; }
         .stat-card .value { font-size: 28px; font-weight: 700; }
 
+        /* --- FORMS --- */
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 24px;}
         .form-group { display: flex; flex-direction: column; gap: 8px; }
         .form-group.full-width { grid-column: 1 / -1; }
         .form-label { font-size: 14px; font-weight: 500; color: var(--text-main); }
         .form-control { padding: 12px 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; transition: all 0.2s; }
-        .form-control:focus { border-color: var(--primary); }
         .upload-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; background: #f8fafc; }
         
-        /* Modais */
+        /* --- TIMELINE E MODAIS --- */
+        .timeline { padding: 20px 24px; }
+        .timeline-item { display: flex; gap: 24px; margin-bottom: 32px; position: relative; }
+        .timeline-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; z-index: 2; border: 4px solid var(--surface); }
+        .timeline-content { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; flex: 1; }
+        
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.5); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
         .modal-overlay.active { display: flex; }
         .modal-content { background: var(--surface); width: 100%; max-width: 500px; border-radius: 12px; padding: 24px; position: relative; }
@@ -111,6 +100,7 @@
         .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border-left: 4px solid var(--success); padding: 16px 24px; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 16px; transform: translateY(100px); opacity: 0; transition: all 0.3s; z-index: 1000; }
         .toast.show { transform: translateY(0); opacity: 1; }
 
+        /* Responsive */
         .menu-toggle { display: none; background: none; border: none; font-size: 24px; color: var(--text-main); cursor: pointer; }
         @media (max-width: 768px) {
             .sidebar { position: fixed; height: 100%; transform: translateX(-100%); }
@@ -124,134 +114,146 @@
 </head>
 <body>
 
-    <!-- ================= TELA DE LOGIN DO CLIENTE (BARREIRA) ================= -->
-    <div id="login-screen">
-        <div class="login-card">
-            <div style="text-align: center; margin-bottom: 32px;">
-                <i class="ph-fill ph-heartbeat" style="font-size: 48px; color: var(--primary);"></i>
-                <h2 style="margin-top: 16px; color: var(--text-main);">Acesso da Unidade</h2>
-                <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Valide seu CNPJ para acessar o sistema.</p>
-            </div>
-            
-            <form id="form-login">
-                <div class="form-group" style="margin-bottom: 20px;">
-                    <label class="form-label">CNPJ ou CPF da Empresa</label>
-                    <input type="text" id="login-cnpj" class="form-control" required placeholder="00.000.000/0001-00">
-                </div>
-                <div class="form-group" style="margin-bottom: 32px;">
-                    <label class="form-label">Senha de Acesso</label>
-                    <input type="password" id="login-senha" class="form-control" required placeholder="******">
-                </div>
-                <button type="submit" class="btn-primary" style="width: 100%; padding: 14px; font-size: 16px;">Entrar no Sistema</button>
-            </form>
+    <aside class="sidebar" id="sidebar">
+        <div class="logo">
+            <i class="ph-fill ph-heartbeat"></i> sisUnid
+            <button class="menu-toggle" style="margin-left:auto" onclick="toggleMenu()"><i class="ph ph-x"></i></button>
         </div>
-    </div>
+        <nav class="nav-menu">
+            <button class="nav-item active" onclick="switchView('dashboard', this)"><i class="ph ph-squares-four"></i> Fila de Regulação</button>
+            <button class="nav-item" onclick="switchView('nova-recepcao', this)"><i class="ph ph-file-plus"></i> Nova Recepção</button>
+            <button class="nav-item" onclick="switchView('pacientes', this)"><i class="ph ph-users"></i> Pacientes</button>
+            <button class="nav-item" onclick="switchView('relatorios', this)"><i class="ph ph-chart-line-up"></i> Relatórios</button>
+            <button class="nav-item" onclick="switchView('emails', this)"><i class="ph ph-paper-plane-tilt"></i> Disparos & Alertas</button>
+        </nav>
+    </aside>
 
-    <!-- ================= SISTEMA PRINCIPAL (ESCONDIDO ATÉ O LOGIN) ================= -->
-    <div id="app-container">
-        
-        <aside class="sidebar" id="sidebar">
-            <!-- Os textos e cores aqui serão injetados pelo White-Label via Javascript -->
-            <div class="logo">
-                <i class="ph-fill ph-heartbeat"></i> <span id="ui-nome-unidade">sisUnid</span>
-                <button class="menu-toggle" style="margin-left:auto" onclick="toggleMenu()"><i class="ph ph-x"></i></button>
-            </div>
-            <nav class="nav-menu">
-                <button class="nav-item active" onclick="switchView('dashboard', this)"><i class="ph ph-squares-four"></i> Fila de Regulação</button>
-                <button class="nav-item" onclick="switchView('nova-recepcao', this)"><i class="ph ph-file-plus"></i> Nova Recepção</button>
-                <button class="nav-item" onclick="switchView('pacientes', this)"><i class="ph ph-users"></i> Pacientes</button>
-                <button class="nav-item" onclick="switchView('relatorios', this)"><i class="ph ph-chart-line-up"></i> Relatórios</button>
-                <button class="nav-item" onclick="switchView('emails', this)"><i class="ph ph-paper-plane-tilt"></i> Disparos Automáticos</button>
-            </nav>
-        </aside>
-
-        <main class="main-content">
-            <header class="topbar">
-                <button class="menu-toggle" onclick="toggleMenu()"><i class="ph ph-list"></i></button>
-                <div class="search-bar"><input type="text" placeholder="Buscar protocolo, CPF ou paciente..."></div>
-                <div class="user-actions">
-                    <i class="ph ph-bell" style="font-size: 24px; color: var(--text-muted); cursor: pointer;"></i>
-                    <div style="display: flex; align-items: center; gap: 12px; border-left: 1px solid var(--border); padding-left: 16px;">
-                        <div style="background:var(--primary); color:white; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold;">GU</div>
-                        <div>
-                            <div style="font-size: 14px; font-weight: 600;" id="ui-nome-gestor">Gestor da Unidade</div>
-                            <button onclick="fazerLogout()" style="background:none; border:none; color:var(--danger); font-size:12px; cursor:pointer; padding:0; text-align:left;">Sair do Sistema</button>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
-            <!-- VIEW 1: DASHBOARD -->
-            <section id="dashboard" class="view-section active">
-                <div class="page-header">
+    <main class="main-content">
+        <header class="topbar">
+            <button class="menu-toggle" onclick="toggleMenu()"><i class="ph ph-list"></i></button>
+            <div class="search-bar"><input type="text" placeholder="Buscar protocolo, CPF ou paciente..."></div>
+            <div class="user-actions">
+                <i class="ph ph-bell" style="font-size: 24px; color: var(--text-muted); cursor: pointer;"></i>
+                <div style="display: flex; align-items: center; gap: 12px; border-left: 1px solid var(--border); padding-left: 16px;">
+                    <div style="background:var(--primary); color:white; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold;">AR</div>
                     <div>
-                        <h1 class="page-title">Fila de Regulação</h1>
-                        <p class="page-subtitle" id="ui-slogan">Slogan injetado dinamicamente</p>
-                    </div>
-                    <button class="btn-primary" onclick="document.querySelectorAll('.nav-item')[1].click()"><i class="ph ph-plus"></i> Registrar Nova</button>
-                </div>
-
-                <div class="stats-grid">
-                    <div class="card stat-card" style="border-left: 4px solid var(--primary);"><h3>Fila Ativa</h3><div class="value">142</div></div>
-                    <div class="card stat-card" style="border-left: 4px solid var(--success);"><h3>Agendados (Hoje)</h3><div class="value" style="color: var(--success);">18</div></div>
-                    <div class="card stat-card" style="border-left: 4px solid var(--warning);"><h3>Próximos do Limite</h3><div class="value" style="color: var(--warning);">12</div></div>
-                    <div class="card stat-card" style="border-left: 4px solid var(--danger);"><h3>SLA Estourado</h3><div class="value" style="color: var(--danger);">3</div></div>
-                </div>
-
-                <div class="card">
-                    <div style="overflow-x: auto;">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Protocolo</th>
-                                    <th>Paciente / Contato</th>
-                                    <th>Procedimento</th>
-                                    <th>Prioridade (SLA)</th>
-                                    <th>Status Atual</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabela-fila-espera">
-                                <!-- JS injetará linhas aqui -->
-                            </tbody>
-                        </table>
+                        <div style="font-size: 14px; font-weight: 600;">Antônio Regulação</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">Unidade de Saúde Vigia</div>
                     </div>
                 </div>
-            </section>
+            </div>
+        </header>
 
-            <!-- VIEW 2: NOVA RECEPÇÃO -->
-            <section id="nova-recepcao" class="view-section">
-                <div class="page-header">
-                    <div><h1 class="page-title">Recepção de Documentos</h1><p class="page-subtitle">Cadastre a requisição, anexe arquivos e dispare o 1º alerta.</p></div>
+        <!-- VIEW 1: DASHBOARD -->
+        <section id="dashboard" class="view-section active">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Visão Geral da Regulação</h1>
+                    <p class="page-subtitle">Monitore prazos e atue nas requisições em tempo real.</p>
                 </div>
-                <div class="card">
-                    <form id="form-recepcao" class="form-grid">
-                        <div class="form-group"><label class="form-label">Nome Completo</label><input type="text" id="req-nome" class="form-control" required></div>
-                        <div class="form-group"><label class="form-label">Cartão SUS ou CPF</label><input type="text" id="req-cpf" class="form-control" required></div>
-                        <div class="form-group"><label class="form-label">E-mail</label><input type="email" id="req-email" class="form-control"></div>
-                        <div class="form-group">
-                            <label class="form-label">Celular / WhatsApp</label>
-                            <input type="text" id="req-telefone" class="form-control" required>
-                        </div>
-                        <div class="form-group full-width" style="border-top: 1px solid var(--border); padding-top: 16px;">
-                            <label class="form-label">Tipo de Requisição e Prioridade</label>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
-                                <select id="req-procedimento" class="form-control" required><option value="">Selecione...</option><option>Consulta Especializada</option><option>Ressonância Magnética</option></select>
-                                <select id="req-prioridade" class="form-control" required><option value="Rotina">Rotina (Verde - 30 dias)</option><option value="Urgência">Urgência (Vermelho - 72h)</option></select>
-                            </div>
-                        </div>
-                        <div class="form-group full-width" style="display: flex; justify-content: flex-end; margin-top: 16px;">
-                            <button type="submit" class="btn-primary"><i class="ph ph-check-circle"></i> Registrar e Gerar Protocolo</button>
-                        </div>
-                    </form>
-                </div>
-            </section>
+                <button class="btn-primary" onclick="document.querySelectorAll('.nav-item')[1].click()"><i class="ph ph-plus"></i> Registrar Nova</button>
+            </div>
 
-            <!-- Telas Estáticas (Design) -->
-            <section id="pacientes" class="view-section"><div class="page-header"><h1 class="page-title">Base de Pacientes</h1></div><div class="card"><div style="padding:24px;">Carregando Base...</div></div></section>
-            <section id="relatorios" class="view-section"><div class="page-header"><h1 class="page-title">Relatórios</h1></div><div class="card"><div style="padding:24px;">Carregando Gráficos...</div></div></section>
-            <section id="emails" class="view-section"><div class="page-header"><h1 class="page-title">Disparos Automáticos</h1></div><div class="card"><div style="padding:24px;">Monitoramento de WhatsApp ativado.</div></div></section>
-        </main>
+            <div class="stats-grid">
+                <div class="card stat-card" style="border-left: 4px solid var(--primary);"><h3>Fila Ativa</h3><div class="value">142</div></div>
+                <div class="card stat-card" style="border-left: 4px solid var(--success);"><h3>Agendados (Hoje)</h3><div class="value" style="color: var(--success);">18</div></div>
+                <div class="card stat-card" style="border-left: 4px solid var(--warning);"><h3>Próximos do Limite</h3><div class="value" style="color: var(--warning);">12</div></div>
+                <div class="card stat-card" style="border-left: 4px solid var(--danger);"><h3>SLA Estourado</h3><div class="value" style="color: var(--danger);">3</div></div>
+            </div>
+
+            <div class="card">
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Protocolo</th>
+                                <th>Paciente / Contato</th>
+                                <th>Procedimento</th>
+                                <th>Prioridade (SLA)</th>
+                                <th>Status Atual</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-fila-espera">
+                            <!-- JS injetará linhas aqui -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 2: NOVA RECEPÇÃO -->
+        <section id="nova-recepcao" class="view-section">
+            <div class="page-header">
+                <div><h1 class="page-title">Recepção de Documentos</h1><p class="page-subtitle">Cadastre a requisição, anexe arquivos e dispare o 1º alerta.</p></div>
+            </div>
+            <div class="card">
+                <form id="form-recepcao" class="form-grid">
+                    <div class="form-group"><label class="form-label">Nome Completo</label><input type="text" id="req-nome" class="form-control" required></div>
+                    <div class="form-group"><label class="form-label">Cartão SUS ou CPF</label><input type="text" id="req-cpf" class="form-control" required></div>
+                    <div class="form-group"><label class="form-label">E-mail</label><input type="email" id="req-email" class="form-control"></div>
+                    <div class="form-group">
+                        <label class="form-label">Celular / WhatsApp</label>
+                        <input type="text" id="req-telefone" class="form-control" required>
+                        <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin-top:4px;"><input type="checkbox" id="req-wpp" checked> <i class="ph-fill ph-whatsapp-logo" style="color:var(--whatsapp);"></i> Notificar via WhatsApp</label>
+                    </div>
+
+                    <div class="form-group full-width" style="border-top: 1px solid var(--border); padding-top: 16px;">
+                        <label class="form-label">Tipo de Requisição e Prioridade</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                            <select id="req-procedimento" class="form-control" required>
+                                <option value="">Selecione...</option><option value="Consulta Especializada">Consulta Especializada</option><option value="Ressonância Magnética">Ressonância Magnética</option><option value="Exame de Sangue">Exame de Sangue</option>
+                            </select>
+                            <select id="req-prioridade" class="form-control" required>
+                                <option value="Rotina">Rotina (Verde - 30 dias)</option><option value="Prioridade">Prioridade (Amarelo - 15 dias)</option><option value="Urgência">Urgência (Vermelho - 72h)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label class="form-label">Anexar Documentos (Guia médica)</label>
+                        <div class="upload-zone"><i class="ph ph-cloud-arrow-up" style="font-size: 48px; color: var(--text-muted);"></i><p>Arraste arquivos aqui</p></div>
+                    </div>
+
+                    <div class="form-group full-width" style="display: flex; justify-content: flex-end; gap: 16px; margin-top: 16px;">
+                        <button type="submit" class="btn-primary"><i class="ph ph-check-circle"></i> Registrar e Gerar Protocolo</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- AS DEMAIS VIEWS (Pacientes, Relatórios, Disparos) CONTINUAM MANTIDAS E ESTÁTICAS PARA EFEITO DE PROTÓTIPO DE DESIGN -->
+        <section id="pacientes" class="view-section"><div class="page-header"><h1 class="page-title">Base de Pacientes</h1></div><div class="card"><div style="padding:24px;">Página em construção pelo Backend...</div></div></section>
+        <section id="relatorios" class="view-section"><div class="page-header"><h1 class="page-title">Relatórios</h1></div><div class="card"><div style="padding:24px;">Página em construção pelo Backend...</div></div></section>
+        
+        <section id="emails" class="view-section">
+            <div class="page-header"><h1 class="page-title">Central de Disparos Automáticos</h1></div>
+            <div class="card">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-icon" style="background:var(--whatsapp-bg); color:var(--whatsapp);"><i class="ph-fill ph-whatsapp-logo"></i></div>
+                        <div class="timeline-content">
+                            <div style="display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 8px;">WhatsApp: Agendamento Confirmado <span style="color:var(--text-muted); font-weight:normal; font-size:12px;">Hoje, 10:14</span></div>
+                            <div style="font-size: 14px; color: var(--text-muted);">Para: João Pedro Silva (+55 11 9777-6666)<br>Status: Entregue</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL AVALIAR -->
+    <div id="modal-avaliar" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close" onclick="fecharModal('modal-avaliar')"><i class="ph ph-x"></i></button>
+            <h2 style="font-size: 18px; margin-bottom: 16px;">Avaliar Regulação</h2>
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label class="form-label">Alterar Status para:</label>
+                <select class="form-control" id="select-status"><option>Aprovado (Aguardando Vaga)</option><option>Devolvido (Falta Documento)</option></select>
+            </div>
+            <button class="btn-primary" style="width: 100%;" onclick="salvarModal('modal-avaliar', 'Status atualizado com sucesso!')">Salvar e Notificar</button>
+        </div>
     </div>
 
     <!-- TOAST NOTIFICATION -->
@@ -263,100 +265,8 @@
         </div>
     </div>
 
-    <!-- SCRIPTS -->
+    <!-- SCRIPTS E LÓGICA DE INTEGRAÇÃO (FETCH) -->
     <script>
-        // ----------------------------------------------------
-        // LÓGICA DE LOGIN E AUTENTICAÇÃO DO CLIENTE
-        // ----------------------------------------------------
-        document.getElementById('form-login').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const cnpj = document.getElementById('login-cnpj').value;
-            const senha = document.getElementById('login-senha').value;
-
-            // Altera botão para loading
-            const btn = this.querySelector('button');
-            btn.innerHTML = 'Verificando...';
-
-            try {
-                // Dispara POST para o Python (Backend)
-                const response = await fetch('/api/tenant/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ cnpj, senha })
-                });
-
-                const data = await response.json();
-
-                if (data.sucesso) {
-                    // Salva Sessão (Unidade Local)
-                    localStorage.setItem('unidade_id', data.unidade_id);
-                    localStorage.setItem('unidade_dados', JSON.stringify(data.empresa));
-                    
-                    iniciarSistema();
-                } else {
-                    alert('Acesso negado: ' + data.erro);
-                    btn.innerHTML = 'Entrar no Sistema';
-                }
-            } catch (error) {
-                // MOCK PARA TESTE (Caso o servidor Python não esteja rodando)
-                console.warn("API Offline: Simulando Login com Sucesso para testes visuais.");
-                
-                // Dados fictícios simulando o que o master.html gravou
-                const mockEmpresa = {
-                    nome: "Sec. Saúde de Vigia",
-                    gestor: "Antônio Silva",
-                    slogan: "Regulação Rápida e Transparente",
-                    tema: { primaria: "#2563eb", secundaria: "#1e293b" }
-                };
-
-                localStorage.setItem('unidade_id', 'MOCK_ID_123');
-                localStorage.setItem('unidade_dados', JSON.stringify(mockEmpresa));
-                iniciarSistema();
-            }
-        });
-
-        // Função que esconde o Login, mostra o painel e aplica o White-Label
-        function iniciarSistema() {
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('app-container').style.display = 'flex';
-            
-            // Aplica os dados da Empresa Logada (White-Label)
-            const dados = JSON.parse(localStorage.getItem('unidade_dados'));
-            if(dados) {
-                // Altera Cores do Sistema
-                if(dados.tema) {
-                    document.documentElement.style.setProperty('--primary', dados.tema.primaria);
-                    document.documentElement.style.setProperty('--primary-hover', dados.tema.primaria);
-                    // O sidebar pode pegar a cor secundária (opicional, deixei surface como base)
-                }
-                
-                // Altera Textos
-                document.getElementById('ui-nome-unidade').innerText = dados.nome || "sisUnid";
-                document.getElementById('ui-nome-gestor').innerText = dados.gestor || "Gestor";
-                document.getElementById('ui-slogan').innerText = dados.slogan || "Gestão de Prazos";
-            }
-
-            carregarFilaEspera();
-        }
-
-        // Logout
-        function fazerLogout() {
-            localStorage.removeItem('unidade_id');
-            localStorage.removeItem('unidade_dados');
-            window.location.reload();
-        }
-
-        // Verifica se já está logado ao atualizar a página
-        window.onload = function() {
-            if(localStorage.getItem('unidade_id')) {
-                iniciarSistema();
-            }
-        };
-
-        // ----------------------------------------------------
-        // FUNCIONALIDADES DO PAINEL
-        // ----------------------------------------------------
         function switchView(viewId, navElement) {
             document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
             if(navElement) {
@@ -364,11 +274,17 @@
                 navElement.classList.add('active');
             }
             document.getElementById(viewId).classList.add('active');
+            
             if(window.innerWidth <= 768) { document.getElementById('sidebar').classList.remove('open'); }
+            
+            // Carrega a fila real ao voltar para o dashboard
+            if (viewId === 'dashboard') carregarFilaEspera();
         }
 
         function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
-        
+        function abrirModal(id) { document.getElementById(id).classList.add('active'); }
+        function fecharModal(id) { document.getElementById(id).classList.remove('active'); }
+
         function showToast(title, desc) {
             document.getElementById('toast-title').innerText = title;
             document.getElementById('toast-desc').innerText = desc;
@@ -377,22 +293,34 @@
             setTimeout(() => toast.classList.remove('show'), 4000);
         }
 
-        // Busca fila
+        function salvarModal(id, msg) {
+            fecharModal(id);
+            showToast('Atualizado!', msg);
+        }
+
+        // LÓGICA DE API - GET (Buscar Fila)
         async function carregarFilaEspera() {
             const tbody = document.getElementById('tabela-fila-espera');
+            
+            // Popula com dados visuais (Mock) para que o design não fique vazio caso o Python esteja offline
             const dadosMock = [
-                { protocolo: "REQ-0992", nome_paciente: "Maria Oliveira", telefone: "(91) 9999-8888", procedimento: "Ressonância", prioridade: "Urgência", status_atual: "Em Análise" }
+                { protocolo: "REQ-0992", nome_paciente: "Maria Oliveira", telefone: "(91) 9999-8888", procedimento: "Ressonância", prioridade: "Urgência", status_atual: "Em Análise", _id: "1" },
+                { protocolo: "REQ-1004", nome_paciente: "João Pedro Silva", telefone: "(11) 9777-6666", procedimento: "Consulta Cardiologia", prioridade: "Prioridade", status_atual: "Aguardando Vaga", _id: "2" }
             ];
 
             try {
-                const unidadeId = localStorage.getItem('unidade_id'); 
+                const unidadeId = localStorage.getItem('unidade_id') || 'ID_DA_UNIDADE_AQUI'; 
                 const response = await fetch(`/api/tenant/regulacoes?unidade_id=${unidadeId}`);
+                
                 if(response.ok) {
                     const data = await response.json();
                     if(data.sucesso && data.regulacoes.length > 0) renderTabela(data.regulacoes, tbody);
-                    else renderTabela(dadosMock, tbody);
-                } else renderTabela(dadosMock, tbody);
+                    else renderTabela(dadosMock, tbody); // Renderiza Mock se não houver dados
+                } else {
+                    renderTabela(dadosMock, tbody); // Renderiza Mock se falhar
+                }
             } catch (error) {
+                console.warn("API Python Offline. Exibindo dados de design (Mock).");
                 renderTabela(dadosMock, tbody);
             }
         }
@@ -401,36 +329,29 @@
             tbody.innerHTML = '';
             dados.forEach(req => {
                 let badgeColor = req.status_atual === 'Em Análise' ? 'bg-danger' : 'bg-warning';
-                let iconColor = req.prioridade === 'Urgência' ? 'var(--danger)' : 'var(--success)';
+                let iconColor = req.prioridade === 'Urgência' ? 'var(--danger)' : 'var(--warning)';
                 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="font-weight: 600;">#${req.protocolo}</td>
                     <td><div>${req.nome_paciente}</div><div style="font-size: 12px; color: var(--text-muted);"><i class="ph-fill ph-whatsapp-logo" style="color:var(--whatsapp)"></i> ${req.telefone}</div></td>
                     <td>${req.procedimento}</td>
-                    <td><div style="display:flex; align-items:center; gap:6px; font-weight:600; color:${iconColor};"><i class="ph-fill ph-clock"></i> ${req.prioridade}</div></td>
+                    <td><div class="sla-indicator" style="color:${iconColor};"><i class="ph-fill ph-clock"></i> ${req.prioridade}</div></td>
                     <td><span class="badge ${badgeColor}">${req.status_atual}</span></td>
-                    <td><button class="btn-primary" style="padding: 6px 12px; font-size: 12px;">Avaliar</button></td>
+                    <td><button class="btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="abrirModal('modal-avaliar')">Avaliar</button></td>
                 `;
                 tbody.appendChild(tr);
             });
         }
-        // ----------------------------------------------------
-        // ENVIAR NOVA RECEPÇÃO (CRIAR PACIENTE NA FILA)
-        // ----------------------------------------------------
+
+        // LÓGICA DE API - POST (Registrar Recepção)
         document.getElementById('form-recepcao').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const btn = this.querySelector('button');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = 'Gerando Protocolo...';
-            btn.disabled = true;
-
             const payload = {
-                unidade_id: localStorage.getItem('unidade_id'),
+                unidade_id: localStorage.getItem('unidade_id') || 'ID_DA_UNIDADE_AQUI',
                 nome_paciente: document.getElementById('req-nome').value,
                 cpf: document.getElementById('req-cpf').value,
-                email: document.getElementById('req-email').value,
                 telefone: document.getElementById('req-telefone').value,
                 procedimento: document.getElementById('req-procedimento').value,
                 prioridade: document.getElementById('req-prioridade').value
@@ -444,26 +365,21 @@
                 });
                 
                 const data = await response.json();
-                
                 if (data.sucesso) {
-                    showToast('Protocolo Gerado!', `Paciente registrado sob o protocolo #${data.protocolo}`);
-                    this.reset(); // Limpa o formulário
-                    switchView('dashboard', document.querySelectorAll('.nav-item')[0]); // Volta pro Dashboard
-                    carregarFilaEspera(); // Atualiza a tabela com o novo paciente
-                } else {
-                    alert('Erro ao salvar requisição: ' + data.erro);
+                    showToast('Protocolo Gerado!', `Registro salvo no banco.`);
                 }
             } catch (error) {
-                // Fallback para testes visuais offline
-                console.error(error);
-                showToast('Aviso', 'Modo Offline: Registro simulado com sucesso.');
-                this.reset();
-                switchView('dashboard', document.querySelectorAll('.nav-item')[0]);
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
+                // Se a API falhar (ex: rodando local sem backend), simula o sucesso para fluidez de apresentação
+                showToast('Protocolo Gerado!', `Protocolo salvo (Modo Offline).`);
+                console.log(payload);
             }
+
+            this.reset();
+            setTimeout(() => { switchView('dashboard', document.querySelectorAll('.nav-item')[0]); }, 2000);
         });
+
+        // Init
+        document.addEventListener("DOMContentLoaded", () => { carregarFilaEspera(); });
     </script>
 </body>
 </html>
