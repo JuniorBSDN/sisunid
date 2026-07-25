@@ -8,8 +8,7 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
         :root {
-            /* Cores do Painel Master */
-            --master-primary: #4f46e5; 
+            --master-primary: #4f46e5;
             --master-hover: #4338ca;
             --master-dark: #1e1b4b;
             --bg-color: #f1f5f9;
@@ -19,27 +18,25 @@
             --border: #e2e8f0;
             --success: #10b981;
             --danger: #ef4444;
-            --warning: #f59e0b;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
 
-        /* --- TELA DE LOGIN MASTER (BARREIRA) --- */
+        /* --- LOGIN MASTER --- */
         #login-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--master-dark);
-            z-index: 9999; display: flex; align-items: center; justify-content: center;
+            background: var(--master-dark); z-index: 9999; 
+            display: flex; align-items: center; justify-content: center;
         }
         .login-card {
             background: var(--surface); width: 100%; max-width: 400px; padding: 40px 32px;
             border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
         }
 
-        /* --- ESTRUTURA GERAL (ESCONDIDA POR PADRÃO) --- */
         #app-container { display: none; width: 100%; height: 100%; }
 
-        /* --- SIDEBAR E TOPBAR --- */
+        /* --- SIDEBAR & TOPBAR --- */
         .sidebar { width: 260px; background-color: var(--master-dark); color: white; display: flex; flex-direction: column; z-index: 20; }
         .logo { padding: 24px; font-size: 22px; font-weight: 700; color: white; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .nav-menu { padding: 24px 16px; display: flex; flex-direction: column; gap: 8px; }
@@ -49,42 +46,36 @@
 
         .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
         .topbar { background-color: var(--surface); padding: 16px 32px; display: flex; justify-content: flex-end; align-items: center; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
-        .user-profile { display: flex; align-items: center; gap: 12px; }
-        .avatar { width: 36px; height: 36px; background: var(--master-primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; }
-
+        
         /* --- VIEWS --- */
         .view-section { display: none; padding: 32px; max-width: 1200px; margin: 0 auto; width: 100%; animation: fadeIn 0.3s ease; }
         .view-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- COMPONENTES --- */
+        /* --- COMPONENTES BÁSICOS --- */
         .page-header { margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; }
         .page-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
-        
-        .btn-primary { background-color: var(--master-primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; transition: 0.2s; }
+
+        .btn-primary { background-color: var(--master-primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; transition: 0.2s; }
         .btn-primary:hover { background-color: var(--master-hover); }
         .btn-outline { background: transparent; color: var(--text-main); border: 1px solid var(--border); padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; }
+        .btn-action { background: none; border: 1px solid var(--border); padding: 8px; border-radius: 6px; color: var(--text-muted); cursor: pointer; transition: 0.2s; }
+        .btn-action:hover { color: var(--master-primary); border-color: var(--master-primary); background: var(--bg-color); }
+        .btn-action.danger:hover { color: var(--danger); border-color: var(--danger); }
+
+        .card { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; padding: 24px; }
         
-        .card { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px; }
+        /* --- DASHBOARD WIDGETS --- */
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 24px; }
         .stat-card { padding: 24px; background: var(--surface); border-radius: 12px; border: 1px solid var(--border); }
         .stat-card h3 { color: var(--text-muted); font-size: 14px; font-weight: 500; margin-bottom: 8px; text-transform: uppercase; }
         .stat-card .value { font-size: 32px; font-weight: 700; }
 
-        /* --- TABELA E FORMS --- */
-        .search-bar { display: flex; gap: 16px; padding: 16px 24px; background: #f8fafc; border-bottom: 1px solid var(--border); align-items: center; }
-        .search-input { flex: 1; padding: 10px 16px 10px 40px; border-radius: 8px; border: 1px solid var(--border); outline: none; background: white url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%2364748b" viewBox="0 0 256 256"><path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"></path></svg>') no-repeat 12px center; }
-        table { width: 100%; border-collapse: collapse; text-align: left; }
-        th, td { padding: 16px 24px; border-bottom: 1px solid var(--border); font-size: 14px; }
-        th { background-color: #f8fafc; color: var(--text-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; }
-        .badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        .badge.bg-success { background: #ecfdf5; color: var(--success); }
-        .badge.bg-danger { background: #fef2f2; color: var(--danger); }
-        .action-group { display: flex; gap: 8px; }
-        .btn-action { background: none; border: 1px solid var(--border); padding: 6px; border-radius: 6px; color: var(--text-muted); cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
-        .btn-action:hover { color: var(--master-primary); border-color: var(--master-primary); background: var(--bg-color); }
+        /* --- FILTROS DE IMPRESSÃO --- */
+        .filter-bar { display: flex; gap: 16px; align-items: flex-end; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid var(--border); }
         
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 24px; }
+        /* --- FORMULÁRIOS --- */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .form-group { display: flex; flex-direction: column; gap: 8px; }
         .form-group.full { grid-column: 1 / -1; }
         .form-label { font-size: 14px; font-weight: 500; color: var(--text-main); }
@@ -93,60 +84,62 @@
         .color-item { display: flex; align-items: center; gap: 8px; }
         .color-item input[type="color"] { width: 40px; height: 40px; border: none; border-radius: 8px; cursor: pointer; padding: 0; }
         .upload-logo { border: 2px dashed var(--border); border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; background: #f8fafc; }
-        .section-divider { border-top: 1px solid var(--border); margin: 24px 0; padding-top: 16px; font-weight: 600; color: var(--text-muted); grid-column: 1 / -1; }
+        
+        /* --- TABELA --- */
+        .table-container { overflow-x: auto; margin-top: 16px; border-radius: 8px; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 16px; border-bottom: 1px solid var(--border); font-size: 14px; }
+        th { background-color: #f8fafc; color: var(--text-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; }
+        .badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge.bg-success { background: #ecfdf5; color: var(--success); }
+        .badge.bg-danger { background: #fef2f2; color: var(--danger); }
+        .action-group { display: flex; gap: 8px; }
     </style>
 </head>
 <body>
 
-    <!-- ================= TELA DE LOGIN MASTER (BARREIRA) ================= -->
+    <!-- BARREIRA DE LOGIN -->
     <div id="login-screen">
         <div class="login-card">
             <div style="text-align: center; margin-bottom: 32px;">
                 <i class="ph-fill ph-rocket-launch" style="font-size: 48px; color: var(--master-primary);"></i>
-                <h2 style="margin-top: 16px; color: var(--text-main);">sisUnid Super Admin</h2>
-                <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Insira a Senha Master (Vercel) para continuar.</p>
+                <h2 style="margin-top: 16px;">sisUnid Master</h2>
+                <p style="color: var(--text-muted); font-size: 14px;">Acesso Restrito</p>
             </div>
-            
             <form id="form-login-master">
-                <div class="form-group" style="margin-bottom: 32px;">
+                <div class="form-group" style="margin-bottom: 24px;">
                     <label class="form-label">Senha Master</label>
-                    <input type="password" id="master-senha" class="form-control" required placeholder="Digite a senha super secreta...">
+                    <input type="password" id="master-senha" class="form-control" required>
                 </div>
-                <button type="submit" class="btn-primary" style="width: 100%;">Acessar Painel Central</button>
+                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center;">Acessar Painel</button>
             </form>
         </div>
     </div>
 
-    <!-- ================= SISTEMA MASTER (ESCONDIDO) ================= -->
+    <!-- SISTEMA MASTER -->
     <div id="app-container">
         <aside class="sidebar">
             <div class="logo"><i class="ph-fill ph-rocket-launch"></i> sisUnid</div>
             <nav class="nav-menu">
-                <button class="nav-item active" onclick="switchView('dashboard', this)"><i class="ph ph-chart-pie-slice"></i> Dashboard Master</button>
-                <button class="nav-item" onclick="switchView('lista-clientes', this)"><i class="ph ph-buildings"></i> Clientes / Empresas</button>
-                <button class="nav-item" onclick="switchView('form-cliente', this)"><i class="ph ph-plus-circle"></i> Cadastrar Novo</button>
+                <button class="nav-item active" onclick="switchView('dashboard', this)"><i class="ph ph-chart-pie-slice"></i> Dashboard</button>
+                <button class="nav-item" onclick="switchView('gestao-clientes', this)"><i class="ph ph-buildings"></i> Cadastrar / Gerenciar</button>
             </nav>
         </aside>
 
         <main class="main-content">
             <header class="topbar">
-                <div class="user-profile">
-                    <div style="text-align: right;">
-                        <div style="font-size: 14px; font-weight: 600;">CEO / Super Admin</div>
-                        <button onclick="fazerLogoutMaster()" style="background:none; border:none; color:var(--danger); font-size:12px; cursor:pointer; padding:0; text-align:right; width:100%;">Sair do Painel</button>
-                    </div>
-                    <div class="avatar">SA</div>
-                </div>
+                <button onclick="fazerLogoutMaster()" class="btn-outline" style="border-color: var(--danger); color: var(--danger);">
+                    <i class="ph ph-sign-out"></i> Sair
+                </button>
             </header>
 
-            <!-- VIEW 1: DASHBOARD -->
+            <!-- ================= VIEW 1: DASHBOARD ================= -->
             <section id="dashboard" class="view-section active">
                 <div class="page-header">
-                    <div>
-                        <h1 class="page-title">Visão Geral - sisUnid</h1>
-                        <p style="color:var(--text-muted);">Monitoramento da base de clientes (Tenants).</p>
-                    </div>
+                    <h1 class="page-title">Dashboard Master</h1>
                 </div>
+
+                <!-- WIDGETS -->
                 <div class="stats-grid">
                     <div class="stat-card" style="border-left: 4px solid var(--master-primary);">
                         <h3>Total de Unidades</h3><div class="value" id="dash-total">0</div>
@@ -158,116 +151,155 @@
                         <h3>Status: Desativadas</h3><div class="value" style="color: var(--danger);" id="dash-inativas">0</div>
                     </div>
                 </div>
-            </section>
 
-            <!-- VIEW 2: LISTA DE CLIENTES -->
-            <section id="lista-clientes" class="view-section">
-                <div class="page-header">
-                    <h1 class="page-title">Gestão de Empresas/Clientes</h1>
-                    <button class="btn-primary" onclick="document.querySelectorAll('.nav-item')[2].click()"><i class="ph ph-plus"></i> Novo Cliente</button>
-                </div>
+                <!-- IMPRIMIR RELATÓRIO DASHBOARD -->
                 <div class="card">
-                    <div class="search-bar">
-                        <input type="text" class="search-input" placeholder="Buscar por Empresa, CNPJ ou Gestor...">
-                    </div>
-                    <div style="overflow-x: auto;">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Nome Empresa</th>
-                                    <th>Responsável/Gestor</th>
-                                    <th>Senha de Acesso (Unidade)</th>
-                                    <th>Status</th>
-                                    <th>Ações Gerenciais</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabela-clientes">
-                                <!-- JS injetará os dados -->
-                            </tbody>
-                        </table>
+                    <h3 style="margin-bottom: 16px; font-size: 16px;">Imprimir Relatório Geral</h3>
+                    <div class="filter-bar">
+                        <div class="form-group" style="flex:1;">
+                            <label class="form-label">Data Inicial</label>
+                            <input type="date" class="form-control" id="dash-data-ini">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label class="form-label">Data Final</label>
+                            <input type="date" class="form-control" id="dash-data-fim">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label class="form-label">Tipo</label>
+                            <select class="form-control" id="dash-tipo-rel">
+                                <option value="todos">Todas as Unidades</option>
+                                <option value="ativas">Somente Ativas</option>
+                                <option value="inativas">Somente Desativadas</option>
+                            </select>
+                        </div>
+                        <button class="btn-primary" onclick="imprimirRelatorioGeral()"><i class="ph ph-printer"></i> Imprimir</button>
                     </div>
                 </div>
             </section>
 
-            <!-- VIEW 3: CADASTRAR EMPRESA -->
-            <section id="form-cliente" class="view-section">
+            <!-- ================= VIEW 2: GESTÃO (CADASTRAR EMPRESA/CLIENTE) ================= -->
+            <section id="gestao-clientes" class="view-section">
                 <div class="page-header">
-                    <h1 class="page-title">Cadastrar Nova Unidade / Cliente</h1>
+                    <h1 class="page-title">Gestão de Empresas / Clientes</h1>
+                    <button class="btn-primary" onclick="toggleFormulario()"><i class="ph ph-plus"></i> Novo Cadastro</button>
                 </div>
-                <div class="card">
-                    <form class="form-grid" id="form-novo-cliente">
-                        <div class="section-divider">Dados Comerciais e Gestão</div>
+
+                <!-- FORMULÁRIO DE CADASTRO (Oculto por padrão para otimizar espaço) -->
+                <div class="card" id="bloco-formulario" style="display: none; border-left: 4px solid var(--master-primary);">
+                    <h3 style="margin-bottom: 24px; font-size: 18px;">Cadastrar Cliente/Empresa</h3>
+                    <form id="form-novo-cliente" class="form-grid">
                         
+                        <!-- Dados da Empresa -->
                         <div class="form-group">
-                            <label class="form-label">Nome da Empresa / Secretaria</label>
-                            <input type="text" id="input-nome-empresa" class="form-control" required placeholder="Ex: Sec. de Saúde de Vigia">
+                            <label class="form-label">Nome da Empresa</label>
+                            <input type="text" id="input-nome-empresa" class="form-control" required>
                         </div>
                         <div class="form-group">
                             <label class="form-label">CNPJ / CPF</label>
-                            <input type="text" id="input-cnpj" class="form-control" required placeholder="00.000.000/0001-00">
+                            <input type="text" id="input-cnpj" class="form-control" required>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Nome do Responsável / Gestor</label>
                             <input type="text" id="input-gestor" class="form-control" required>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Data de Início (Contrato)</label>
-                            <input type="date" id="input-inicio" class="form-control" required>
-                        </div>
-                        <div class="form-group">
                             <label class="form-label">Telefone</label>
                             <input type="text" id="input-telefone" class="form-control" required>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">E-mail de Contato</label>
+                            <label class="form-label">Email</label>
                             <input type="email" id="input-email" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Data de Início</label>
+                            <input type="date" id="input-inicio" class="form-control" required>
                         </div>
                         <div class="form-group full">
                             <label class="form-label">Endereço Completo</label>
                             <input type="text" id="input-endereco" class="form-control" required>
                         </div>
 
-                        <div class="section-divider">Configurações do Sistema (White-Label)</div>
-                        <div class="form-group">
-                            <label class="form-label">Slogan do Sistema para a Unidade</label>
-                            <input type="text" id="input-slogan" class="form-control" placeholder="Ex: Regulação Rápida">
+                        <!-- Brand / White-label -->
+                        <div class="form-group full" style="margin-top: 16px;">
+                            <label class="form-label">Slogan do Sistema</label>
+                            <input type="text" id="input-slogan" class="form-control" placeholder="Frase de impacto na tela de login...">
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Temas (Selecionar Cores)</label>
+                        <div class="form-group full">
+                            <label class="form-label">Tema (Selecionar 2 Cores)</label>
                             <div class="color-pickers">
                                 <div class="color-item">
-                                    <input type="color" id="input-color-primary" value="#2563eb">
-                                    <span style="font-size: 13px;">Cor Primária</span>
+                                    <input type="color" id="input-cor-1" value="#2563eb">
+                                    <span style="font-size: 13px;">Cor 1 (Primária)</span>
+                                </div>
+                                <div class="color-item">
+                                    <input type="color" id="input-cor-2" value="#1e3a8a">
+                                    <span style="font-size: 13px;">Cor 2 (Secundária)</span>
                                 </div>
                             </div>
                         </div>
                         <div class="form-group full">
-                            <label class="form-label">Logo da Unidade (Upload)</label>
-                            <div class="upload-logo">
+                            <label class="form-label">Logo: Upload do Arquivo</label>
+                            <div class="upload-logo" onclick="document.getElementById('input-logo').click()">
                                 <i class="ph ph-upload-simple" style="font-size: 32px; color: var(--text-muted);"></i>
-                                <p style="font-size: 14px; margin-top: 8px;">Arraste a logo PNG do cliente aqui</p>
+                                <p id="nome-arquivo-logo" style="font-size: 14px; margin-top: 8px;">Clique para anexar a Logo</p>
+                                <input type="file" id="input-logo" accept="image/*" style="display: none;" onchange="document.getElementById('nome-arquivo-logo').innerText = this.files[0] ? this.files[0].name : 'Clique para anexar a Logo';">
                             </div>
                         </div>
 
                         <div class="form-group full" style="display: flex; justify-content: flex-end; gap: 16px; margin-top: 16px;">
-                            <button type="submit" class="btn-primary"><i class="ph ph-floppy-disk"></i> Salvar e Gerar Acesso</button>
+                            <button type="button" class="btn-outline" onclick="toggleFormulario()">Cancelar</button>
+                            <button type="submit" class="btn-primary" id="btn-salvar-cliente"><i class="ph ph-floppy-disk"></i> Salvar Registro</button>
                         </div>
                     </form>
+                </div>
+
+                <!-- LISTA DE CLIENTES E BUSCA -->
+                <div class="card">
+                    <div style="display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap;">
+                        <!-- Sistema de Busca -->
+                        <div class="form-group" style="flex: 2; min-width: 250px;">
+                            <label class="form-label">Buscar Cliente/Empresa</label>
+                            <input type="text" id="busca-lista" class="form-control" placeholder="Digite nome, gestor ou CNPJ..." onkeyup="filtrarTabela()">
+                        </div>
+                        <!-- Botão Imprimir com Filtro de Data (Lista) -->
+                        <div class="form-group" style="flex: 1; min-width: 150px;">
+                            <label class="form-label">Filtrar Cadastro (Data)</label>
+                            <input type="date" id="busca-data" class="form-control">
+                        </div>
+                        <div class="form-group" style="justify-content: flex-end;">
+                            <button class="btn-primary" onclick="imprimirListaFiltro()"><i class="ph ph-printer"></i> Imprimir</button>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nome Empresa</th>
+                                    <th>Nome: Responsável/Gestor</th>
+                                    <th>Senha Admin</th>
+                                    <th>Status</th>
+                                    <th>Botões de Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-clientes">
+                                <!-- Preenchido via JS -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
         </main>
     </div>
 
-    <!-- SCRIPTS -->
+    <!-- SCRIPTS MANTENDO LÓGICA DE API (FormData / Supabase) -->
     <script>
-        // ----------------------------------------------------
-        // LÓGICA DE LOGIN DO SUPER ADMIN
-        // ----------------------------------------------------
+        // --- 1. LOGIN ---
         document.getElementById('form-login-master').addEventListener('submit', async function(e) {
             e.preventDefault();
             const senha = document.getElementById('master-senha').value;
             const btn = this.querySelector('button');
-            btn.innerHTML = 'Verificando Criptografia...';
+            btn.innerHTML = 'Verificando...';
 
             try {
                 const response = await fetch('/api/master/login', {
@@ -278,22 +310,20 @@
                 const data = await response.json();
 
                 if (data.sucesso) {
-                    // Salva na sessão temporária (se fechar o navegador, desloga)
                     sessionStorage.setItem('master_auth', 'true');
                     iniciarMaster();
                 } else {
-                    alert('Acesso negado. Senha incorreta.');
-                    btn.innerHTML = 'Acessar Painel Central';
+                    alert('Senha incorreta.');
+                    btn.innerHTML = 'Acessar Painel';
                 }
             } catch (error) {
-                // FALLBACK LOCAL: Se rodar sem o backend Python (para testes visuais de frontend)
-                console.warn("API Offline. Fallback ativado.");
-                if(senha === 'admin') { // Senha genérica para testes offline
+                // Fallback Offline
+                if(senha === 'admin') {
                     sessionStorage.setItem('master_auth', 'true');
                     iniciarMaster();
                 } else {
-                    alert('Senha incorreta. (No modo offline use a senha: admin)');
-                    btn.innerHTML = 'Acessar Painel Central';
+                    alert('Erro de conexão ou senha incorreta.');
+                    btn.innerHTML = 'Acessar Painel';
                 }
             }
         });
@@ -301,7 +331,7 @@
         function iniciarMaster() {
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app-container').style.display = 'flex';
-            carregarUnidades(); // Puxa os dados logo que abre o painel
+            carregarUnidades();
         }
 
         function fazerLogoutMaster() {
@@ -309,78 +339,70 @@
             window.location.reload();
         }
 
-        // Verifica se a sessão master está ativa ao dar F5
         window.onload = function() {
-            if(sessionStorage.getItem('master_auth') === 'true') {
-                iniciarMaster();
-            }
+            if(sessionStorage.getItem('master_auth') === 'true') iniciarMaster();
         }
 
-        // ----------------------------------------------------
-        // FUNCIONALIDADES DO PAINEL MASTER
-        // ----------------------------------------------------
+        // --- 2. NAVEGAÇÃO E UI ---
         function switchView(viewId, navElement) {
             document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
-            if (navElement) {
-                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-                navElement.classList.add('active');
-            }
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            navElement.classList.add('active');
             document.getElementById(viewId).classList.add('active');
-            
-            if (viewId === 'lista-clientes') carregarUnidades();
+            if (viewId === 'gestao-clientes') carregarUnidades();
         }
 
-        // GET: Buscar Unidades
+        function toggleFormulario() {
+            const form = document.getElementById('bloco-formulario');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // --- 3. DADOS (SUPABASE VIA PYTHON) ---
         async function carregarUnidades() {
             const tbody = document.getElementById('tabela-clientes');
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Buscando banco de dados (Atlas)...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Carregando dados...</td></tr>';
 
-            // MOCK DATA (Garantir que a tabela aparece mesmo offline)
             const mockData = [
-                { nome_empresa: "Sec. Saúde de Vigia", cnpj: "00.000.000/0001-00", gestor: "Antônio Regulação", telefone: "(91) 99999-9999", senha_acesso: "Vigi@123", status: "ativa" }
+                { id: "1", nome_empresa: "Prefeitura de Vigia", gestor: "João Silva", cnpj: "00.000/0001", senha_acesso: "XyZ123", status: "ativa" }
             ];
 
             try {
                 const response = await fetch('/api/master/unidades');
                 if(response.ok) {
                     const data = await response.json();
-                    if(data.sucesso && data.unidades.length > 0) renderTabelaMaster(data.unidades, tbody);
-                    else renderTabelaMaster(mockData, tbody);
-                } else renderTabelaMaster(mockData, tbody);
-            } catch (error) {
-                renderTabelaMaster(mockData, tbody);
+                    renderTabela(data.sucesso && data.unidades.length > 0 ? data.unidades : mockData);
+                } else {
+                    renderTabela(mockData);
+                }
+            } catch (e) {
+                renderTabela(mockData);
             }
         }
 
-        function renderTabelaMaster(dados, tbody) {
+        function renderTabela(dados) {
+            const tbody = document.getElementById('tabela-clientes');
             tbody.innerHTML = '';
             
-            let total = dados.length;
             let ativas = dados.filter(d => d.status === 'ativa').length;
-            
-            // Atualiza Widgets
-            document.getElementById('dash-total').innerText = total;
+            document.getElementById('dash-total').innerText = dados.length;
             document.getElementById('dash-ativas').innerText = ativas;
-            document.getElementById('dash-inativas').innerText = total - ativas;
+            document.getElementById('dash-inativas').innerText = dados.length - ativas;
 
-            dados.forEach(unidade => {
-                const badge = unidade.status === 'ativa' ? 'bg-success' : 'bg-danger';
+            dados.forEach(un => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>
-                        <div style="font-weight: 600;">${unidade.nome_empresa}</div>
-                        <div style="font-size: 12px; color: var(--text-muted);">CNPJ: ${unidade.cnpj}</div>
-                    </td>
-                    <td>
-                        <div>${unidade.gestor}</div>
-                        <div style="font-size: 12px; color: var(--text-muted);">${unidade.telefone}</div>
-                    </td>
-                    <td><span style="font-family: monospace; background:#f1f5f9; padding:4px 8px; border-radius:4px;">*${unidade.senha_acesso}*</span></td>
-                    <td><span class="badge ${badge}">${unidade.status.toUpperCase()}</span></td>
+                    <td><strong>${un.nome_empresa}</strong><br><small>CNPJ: ${un.cnpj}</small></td>
+                    <td>${un.gestor}</td>
+                    <td><span style="font-family:monospace; background:#f1f5f9; padding:4px; border-radius:4px;">${un.senha_acesso}</span></td>
+                    <td><span class="badge ${un.status === 'ativa' ? 'bg-success' : 'bg-danger'}">${un.status.toUpperCase()}</span></td>
                     <td>
                         <div class="action-group">
-                            <button class="btn-action" title="Alterar Dados"><i class="ph ph-pencil-simple"></i></button>
-                            <button class="btn-action danger" title="Bloquear"><i class="ph ph-lock-key"></i></button>
+                            <button class="btn-action" title="Gerar Recibo" onclick="acaoExtra('recibo')"><i class="ph ph-receipt"></i></button>
+                            <button class="btn-action" title="Alterar" onclick="acaoExtra('editar')"><i class="ph ph-pencil-simple"></i></button>
+                            <button class="btn-action ${un.status === 'ativa' ? 'danger' : ''}" title="Bloquear/Ativar" onclick="alternarStatus('${un.id}', '${un.status}')">
+                                <i class="ph ${un.status === 'ativa' ? 'ph-lock-key' : 'ph-lock-key-open'}"></i>
+                            </button>
+                            <button class="btn-action" title="Visualizar Contrato" onclick="acaoExtra('contrato')"><i class="ph ph-file-text"></i></button>
                         </div>
                     </td>
                 `;
@@ -388,27 +410,83 @@
             });
         }
 
-        // POST: Salvar Unidade
+        // Submissão do Formulário (Com Arquivos e 2 Cores)
         document.getElementById('form-novo-cliente').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
-            const payload = {
-                nome_empresa: document.getElementById('input-nome-empresa').value,
-                cnpj: document.getElementById('input-cnpj').value,
-                gestor: document.getElementById('input-gestor').value,
-                senha_acesso: Math.random().toString(36).slice(-8)
-            };
+            const btnSalvar = document.getElementById('btn-salvar-cliente');
+            btnSalvar.innerText = 'Salvando...';
+
+            const formData = new FormData();
+            formData.append('nome_empresa', document.getElementById('input-nome-empresa').value);
+            formData.append('cnpj', document.getElementById('input-cnpj').value);
+            formData.append('gestor', document.getElementById('input-gestor').value);
+            formData.append('telefone', document.getElementById('input-telefone').value);
+            formData.append('email', document.getElementById('input-email').value);
+            formData.append('data_inicio', document.getElementById('input-inicio').value);
+            formData.append('endereco', document.getElementById('input-endereco').value);
+            formData.append('slogan', document.getElementById('input-slogan').value);
+            formData.append('tema_primaria', document.getElementById('input-cor-1').value);
+            formData.append('tema_secundaria', document.getElementById('input-cor-2').value); // Adicionado Cor 2
+            formData.append('senha_acesso', Math.random().toString(36).slice(-8));
+
+            const arquivo = document.getElementById('input-logo').files[0];
+            if(arquivo) formData.append('logo', arquivo);
 
             try {
-                await fetch('/api/master/unidades', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                await fetch('/api/master/unidades', { method: 'POST', body: formData });
+                alert('Cliente cadastrado com sucesso!');
+                this.reset();
+                document.getElementById('nome-arquivo-logo').innerText = 'Clique para anexar a Logo';
+                toggleFormulario();
+                carregarUnidades();
             } catch (error) {
-                console.log("Mock Salvo: ", payload);
+                alert('Modo offline: Simulado com sucesso.');
+                toggleFormulario();
+            } finally {
+                btnSalvar.innerHTML = '<i class="ph ph-floppy-disk"></i> Salvar Registro';
             }
-            
-            alert('Acesso Gerado com Sucesso! A senha é: ' + payload.senha_acesso);
-            this.reset();
-            switchView('lista-clientes', document.querySelectorAll('.nav-item')[1]);
         });
+
+        async function alternarStatus(id, statusAtual) {
+            const novo = statusAtual === 'ativa' ? 'inativa' : 'ativa';
+            try {
+                await fetch(`/api/master/unidades/${id}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: novo })
+                });
+                carregarUnidades();
+            } catch(e) { alert('Ação simulada offline'); }
+        }
+
+        function acaoExtra(tipo) {
+            const msgs = {
+                'recibo': 'Módulo de Geração de Recibo em desenvolvimento.',
+                'editar': 'Módulo de Edição abrirá o formulário preenchido.',
+                'contrato': 'Visualizador de PDF de Contratos em desenvolvimento.'
+            };
+            alert(msgs[tipo]);
+        }
+
+        function imprimirRelatorioGeral() {
+            window.print();
+        }
+
+        function imprimirListaFiltro() {
+            window.print();
+        }
+
+        function filtrarTabela() {
+            let filtro = document.getElementById('busca-lista').value.toLowerCase();
+            let linhas = document.getElementById('tabela-clientes').getElementsByTagName('tr');
+            for (let i = 0; i < linhas.length; i++) {
+                let td = linhas[i].getElementsByTagName('td');
+                if (td.length > 0) {
+                    let textoLinha = td[0].textContent + " " + td[1].textContent + " " + td[2].textContent;
+                    linhas[i].style.display = textoLinha.toLowerCase().indexOf(filtro) > -1 ? "" : "none";
+                }
+            }
+        }
     </script>
 </body>
 </html>
