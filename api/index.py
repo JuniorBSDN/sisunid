@@ -1,13 +1,12 @@
 import os
 import uuid
 from flask import Flask, request, jsonify, send_from_directory, send_file
-from pymongo import MongoClient
 from supabase import create_client, Client
-from bson.objectid import ObjectId
 
 app = Flask(__name__)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 
 # ==========================================
 # 0. ROTAS DO FRONT-END (Telas)
@@ -17,33 +16,21 @@ def serve_tenant():
     # Serve o index.html (tela do cliente) que está dentro da pasta public/
     return send_from_directory(os.path.join(BASE_DIR, 'public'), 'index.html')
 
+
 @app.route('/master')
 def serve_master():
     # Serve o master.html (tela do admin) que está na raiz
     return send_file(os.path.join(BASE_DIR, 'master.html'))
 
+
 # ==========================================
 # 1. CONEXÕES COM BANCOS E VARIÁVEIS (PROTEGIDAS)
 # ==========================================
-MONGO_URI = os.environ.get("MONGO_URI", "").strip()
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "").strip()
 
 # Trata a senha master com valor fallback para não quebrar no boot
 MASTER_PASSWORD = (os.environ.get("MASTER_PASSWORD") or "admin").strip()
-
-db = None
-if MONGO_URI and "<db_username>" not in MONGO_URI:
-    try:
-        # Usa os certificados atualizados do certifi para ignorar o erro de handshake TLS
-        mongo_client = MongoClient(
-            MONGO_URI,
-            tlsCAFile=certifi.where(),
-            serverSelectionTimeoutMS=5000
-        )
-        db = mongo_client["sisunid"]
-    except Exception as e:
-        print("Erro ao conectar no MongoDB:", str(e))
 
 supabase: Client = None
 if SUPABASE_URL and SUPABASE_KEY:
@@ -54,10 +41,16 @@ if SUPABASE_URL and SUPABASE_KEY:
 
 BUCKET_NAME = "uploads"
 
-def format_mongo_doc(doc):
-    if doc and '_id' in doc:
-        doc['_id'] = str(doc['_id'])
+
+def adaptar_id_para_frontend(doc):
+    """
+    Mantém a compatibilidade com o Frontend que esperava o '_id' do MongoDB.
+    Clona a chave 'id' do Supabase para '_id'.
+    """
+    if doc and 'id' in doc:
+        doc['_id'] = str(doc['id'])
     return doc
+
 
 # ==========================================
 # 2. ROTAS DO PAINEL MASTER (SUPER ADMIN)
@@ -67,26 +60,31 @@ def format_mongo_doc(doc):
 def master_login():
     data = request.get_json(silent=True) or {}
     senha = str(data.get('senha', '')).strip()
-    
+
     if senha == MASTER_PASSWORD:
         return jsonify({"sucesso": True})
     return jsonify({"sucesso": False, "erro": "Senha incorreta"}), 401
 
+
 @app.route('/api/master/unidades', methods=['GET'])
 def get_unidades():
-    if db is None:
-        return jsonify({"sucesso": False, "erro": "Banco de dados offline. Verifique a MONGO_URI."}), 500
+    if supabase is None:
+        return jsonify({"sucesso": False, "erro": "Banco de dados Supabase offline."}), 500
     try:
-        unidades = list(db.unidades.find().sort("_id", -1))
-        unidades_formatadas = [format_mongo_doc(u) for u in unidades]
+        # Busca ordenando pelo ID de forma decrescente (mais recentes primeiro)
+        response = supabase.table("unidades").select("*").order("id", desc=True).execute()
+        unidades = response.data
+        
+        unidades_formatadas = [adaptar_id_para_frontend(u) for u in unidades]
         return jsonify({"sucesso": True, "unidades": unidades_formatadas})
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
+
 @app.route('/api/master/unidades', methods=['POST'])
 def criar_unidade():
-    if db is None:
-        return jsonify({"sucesso": False, "erro": "Banco de dados offline."}), 500
+    if supabase is None:
+        return jsonify({"sucesso": False, "erro": "Banco de dados Supabase offline."}), 500
 
     try:
         nome_empresa = request.form.get('nome_empresa')
@@ -99,16 +97,16 @@ def criar_unidade():
         slogan = request.form.get('slogan')
         tema_primaria = request.form.get('tema_primaria')
         senha_acesso = request.form.get('senha_acesso')
-        
+
         logo_url = None
-        
-        if 'logo' in request.files and supabase is not None:
+
+        if 'logo' in request.files:
             file = request.files['logo']
             if file and file.filename != '':
                 file_ext = file.filename.split('.')[-1]
                 unique_filename = f"logos/{uuid.uuid4().hex}.{file_ext}"
                 file_bytes = file.read()
-                
+
                 try:
                     supabase.storage.from_(BUCKET_NAME).upload(
                         path=unique_filename,
@@ -133,29 +131,29 @@ def criar_unidade():
             "logo_url": logo_url,
             "status": "ativa"
         }
-        
-        db.unidades.insert_one(nova_unidade)
+
+        supabase.table("unidades").insert(nova_unidade).execute()
         return jsonify({"sucesso": True, "mensagem": "Unidade criada com sucesso!"})
 
     except Exception as e:
         print("Erro ao Salvar Unidade:", str(e))
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
+
 @app.route('/api/master/unidades/<id>/status', methods=['PATCH'])
 def alterar_status_unidade(id):
-    if db is None:
+    if supabase is None:
         return jsonify({"sucesso": False, "erro": "Banco offline."}), 500
     try:
         data = request.get_json(silent=True) or {}
         novo_status = data.get('status')
+
+        supabase.table("unidades").update({"status": novo_status}).eq("id", id).execute()
         
-        db.unidades.update_one(
-            {"_id": ObjectId(id)},
-            {"$set": {"status": novo_status}}
-        )
         return jsonify({"sucesso": True})
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
+
 
 # ==========================================
 # 3. ROTAS DO PAINEL DO CLIENTE (TENANT)
@@ -163,54 +161,69 @@ def alterar_status_unidade(id):
 
 @app.route('/api/tenant/login', methods=['POST'])
 def tenant_login():
-    if db is None:
+    if supabase is None:
         return jsonify({"sucesso": False, "erro": "Banco offline."}), 500
 
     data = request.get_json(silent=True) or {}
     cnpj = data.get('cnpj')
     senha = data.get('senha')
-    
-    unidade = db.unidades.find_one({"cnpj": cnpj, "senha_acesso": senha, "status": "ativa"})
-    
-    if unidade:
-        return jsonify({
-            "sucesso": True,
-            "unidade_id": str(unidade['_id']),
-            "empresa": {
-                "nome": unidade.get('nome_empresa'),
-                "gestor": unidade.get('gestor'),
-                "slogan": unidade.get('slogan'),
-                "tema": unidade.get('tema'),
-                "logo_url": unidade.get('logo_url')
-            }
-        })
-    return jsonify({"sucesso": False, "erro": "CNPJ ou Senha inválidos, ou unidade bloqueada."}), 401
+
+    try:
+        response = supabase.table("unidades").select("*")\
+            .eq("cnpj", cnpj)\
+            .eq("senha_acesso", senha)\
+            .eq("status", "ativa")\
+            .execute()
+            
+        unidades = response.data
+
+        if unidades and len(unidades) > 0:
+            unidade = unidades[0]
+            return jsonify({
+                "sucesso": True,
+                "unidade_id": str(unidade['id']),  # Mantido string para o JS
+                "empresa": {
+                    "nome": unidade.get('nome_empresa'),
+                    "gestor": unidade.get('gestor'),
+                    "slogan": unidade.get('slogan'),
+                    "tema": unidade.get('tema'),
+                    "logo_url": unidade.get('logo_url')
+                }
+            })
+            
+        return jsonify({"sucesso": False, "erro": "CNPJ ou Senha inválidos, ou unidade bloqueada."}), 401
+    except Exception as e:
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
+
 
 @app.route('/api/tenant/regulacoes', methods=['GET'])
 def get_regulacoes():
-    if db is None:
+    if supabase is None:
         return jsonify({"sucesso": False, "erro": "Banco offline."}), 500
 
     unidade_id = request.args.get('unidade_id')
     if not unidade_id:
         return jsonify({"sucesso": False, "erro": "ID da unidade é obrigatório"}), 400
-        
+
     try:
-        regulacoes = list(db.regulacoes.find({"unidade_id": unidade_id}).sort("_id", -1))
-        regs_formatadas = [format_mongo_doc(r) for r in regulacoes]
+        response = supabase.table("regulacoes").select("*").eq("unidade_id", unidade_id).order("id", desc=True).execute()
+        regulacoes = response.data
+        
+        regs_formatadas = [adaptar_id_para_frontend(r) for r in regulacoes]
         return jsonify({"sucesso": True, "regulacoes": regs_formatadas})
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
+
 @app.route('/api/tenant/regulacoes', methods=['POST'])
 def criar_regulacao():
-    if db is None:
+    if supabase is None:
         return jsonify({"sucesso": False, "erro": "Banco offline."}), 500
 
     data = request.get_json(silent=True) or {}
     try:
         protocolo = f"REQ-{str(uuid.uuid4())[:4].upper()}"
-        
+
         novo_paciente = {
             "unidade_id": data.get("unidade_id"),
             "protocolo": protocolo,
@@ -222,12 +235,13 @@ def criar_regulacao():
             "prioridade": data.get("prioridade"),
             "status_atual": "Em Análise"
         }
-        
-        db.regulacoes.insert_one(novo_paciente)
+
+        supabase.table("regulacoes").insert(novo_paciente).execute()
         return jsonify({"sucesso": True, "protocolo": protocolo})
-        
+
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
