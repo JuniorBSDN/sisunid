@@ -344,86 +344,103 @@
 
         // 2. BUSCA REAL NO BANCO DE DADOS
        
-// Conversor Base64 idêntico ao modelo SISJESS
-const toBase64 = file => new Promise((resolve, reject) => {
+// Função utilitária para converter arquivo para Base64
+const arquivoParaBase64 = file => new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = () => resolve(reader.result);
     reader.onerror = error => reject(error);
 });
 
-async function realizarCadastro(e) {
+// Substitua a função de salvamento do formulário White-Label por esta:
+async function salvarConfiguracoesUnidade(e) {
     e.preventDefault();
-    const btn = document.getElementById('btn-gravar');
-    btn.innerText = "Processando Imagem e Gravando...";
-    btn.disabled = true;
 
-    let urlLogoFinal = "";
-    const fileInput = document.getElementById('cad-logo-file');
+    const btnSalvar = e.target.querySelector('button[type="submit"]') || document.getElementById('btn-salvar');
+    if (btnSalvar) {
+        btnSalvar.innerText = "Processando imagem...";
+        btnSalvar.disabled = true;
+    }
 
     try {
-        // 1. Se houver arquivo selecionado, converte em Base64 e faz o upload
-        if (fileInput && fileInput.files.length > 0) {
-            const file = fileInput.files[0];
-            const base64Str = await toBase64(file);
+        let urlLogoFinal = "";
+        
+        // Captura o input file da logo (Ajuste o ID 'cad-logo-file' se o seu HTML usar outro ID)
+        const inputLogo = document.getElementById('cad-logo-file') || document.querySelector('input[type="file"]');
+
+        // 1. SE HOUVER UMA IMAGEM SELECIONADA, CONVERTE PARA BASE64 E FAZ O UPLOAD
+        if (inputLogo && inputLogo.files.length > 0) {
+            const file = inputLogo.files[0];
+
+            // Converte o arquivo .jpg em string UTF-8 Base64 válida
+            const base64Texto = await arquivoParaBase64(file);
 
             const uploadRes = await fetch('/api', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     action: 'upload_logo',
-                    file_base64: base64Str,
+                    file_base64: base64Texto,
                     filename: Date.now() + "_" + file.name.replace(/\s+/g, '_')
                 })
             });
 
             const uploadData = await uploadRes.json();
-            if (uploadData.url_logo) {
-                urlLogoFinal = uploadData.url_logo;
-            } else if (uploadData.erro) {
-                alert("Erro no upload da imagem: " + uploadData.erro);
-                btn.innerText = "Gravar e Ativar Cliente";
-                btn.disabled = false;
+
+            if (uploadData.erro) {
+                alert("Erro no upload da logo: " + uploadData.erro);
                 return;
             }
+
+            urlLogoFinal = uploadData.url_logo;
         }
 
-        // 2. Envia o cadastro para a rota POST com a action cadastrar_gestor
+        if (btnSalvar) btnSalvar.innerText = "Salvando configurações...";
+
+        // 2. MONTA O PAYLOAD DA UNIDADE COM A URL DA LOGO RETORNADA
+        const payload = {
+            action: 'cadastrar_gestor', // Ou 'editar_gestor'
+            nome_responsavel: document.getElementById('cad-nome')?.value || '',
+            nome_gabinete: document.getElementById('cad-gabinete')?.value || '',
+            whatsapp: document.getElementById('cad-whats')?.value || '',
+            email: document.getElementById('cad-email')?.value || '',
+            endereco: document.getElementById('cad-endereco')?.value || '',
+            slogan: document.getElementById('cad-slogan')?.value || '',
+            cor_layout: document.getElementById('cad-cor')?.value || '',
+            senha_admin: document.getElementById('cad-senha')?.value || '',
+            url_logo: urlLogoFinal
+        };
+
+        // 3. ENVIA OS DADOS DA UNIDADE EM JSON LIMPO
         const res = await fetch('/api', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'cadastrar_gestor',
-                nome_gestor: document.getElementById('cad-nome').value,
-                nome_gabinete: document.getElementById('cad-gabinete').value,
-                whatsapp: document.getElementById('cad-whats').value,
-                email: document.getElementById('cad-email').value,
-                documento: document.getElementById('cad-doc').value,
-                data_inicio: document.getElementById('cad-data').value,
-                endereco: document.getElementById('cad-endereco').value,
-                senha_admin: document.getElementById('cad-senha').value,
-                cor_layout: document.getElementById('cad-cor').value,
-                url_logo: urlLogoFinal
-            })
+            body: JSON.stringify(payload)
         });
 
-        const d = await res.json();
-        if (d.sucesso) {
-            alert("Cliente cadastrado com sucesso!");
-            document.getElementById('form-cadastro-gestor').reset();
-            if (typeof gerarSenhaAleatoria === 'function') gerarSenhaAleatoria();
-            if (typeof atualizarDashboard === 'function') atualizarDashboard();
-            if (typeof navegarPara === 'function') navegarPara('aba-dashboard');
+        const resposta = await res.json();
+
+        if (resposta.sucesso) {
+            alert("Configurações salvas com sucesso!");
+            location.reload();
         } else {
-            alert("Erro retornado pelo servidor: " + (d.erro || "Falha desconhecida"));
+            alert("Erro do servidor: " + (resposta.erro || "Falha ao gravar"));
         }
+
     } catch (err) {
-        alert("Erro de comunicação com a rede ao tentar gravar.");
+        alert("Erro de comunicação com a rede ao tentar salvar.");
     } finally {
-        btn.innerText = "Gravar e Ativar Cliente";
-        btn.disabled = false;
+        if (btnSalvar) {
+            btnSalvar.innerText = "Salvar";
+            btnSalvar.disabled = false;
+        }
     }
 }
+
+
+
+
+        
         function renderTabelaMaster(unidades, tbody) {
             tbody.innerHTML = '';
 
