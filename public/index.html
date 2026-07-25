@@ -350,19 +350,18 @@
         });
 
         function aplicarWhiteLabel(empresa) {
-            // Aplica as cores dinâmicas vindas do banco (Master)
-            if (empresa.tema_primaria) {
-                document.documentElement.style.setProperty('--primary', empresa.tema_primaria);
-                // Gera a cor hover e light com opacidade/brilho
-                document.documentElement.style.setProperty('--primary-hover', empresa.tema_primaria);
-                document.documentElement.style.setProperty('--primary-light', empresa.tema_primaria + '20'); 
+            // CORREÇÃO: Acessando o JSON do tema
+            if (empresa.tema && empresa.tema.primaria) {
+                document.documentElement.style.setProperty('--primary', empresa.tema.primaria);
+                document.documentElement.style.setProperty('--primary-hover', empresa.tema.primaria);
+                document.documentElement.style.setProperty('--primary-light', empresa.tema.primaria + '20');
             }
 
             // Atualiza os Textos
             document.getElementById('nome-empresa-sidebar').innerText = empresa.nome || 'Unidade';
             document.getElementById('nome-gestor-topbar').innerText = empresa.gestor || 'Gestor';
             document.getElementById('slogan-topbar').innerText = empresa.slogan || 'Regulação Municipal';
-            
+
             // Atualiza a Logo (Se houver upload do Master)
             if (empresa.logo_url) {
                 document.getElementById('icone-padrao-logo').style.display = 'none';
