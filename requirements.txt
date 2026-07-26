@@ -1,9 +1,5 @@
-Flask==3.0.0
-pymongo==4.6.1
-supabase==2.3.4
-certifi
-gotrue
-postgrest
-realtime
-storage3
-supafunc
+Flask>=3.0.0
+supabase>=2.3.0
+gotrue>=2.8.0
+postgrest>=0.16.0
+httpx>=0.26.0
