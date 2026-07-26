@@ -140,47 +140,33 @@ def alterar_status_unidade(id):
 # ==========================================
 # 3. ROTAS DO PAINEL DO CLIENTE (TENANT)
 # ==========================================
-# Rota para Avaliar / Atualizar Status da Regulação
-@app.route('/api/tenant/regulacoes/<id_reg>', methods=['PATCH'])
-def avaliar_regulacao(id_reg):
+@app.route('/api/tenant/login', methods=['POST'])
+def tenant_login():
     supabase = get_supabase_client()
     if not supabase:
         return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
 
     data = request.get_json(silent=True) or {}
-    novo_status = data.get('status_atual')
-    parecer = data.get('parecer', '')
-    data_agendamento = data.get('data_agendamento')
+    cnpj = data.get('cnpj')
+    senha = data.get('senha')
 
     try:
-        # 1. Atualiza a regulação
-        update_data = {
-            "status_atual": novo_status,
-            "parecer": parecer
-        }
-        if data_agendamento:
-            update_data["data_agendamento"] = data_agendamento
+        response = supabase.table('unidades').select('*').eq('cnpj', cnpj).eq('senha_acesso', senha).eq('status', 'ativa').execute()
 
-        res = supabase.table('regulacoes').update(update_data).eq('id', id_reg).execute()
-
-        # 2. Registra o e-mail/notificação correspondente no histórico
-        if len(res.data) > 0:
-            reg = res.data[0]
-            try:
-                email_log = {
-                    "unidade_id": reg.get("unidade_id"),
-                    "protocolo": reg.get("protocolo"),
-                    "destinatario": reg.get("email"),
-                    "paciente_nome": reg.get("nome_paciente"),
-                    "assunto": f"Atualização da Requisição #{reg.get('protocolo')}: {novo_status}",
-                    "status": "Enviado com Sucesso"
+        if len(response.data) > 0:
+            unidade = response.data[0]
+            return jsonify({
+                "sucesso": True,
+                "unidade_id": str(unidade.get('id')),
+                "empresa": {
+                    "nome": unidade.get('nome_empresa'),
+                    "gestor": unidade.get('gestor'),
+                    "slogan": unidade.get('slogan'),
+                    "tema": unidade.get('tema'),
+                    "logo_url": unidade.get('logo_url')
                 }
-                supabase.table('historico_emails').insert(email_log).execute()
-            except Exception as err_log:
-                print("Aviso ao gerar log de email:", str(err_log))
-
-        return jsonify({"sucesso": True, "mensagem": "Regulação avaliada com sucesso!"})
-
+            })
+        return jsonify({"sucesso": False, "erro": "CNPJ ou Senha inválidos, ou unidade bloqueada."}), 401
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
