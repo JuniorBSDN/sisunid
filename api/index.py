@@ -352,6 +352,28 @@ def get_emails():
             return jsonify({"sucesso": False, "erro": str(e2)}), 500
 
 
+@app.route('/api/tenant/regulacoes/<id_reg>', methods=['PATCH'])
+def atualizar_regulacao(id_reg):
+    supabase = get_supabase_client()
+    if not supabase:
+        return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
+
+    data = request.get_json(silent=True) or {}
+    
+    try:
+        # Puxa os dados enviados pelo modal do index.html
+        update_data = {
+            "status_atual": data.get('status_atual'),
+            "parecer": data.get('parecer'),
+            "data_agendamento": data.get('data_agendamento')
+        }
+        
+        # Atualiza a linha específica do paciente no Supabase
+        supabase.table('regulacoes').update(update_data).eq('id', id_reg).execute()
+        
+        return jsonify({"sucesso": True})
+    except Exception as e:
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
 
 @app.route('/api/tenant/alertar-gestor', methods=['POST'])
 def alertar_gestor_email():
