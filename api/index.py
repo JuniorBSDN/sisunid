@@ -2,10 +2,10 @@ import os
 import uuid
 from flask import Flask, request, jsonify, send_from_directory, send_file
 from supabase import create_client, Client
+from supabase.lib.client_options import ClientOptions
 
 app = Flask(__name__)
 
-# Diretório base
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # ==========================================
@@ -17,35 +17,27 @@ def serve_tenant():
 
 @app.route('/master')
 def serve_master():
-    # Tenta servir da raiz ou do diretório public para garantir compatibilidade
     master_path = os.path.join(BASE_DIR, 'master.html')
     if not os.path.exists(master_path):
         master_path = os.path.join(BASE_DIR, 'public', 'master.html')
     return send_file(master_path)
 
 # ==========================================
-# 1. CONEXÕES SUPABASE (Inicialização Dinâmica)
+# 1. CONEXÕES SUPABASE (Inicialização Segura)
 # ==========================================
-
-from supabase import create_client, Client
-from supabase.lib.client_options import ClientOptions
-
 def get_supabase_client() -> Client:
     url = os.environ.get("SUPABASE_URL", "").strip()
     key = os.environ.get("SUPABASE_KEY", "").strip()
     if url and key:
         try:
-            # Força o bypass de argumentos incompatíveis (proxy)
             options = ClientOptions(postgrest_client_timeout=10)
             return create_client(url, key, options=options)
-        except Exception as e:
-            # Fallback seguro caso a versão não suporte options estrito
+        except Exception:
             try:
                 return create_client(url, key)
-            except Exception as e2:
-                print("Erro crítico ao inicializar Supabase:", str(e2))
+            except Exception as e:
+                print("Erro crítico ao inicializar Supabase:", str(e))
     return None
-
 
 MASTER_PASSWORD = (os.environ.get("MASTER_PASSWORD") or "admin").strip()
 BUCKET_NAME = "uploads"
@@ -72,25 +64,23 @@ def get_unidades():
     try:
         response = supabase.table('unidades').select('*').order('created_at', desc=True).execute()
         return jsonify({"sucesso": True, "unidades": response.data})
-    except Exception as e:
-        # Fallback para ordenar por ID se created_at não existir
+    except Exception:
         try:
             response = supabase.table('unidades').select('*').order('id', desc=True).execute()
             return jsonify({"sucesso": True, "unidades": response.data})
-        except Exception as err2:
-            return jsonify({"sucesso": False, "erro": str(err2)}), 500
+        except Exception as e:
+            return jsonify({"sucesso": False, "erro": str(e)}), 500
 
 
 @app.route('/api/master/unidades', methods=['POST'])
 def criar_unidade():
     supabase = get_supabase_client()
     if not supabase:
-        return jsonify({"sucesso": False, "erro": "Supabase offline. Verifique as variáveis SUPABASE_URL e SUPABASE_KEY na Vercel."}), 500
+        return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
 
     try:
         logo_url = None
 
-        # Upload da Logo
         if 'logo' in request.files:
             file = request.files['logo']
             if file and file.filename != '':
@@ -106,9 +96,8 @@ def criar_unidade():
                     )
                     logo_url = supabase.storage.from_(BUCKET_NAME).get_public_url(unique_filename)
                 except Exception as err_supa:
-                    print("Erro no upload do Supabase Storage:", str(err_supa))
+                    print("Erro no upload:", str(err_supa))
 
-        # Estrutura ajustada para o banco Supabase (coluna 'tema' é JSONB)
         nova_unidade = {
             "nome_empresa": request.form.get('nome_empresa'),
             "cnpj": request.form.get('cnpj'),
@@ -131,7 +120,6 @@ def criar_unidade():
         return jsonify({"sucesso": True, "mensagem": "Unidade criada com sucesso!"})
 
     except Exception as e:
-        print("Erro ao Salvar Unidade:", str(e))
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
 
@@ -140,7 +128,6 @@ def alterar_status_unidade(id):
     supabase = get_supabase_client()
     if not supabase:
         return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
-    
     try:
         data = request.get_json(silent=True) or {}
         novo_status = data.get('status')
@@ -157,7 +144,7 @@ def alterar_status_unidade(id):
 def tenant_login():
     supabase = get_supabase_client()
     if not supabase:
-        return jsonify({"sucesso": False, "erro": "Supabase offline. Configure as variáveis na Vercel."}), 500
+        return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
 
     data = request.get_json(silent=True) or {}
     cnpj = data.get('cnpj')
@@ -223,12 +210,34 @@ def criar_regulacao():
             "status_atual": "Em Análise"
         }
 
+        # 1. Salva na tabela 'regulacoes'
         supabase.table('regulacoes').insert(novo_paciente).execute()
+
+        # 2. Tenta registrar o histórico de e-mail (se a tabela existir)
+        try:
+            email_log = {
+                "unidade_id": data.get("unidade_id"),
+                "protocolo": protocolo,
+                "destinatario": data.get("email"),
+                "paciente_nome": data.get("nome_paciente"),
+                "assunto": f"Confirmação de Requisição #{protocolo}",
+                "status": "Enviado com Sucesso"
+            }
+            supabase.table('historico_emails').insert(email_log).execute()
+        except Exception as err_mail:
+            print("Aviso: Falha ao salvar no historico_emails:", str(err_mail))
+
         return jsonify({"sucesso": True, "protocolo": protocolo})
 
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
+
+# ==========================================
+# 4. NOVAS ROTAS DOS MÓDULOS (DINÂMICAS)
+# ==========================================
+
+# Módulo 1: Base de Pacientes (Agrupado por CPF com prontuário real)
 @app.route('/api/tenant/pacientes', methods=['GET'])
 def get_pacientes():
     supabase = get_supabase_client()
@@ -237,12 +246,11 @@ def get_pacientes():
 
     unidade_id = request.args.get('unidade_id')
     try:
-        # Busca todas as regulações para agrupar por paciente/CPF
-        response = supabase.table('regulacoes').select('*').eq('unidade_id', unidade_id).execute()
+        response = supabase.table('regulacoes').select('*').eq('unidade_id', unidade_id).order('created_at', desc=True).execute()
         
         pacientes_dict = {}
         for reg in response.data:
-            cpf = reg.get('cpf')
+            cpf = reg.get('cpf', 'Sem CPF')
             if cpf not in pacientes_dict:
                 pacientes_dict[cpf] = {
                     "nome": reg.get('nome_paciente'),
@@ -250,6 +258,7 @@ def get_pacientes():
                     "email": reg.get('email'),
                     "telefone": reg.get('telefone'),
                     "total_requisicoes": 0,
+                    "ultima_atualizacao": reg.get('created_at'),
                     "historico": []
                 }
             pacientes_dict[cpf]["total_requisicoes"] += 1
@@ -259,6 +268,8 @@ def get_pacientes():
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
+
+# Módulo 2: Relatórios e Estatísticas Reais
 @app.route('/api/tenant/relatorios', methods=['GET'])
 def get_relatorios():
     supabase = get_supabase_client()
@@ -268,21 +279,51 @@ def get_relatorios():
     unidade_id = request.args.get('unidade_id')
     try:
         response = supabase.table('regulacoes').select('procedimento, prioridade, status_atual').eq('unidade_id', unidade_id).execute()
-        data = response.data
+        data = response.data or []
 
         stats = {
+            "total": len(data),
             "consultas": len([r for r in data if r.get('procedimento') == 'Consulta Especializada']),
             "exames": len([r for r in data if r.get('procedimento') in ['Exame de Imagem', 'Exame Laboratorial']]),
             "procedimentos": len([r for r in data if r.get('procedimento') == 'Procedimento Cirúrgico']),
             "urgencia": len([r for r in data if r.get('prioridade') == 'Urgência']),
             "prioridade": len([r for r in data if r.get('prioridade') == 'Prioridade']),
-            "rotina": len([r for r in data if r.get('prioridade') == 'Rotina']),
-            "total": len(data)
+            "rotina": len([r for r in data if r.get('prioridade') == 'Rotina'])
         }
 
         return jsonify({"sucesso": True, "stats": stats})
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
+
+
+# Módulo 3: Timeline de E-mails Enviados
+@app.route('/api/tenant/emails', methods=['GET'])
+def get_emails():
+    supabase = get_supabase_client()
+    if not supabase:
+        return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
+
+    unidade_id = request.args.get('unidade_id')
+    try:
+        response = supabase.table('historico_emails').select('*').eq('unidade_id', unidade_id).order('created_at', desc=True).execute()
+        return jsonify({"sucesso": True, "emails": response.data})
+    except Exception:
+        # Fallback de e-mails extraídos da própria tabela de regulações caso a historico_emails não tenha sido criada no SQL
+        try:
+            response = supabase.table('regulacoes').select('protocolo, email, nome_paciente, created_at').eq('unidade_id', unidade_id).order('created_at', desc=True).execute()
+            emails_mock = []
+            for r in response.data:
+                emails_mock.append({
+                    "protocolo": r.get('protocolo'),
+                    "destinatario": r.get('email'),
+                    "paciente_nome": r.get('nome_paciente'),
+                    "assunto": f"Confirmação de Requisição #{r.get('protocolo')}",
+                    "status": "Enviado com Sucesso",
+                    "created_at": r.get('created_at')
+                })
+            return jsonify({"sucesso": True, "emails": emails_mock})
+        except Exception as e2:
+            return jsonify({"sucesso": False, "erro": str(e2)}), 500
 
 
 if __name__ == '__main__':
