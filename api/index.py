@@ -229,6 +229,61 @@ def criar_regulacao():
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
+@app.route('/api/tenant/pacientes', methods=['GET'])
+def get_pacientes():
+    supabase = get_supabase_client()
+    if not supabase:
+        return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
+
+    unidade_id = request.args.get('unidade_id')
+    try:
+        # Busca todas as regulações para agrupar por paciente/CPF
+        response = supabase.table('regulacoes').select('*').eq('unidade_id', unidade_id).execute()
+        
+        pacientes_dict = {}
+        for reg in response.data:
+            cpf = reg.get('cpf')
+            if cpf not in pacientes_dict:
+                pacientes_dict[cpf] = {
+                    "nome": reg.get('nome_paciente'),
+                    "cpf": cpf,
+                    "email": reg.get('email'),
+                    "telefone": reg.get('telefone'),
+                    "total_requisicoes": 0,
+                    "historico": []
+                }
+            pacientes_dict[cpf]["total_requisicoes"] += 1
+            pacientes_dict[cpf]["historico"].append(reg)
+
+        return jsonify({"sucesso": True, "pacientes": list(pacientes_dict.values())})
+    except Exception as e:
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
+
+@app.route('/api/tenant/relatorios', methods=['GET'])
+def get_relatorios():
+    supabase = get_supabase_client()
+    if not supabase:
+        return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
+
+    unidade_id = request.args.get('unidade_id')
+    try:
+        response = supabase.table('regulacoes').select('procedimento, prioridade, status_atual').eq('unidade_id', unidade_id).execute()
+        data = response.data
+
+        stats = {
+            "consultas": len([r for r in data if r.get('procedimento') == 'Consulta Especializada']),
+            "exames": len([r for r in data if r.get('procedimento') in ['Exame de Imagem', 'Exame Laboratorial']]),
+            "procedimentos": len([r for r in data if r.get('procedimento') == 'Procedimento Cirúrgico']),
+            "urgencia": len([r for r in data if r.get('prioridade') == 'Urgência']),
+            "prioridade": len([r for r in data if r.get('prioridade') == 'Prioridade']),
+            "rotina": len([r for r in data if r.get('prioridade') == 'Rotina']),
+            "total": len(data)
+        }
+
+        return jsonify({"sucesso": True, "stats": stats})
+    except Exception as e:
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
