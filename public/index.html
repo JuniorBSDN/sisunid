@@ -477,6 +477,29 @@
         </div>
     </div>
 
+    <!-- MODAL DE ALERTAS GESTOR -->
+    <div id="modal-alertas-gestor" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header" style="background: var(--danger-bg); border-bottom-color: var(--danger);">
+                <div style="display: flex; align-items: center; gap: 12px; color: var(--danger);">
+                    <i class="ph-fill ph-warning-circle" style="font-size: 24px;"></i>
+                    <h3 style="font-size: 18px; margin: 0;">Pacientes com Prazo Crítico</h3>
+                </div>
+                <button onclick="document.getElementById('modal-alertas-gestor').style.display='none'" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--danger);">&times;</button>
+            </div>
+            <div class="modal-body" style="max-height: 300px; overflow-y: auto; padding: 0;">
+                <table style="margin: 0; width: 100%;">
+                    <tbody id="lista-pacientes-criticos">
+                        <!-- Preenchido via JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer" style="background: var(--surface);">
+                <button type="button" class="btn-primary" style="background: var(--bg-color); color: var(--text-main); border: 1px solid var(--border);" onclick="document.getElementById('modal-alertas-gestor').style.display='none'">Fechar</button>
+                <button type="button" class="btn-primary" style="background: var(--danger);" onclick="notificarGestorEmail()"><i class="ph ph-envelope-simple"></i> Notificar Gestor por E-mail</button>
+            </div>
+        </div>
+    </div>
     <!-- TOAST -->
     <div id="toast" class="toast">
         <i class="ph-fill ph-check-circle" style="font-size: 24px;"></i>
@@ -604,6 +627,7 @@
                     listaRegulacoesCache = data.regulacoes || [];
                     renderTabelaRegulacoes(listaRegulacoesCache);
                     atualizarKPIs(listaRegulacoesCache);
+                    checarPacientesCriticos(listaRegulacoesCache);
                 } else {
                     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nenhuma regulação cadastrada ainda.</td></tr>';
                 }
@@ -854,6 +878,50 @@
             } catch(e) {
                 container.innerHTML = '<p style="text-align:center; color:red;">Erro ao buscar timeline.</p>';
             }
+        }
+
+        // --- SISTEMA DE ALERTA DO GESTOR ---
+        function checarPacientesCriticos(regulacoes) {
+            // Evita abrir o modal repetidas vezes na mesma sessão
+            if (sessionStorage.getItem('alerta_visto') === 'true') return;
+
+            const criticos = regulacoes.filter(r => 
+                r.status_atual === 'Em Análise' && (r.prioridade === 'Urgência' || r.prioridade === 'Prioridade')
+            );
+
+            if (criticos.length > 0) {
+                const tbody = document.getElementById('lista-pacientes-criticos');
+                tbody.innerHTML = '';
+                
+                criticos.forEach(reg => {
+                    tbody.innerHTML += `
+                        <tr style="border-bottom: 1px solid var(--border);">
+                            <td style="padding: 12px; font-weight: 600;">${reg.nome_paciente}<br><span style="font-size: 12px; font-weight: normal; color: var(--text-muted);">Protocolo: ${reg.protocolo}</span></td>
+                            <td style="padding: 12px; color: var(--danger); font-weight: 600;">${reg.prioridade}</td>
+                        </tr>
+                    `;
+                });
+
+                document.getElementById('modal-alertas-gestor').style.display = 'flex';
+                sessionStorage.setItem('alerta_visto', 'true');
+            }
+        }
+
+        function notificarGestorEmail() {
+            // Usa os dados que já estão salvos no cache do sistema para montar o e-mail
+            const criticos = listaRegulacoesCache.filter(r => 
+                r.status_atual === 'Em Análise' && (r.prioridade === 'Urgência' || r.prioridade === 'Prioridade')
+            );
+            
+            let corpo = "Atenção Gestor,%0D%0A%0D%0AOs pacientes abaixo precisam de avaliação imediata no sisUnid:%0D%0A%0D%0A";
+            criticos.forEach(reg => {
+                corpo += `- ${reg.nome_paciente} (Protocolo: ${reg.protocolo}) - ${reg.prioridade}%0D%0A`;
+            });
+            
+            // Abre o aplicativo de e-mail padrão do computador do usuário (Outlook, Gmail, etc)
+            window.location.href = `mailto:?subject=Urgente - Pacientes aguardando Regulação&body=${corpo}`;
+            
+            document.getElementById('modal-alertas-gestor').style.display = 'none';
         }
     </script>
 </body>
