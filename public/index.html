@@ -8,19 +8,15 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
         :root {
-            /* Cores Dinâmicas (Sobrescritas pelo White-Label via JS) */
             --primary: #2563eb;
             --primary-hover: #1d4ed8;
             --primary-light: #dbeafe;
-
-            /* Cores Base */
             --bg-color: #f8fafc;
             --surface: #ffffff;
             --text-main: #0f172a;
             --text-muted: #64748b;
             --border: #e2e8f0;
 
-            /* Status Colors */
             --danger: #ef4444; --danger-bg: #fef2f2;
             --warning: #f59e0b; --warning-bg: #fffbeb;
             --success: #10b981; --success-bg: #ecfdf5;
@@ -30,7 +26,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
 
-        /* --- TELA DE LOGIN DO CLIENTE (TENANT) --- */
+        /* --- LOGIN CLIENTE --- */
         #login-tenant-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #0f172a; z-index: 9999;
@@ -41,10 +37,9 @@
             border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
         }
 
-        /* Oculta o app até autenticar */
         #tenant-app-container { display: none; width: 100%; height: 100%; }
 
-        /* --- SIDEBAR --- */
+        /* --- SIDEBAR & TOPBAR --- */
         .sidebar { width: 260px; background-color: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 20; }
         .logo { padding: 24px; font-size: 18px; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); }
         .logo img { max-height: 32px; border-radius: 4px; }
@@ -55,11 +50,10 @@
         .nav-item:hover { background-color: var(--info-bg); color: var(--primary); }
         .nav-item.active { background-color: var(--primary); color: white; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); }
 
-        /* --- MAIN CONTENT & TOPBAR --- */
         .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; position: relative; }
         .topbar { background-color: var(--surface); padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
 
-        .search-bar input { padding: 10px 16px 10px 40px; border-radius: 20px; border: 1px solid var(--border); width: 300px; outline: none; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%2364748b" viewBox="0 0 256 256"><path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"></path></svg>') no-repeat 12px center; background-size: 16px; transition: border-color 0.2s; }
+        .search-bar input { padding: 10px 16px 10px 40px; border-radius: 20px; border: 1px solid var(--border); width: 300px; outline: none; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%2364748b" viewBox="0 0 256 256"><path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"></path></svg>') no-repeat 12px center; background-size: 16px; }
         .search-bar input:focus { border-color: var(--primary); }
 
         .user-actions { display: flex; align-items: center; gap: 24px; }
@@ -67,7 +61,7 @@
         .badge-alert { position: absolute; top: 0; right: 0; background-color: var(--danger); width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--surface); animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-        /* --- VIEWS --- */
+        /* --- VIEWS & CARDS --- */
         .view-section { display: none; padding: 32px; max-width: 1200px; margin: 0 auto; width: 100%; animation: fadeIn 0.3s ease; }
         .view-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -76,7 +70,7 @@
         .page-title { font-size: 24px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; }
         .page-subtitle { color: var(--text-muted); font-size: 15px; }
 
-        .btn-primary { background-color: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.2s; font-size: 14px; }
+        .btn-primary { background-color: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; }
         .btn-primary:hover { opacity: 0.9; }
 
         .card { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 24px; }
@@ -103,8 +97,7 @@
         .form-control { padding: 12px 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; transition: all 0.2s; }
         .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
 
-        .upload-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 40px; text-align: center; background-color: #f8fafc; cursor: pointer; transition: all 0.2s; }
-        .upload-zone:hover { border-color: var(--primary); background-color: var(--info-bg); }
+        .upload-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 40px; text-align: center; background-color: #f8fafc; cursor: pointer; }
         .upload-zone i { font-size: 48px; color: var(--text-muted); margin-bottom: 16px; }
 
         .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 32px; }
@@ -138,13 +131,27 @@
         .timeline-time { color: var(--text-muted); font-size: 13px; }
         .timeline-body { color: var(--text-muted); font-size: 14px; line-height: 1.5; }
 
-        .toast { position: fixed; bottom: 24px; right: 24px; background: var(--success); color: white; padding: 16px 24px; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 12px; transform: translateY(100px); opacity: 0; transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 100; }
+        /* --- MODAL DE AVALIAÇÃO --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+            z-index: 9000; display: none; align-items: center; justify-content: center;
+        }
+        .modal-card {
+            background: var(--surface); width: 100%; max-width: 580px; border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden; animation: fadeIn 0.2s ease;
+        }
+        .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 24px; }
+        .modal-footer { padding: 16px 24px; background: #f8fafc; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; }
+
+        .toast { position: fixed; bottom: 24px; right: 24px; background: var(--success); color: white; padding: 16px 24px; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 12px; transform: translateY(100px); opacity: 0; transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 10000; }
         .toast.show { transform: translateY(0); opacity: 1; }
     </style>
 </head>
 <body>
 
-    <!-- BARREIRA DE LOGIN DO TENANT -->
+    <!-- BARREIRA DE LOGIN TENANT -->
     <div id="login-tenant-screen">
         <div class="login-card">
             <div style="text-align: center; margin-bottom: 32px;">
@@ -416,35 +423,73 @@
 
                 <div class="card">
                     <div class="card-body timeline" id="timeline-emails">
-                        <div class="timeline-item">
-                            <div class="timeline-icon" style="background:var(--success-bg); color:var(--success);"><i class="ph ph-envelope-open"></i></div>
-                            <div class="timeline-content">
-                                <div class="timeline-header">
-                                    <span class="timeline-title">Sistema de Notificações Conectado</span>
-                                    <span class="timeline-time">Agora</span>
-                                </div>
-                                <div class="timeline-body">Alertas vinculados e prontos para registro na tabela de regulações.</div>
-                            </div>
-                        </div>
+                        <p style="text-align:center;">Carregando histórico...</p>
                     </div>
                 </div>
             </section>
         </main>
     </div>
 
-    <!-- TOAST NOTIFICATION -->
+    <!-- MODAL DE AVALIAÇÃO DO PACIENTE -->
+    <div id="modal-avaliar" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div>
+                    <h3 style="font-size: 18px;" id="modal-titulo-paciente">Avaliar Paciente</h3>
+                    <p style="font-size: 13px; color: var(--text-muted);" id="modal-subtitulo-protocolo">Protocolo #REQ-0000</p>
+                </div>
+                <button onclick="fecharModalAvaliar()" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-muted);">&times;</button>
+            </div>
+            <form id="form-modal-avaliacao">
+                <input type="hidden" id="modal-reg-id">
+                <div class="modal-body">
+                    <div style="background: var(--bg-color); padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
+                        <div style="font-size: 13px; color: var(--text-muted);">Procedimento Solicitado:</div>
+                        <div style="font-weight: 600; font-size: 15px;" id="modal-info-procedimento">-</div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label class="form-label">Decisão da Regulação / Novo Status</label>
+                        <select id="modal-status-select" class="form-control" required onchange="toggleDataAgendamento(this.value)">
+                            <option value="Em Análise">Em Análise</option>
+                            <option value="Agendado">Agendado (Aprovado)</option>
+                            <option value="Aguardando Vaga">Aguardando Vaga em Fila</option>
+                            <option value="Devolvido/Incompleto">Devolvido (Documentação Incompleta)</option>
+                            <option value="Negado/Incompatível">Negado (Procedimento Não Autorizado)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="group-data-agendamento" style="display: none; margin-bottom: 16px;">
+                        <label class="form-label">Data e Hora do Agendamento</label>
+                        <input type="datetime-local" id="modal-data-agendamento" class="form-control">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Parecer Regulador / Justificativa</label>
+                        <textarea id="modal-parecer" class="form-control" rows="4" placeholder="Digite o parecer médico/regulador ou instruções para o paciente..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-primary" style="background: transparent; color: var(--text-muted); border: 1px solid var(--border);" onclick="fecharModalAvaliar()">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="btn-salvar-avaliacao"><i class="ph ph-check-circle"></i> Confirmar Avaliação</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TOAST -->
     <div id="toast" class="toast">
         <i class="ph-fill ph-check-circle" style="font-size: 24px;"></i>
         <div>
-            <h4 style="margin:0; font-size:14px;" id="toast-title">Protocolo Gerado com Sucesso!</h4>
-            <p style="margin:0; font-size:12px; opacity:0.9;" id="toast-msg">O 1º e-mail automático foi disparado para o paciente.</p>
+            <h4 style="margin:0; font-size:14px;" id="toast-title">Sucesso!</h4>
+            <p style="margin:0; font-size:12px; opacity:0.9;" id="toast-msg">Ação realizada.</p>
         </div>
     </div>
 
     <script>
-       let listaRegulacoesCache = [];
+        let listaRegulacoesCache = [];
 
-        // --- 1. AUTENTICAÇÃO REAL TENANT & WHITE LABEL ---
+        // --- 1. LOGIN TENANT ---
         document.getElementById('form-login-tenant').addEventListener('submit', async function(e) {
             e.preventDefault();
             const cnpj = document.getElementById('tenant-cnpj').value;
@@ -480,11 +525,8 @@
             if (!empresa) return;
 
             let corPrimaria = null;
-            if (empresa.tema && empresa.tema.primaria) {
-                corPrimaria = empresa.tema.primaria;
-            } else if (empresa.tema_primaria) {
-                corPrimaria = empresa.tema_primaria;
-            }
+            if (empresa.tema && empresa.tema.primaria) corPrimaria = empresa.tema.primaria;
+            else if (empresa.tema_primaria) corPrimaria = empresa.tema_primaria;
 
             if (corPrimaria) {
                 document.documentElement.style.setProperty('--primary', corPrimaria);
@@ -525,7 +567,7 @@
             if (sessionStorage.getItem('unidade_id')) iniciarSistemaTenant();
         }
 
-        // --- 2. NAVEGAÇÃO ENTRE ABAS COM CONSULTAS AO BANCO ---
+        // --- 2. NAVEGAÇÃO ---
         function switchView(viewId, navElement) {
             document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -547,7 +589,7 @@
             setTimeout(() => toast.classList.remove('show'), 4000);
         }
 
-        // --- 3. REQUISIÇÕES E FILA ---
+        // --- 3. TABELA E AÇÕES ---
         async function carregarRegulacoes() {
             const tbody = document.getElementById('tabela-regulacoes');
             tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Buscando regulações no banco...</td></tr>';
@@ -593,6 +635,8 @@
                     corBadge = 'bg-warning';
                 }
 
+                if (reg.status_atual === 'Agendado') corBadge = 'bg-success';
+
                 tr.innerHTML = `
                     <td style="font-weight: 600;">#${reg.protocolo || 'N/A'}</td>
                     <td>
@@ -605,7 +649,9 @@
                     </td>
                     <td>${slaHtml}</td>
                     <td><span class="badge ${corBadge}">${reg.status_atual || 'Em Análise'}</span></td>
-                    <td><button class="btn-primary" style="padding: 6px 12px; font-size: 12px;">Avaliar</button></td>
+                    <td>
+                        <button class="btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="abrirModalAvaliar('${reg.id}')">Avaliar</button>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -628,12 +674,70 @@
             renderTabelaRegulacoes(filtrados);
         }
 
-        // --- 4. CADASTRAR REQUISIÇÃO ---
+        // --- 4. LÓGICA DO MODAL DE AVALIAÇÃO ---
+        function abrirModalAvaliar(idReg) {
+            const reg = listaRegulacoesCache.find(r => r.id === idReg);
+            if (!reg) return;
+
+            document.getElementById('modal-reg-id').value = reg.id;
+            document.getElementById('modal-titulo-paciente').innerText = `Avaliar: ${reg.nome_paciente}`;
+            document.getElementById('modal-subtitulo-protocolo').innerText = `Protocolo #${reg.protocolo}`;
+            document.getElementById('modal-info-procedimento').innerText = `${reg.procedimento} (${reg.prioridade})`;
+            document.getElementById('modal-status-select').value = reg.status_atual || 'Em Análise';
+            document.getElementById('modal-parecer').value = reg.parecer || '';
+
+            toggleDataAgendamento(reg.status_atual);
+            document.getElementById('modal-avaliar').style.display = 'flex';
+        }
+
+        function fecharModalAvaliar() {
+            document.getElementById('modal-avaliar').style.display = 'none';
+        }
+
+        function toggleDataAgendamento(status) {
+            const groupData = document.getElementById('group-data-agendamento');
+            groupData.style.display = (status === 'Agendado') ? 'block' : 'none';
+        }
+
+        document.getElementById('form-modal-avaliacao').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const idReg = document.getElementById('modal-reg-id').value;
+            const btn = document.getElementById('btn-salvar-avaliacao');
+            btn.innerHTML = 'Salvando...';
+
+            const payload = {
+                status_atual: document.getElementById('modal-status-select').value,
+                parecer: document.getElementById('modal-parecer').value,
+                data_agendamento: document.getElementById('modal-data-agendamento').value || null
+            };
+
+            try {
+                const response = await fetch(`/api/tenant/regulacoes/${idReg}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                if (data.sucesso) {
+                    showToast('Avaliação Concluída!', 'A decisão do regulador foi salva e atualizada na fila.');
+                    fecharModalAvaliar();
+                    carregarRegulacoes();
+                } else {
+                    alert('Erro ao salvar avaliação: ' + data.erro);
+                }
+            } catch(error) {
+                alert('Erro de conexão ao salvar parecer.');
+            } finally {
+                btn.innerHTML = '<i class="ph ph-check-circle"></i> Confirmar Avaliação';
+            }
+        });
+
+        // --- 5. CADASTRO DE RECEPÇÃO ---
         document.getElementById('form-recepcao').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btnSalvar = document.getElementById('btn-salvar-reg');
-            const textoOriginal = btnSalvar.innerHTML;
-            btnSalvar.innerHTML = 'Enviando ao banco...';
+            btnSalvar.innerHTML = 'Enviando...';
 
             const payload = {
                 unidade_id: sessionStorage.getItem('unidade_id'),
@@ -654,24 +758,23 @@
 
                 const data = await response.json();
                 if (response.ok && data.sucesso) {
-                    showToast(`Protocolo ${data.protocolo} Gerado!`, 'Inclusão salva no banco de dados com sucesso.');
+                    showToast(`Protocolo ${data.protocolo} Gerado!`, 'Inclusão salva no banco de dados.');
                     this.reset();
-                    document.getElementById('label-arquivo-anexo').innerHTML = 'Arraste arquivos aqui ou <span style="color:var(--primary); font-weight:600;">Clique para buscar</span> no computador';
                     switchView('dashboard', document.querySelectorAll('.nav-item')[0]);
                 } else {
-                    alert('Erro ao salvar regulação: ' + (data.erro || 'Verifique o Supabase.'));
+                    alert('Erro ao salvar: ' + (data.erro || 'Falha no servidor.'));
                 }
             } catch (error) {
-                alert('Erro de comunicação com a API.');
+                alert('Erro de conexão.');
             } finally {
-                btnSalvar.innerHTML = textoOriginal;
+                btnSalvar.innerHTML = '<i class="ph ph-check-circle"></i> Registrar e Gerar Protocolo';
             }
         });
 
-        // --- 5. CONSULTAS REALMENTE DINÂMICAS DOS MÓDULOS ---
+        // --- 6. DEMAIS CONSULTAS ---
         async function carregarPacientesBanco() {
             const tbody = document.getElementById('tabela-pacientes');
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Buscando base de pacientes no Supabase...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Buscando base de pacientes...</td></tr>';
             const unidade_id = sessionStorage.getItem('unidade_id');
 
             try {
@@ -749,7 +852,7 @@
                     container.innerHTML = '<p style="text-align:center; color:var(--text-muted);">Nenhum e-mail enviado ainda.</p>';
                 }
             } catch(e) {
-                container.innerHTML = '<p style="text-align:center; color:red;">Erro ao buscar timeline de e-mails.</p>';
+                container.innerHTML = '<p style="text-align:center; color:red;">Erro ao buscar timeline.</p>';
             }
         }
     </script>
