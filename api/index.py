@@ -7,6 +7,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+
 app = Flask(__name__)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -207,37 +208,11 @@ def get_regulacoes():
     if not unidade_id:
         return jsonify({"sucesso": False, "erro": "ID da unidade é obrigatório"}), 400
 
-    assunto_email = f"Confirmação de Requisição #{protocolo}"
-    corpo_email = f"""
-        <h2>Olá, {data.get("nome_paciente")}</h2>
-        <p>Sua requisição para <b>{data.get("procedimento")}</b> foi recebida pela nossa central.</p>
-        <p><b>Protocolo:</b> {protocolo}</p>
-        <p>Você será notificado assim que houver atualizações.</p>
-        """
-        
-    email_enviado = enviar_email(data.get("email"), assunto_email, corpo_email)
-    status_envio = "Enviado com Sucesso" if email_enviado else "Falha no Envio"
-
-        # 2. Registra o histórico com o status real
-    try:
-        email_log = {
-            "unidade_id": data.get("unidade_id"),
-            "protocolo": protocolo,
-            "destinatario": data.get("email"),
-            "paciente_nome": data.get("nome_paciente"),
-            "assunto": assunto_email,
-            "status": status_envio
-            }
-        supabase.table('historico_emails').insert(email_log).execute()
-    except Exception as err_mail:
-        print("Aviso: Falha ao salvar no historico_emails:", str(err_mail))
-
     try:
         response = supabase.table('regulacoes').select('*').eq('unidade_id', unidade_id).order('created_at', desc=True).execute()
         return jsonify({"sucesso": True, "regulacoes": response.data})
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
-
 
 @app.route('/api/tenant/regulacoes', methods=['POST'])
 def criar_regulacao():
@@ -375,6 +350,58 @@ def get_emails():
             return jsonify({"sucesso": True, "emails": emails_mock})
         except Exception as e2:
             return jsonify({"sucesso": False, "erro": str(e2)}), 500
+
+
+
+@app.route('/api/tenant/alertar-gestor', methods=['POST'])
+def alertar_gestor_email():
+    data = request.get_json(silent=True) or {}
+    email_gestor = data.get('email_gestor')
+    nome_empresa = data.get('nome_empresa', 'sisUnid')
+    logo_url = data.get('logo_url', '')
+    pacientes = data.get('pacientes', [])
+    
+    if not email_gestor or not pacientes:
+        return jsonify({"sucesso": False, "erro": "Faltam dados para envio"}), 400
+
+    # Configurações do seu e-mail (Coloque suas credenciais reais aqui ou na Vercel)
+    remetente = os.environ.get("SMTP_EMAIL", "seu-email@gmail.com")
+    senha = os.environ.get("SMTP_PASSWORD", "sua-senha-de-app")
+    
+    # Monta a lista de pacientes em HTML
+    lista_html = "".join([f"<li><b>{p['nome']}</b> (Protocolo: {p['protocolo']}) - {p['prioridade']}</li>" for p in pacientes])
+    
+    # Monta o corpo do e-mail com a Logo
+    img_tag = f'<img src="{logo_url}" alt="Logo" style="max-height: 60px; margin-bottom: 20px;">' if logo_url else ''
+    
+    corpo_html = f"""
+    <html>
+    <body style="font-family: Arial, sans-serif; color: #333; padding: 20px;">
+        {img_tag}
+        <h2 style="color: #ef4444;">Atenção Gestor - Alerta de SLA ({nome_empresa})</h2>
+        <p>Os pacientes abaixo estão com prazos críticos (Urgência/Prioridade) e precisam de avaliação imediata no sistema:</p>
+        <ul>{lista_html}</ul>
+        <p>Por favor, acesse o painel de regulação o mais rápido possível.</p>
+    </body>
+    </html>
+    """
+    
+    msg = MIMEMultipart()
+    msg['From'] = remetente
+    msg['To'] = email_gestor
+    msg['Subject'] = f"ALERTA URGENTE: Regulação {nome_empresa}"
+    msg.attach(MIMEText(corpo_html, 'html'))
+    
+    try:
+        server = smtplib.SMTP('smtp.gmail.com', 587) # Mude se não for Gmail
+        server.starttls()
+        server.login(remetente, senha)
+        server.send_message(msg)
+        server.quit()
+        return jsonify({"sucesso": True})
+    except Exception as e:
+        print("Erro envio e-mail:", str(e))
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
 
 
 if __name__ == '__main__':
