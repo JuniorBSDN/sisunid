@@ -361,17 +361,103 @@ def atualizar_regulacao(id_reg):
     data = request.get_json(silent=True) or {}
     
     try:
-        # Puxa os dados enviados pelo modal do index.html
+        novo_status = data.get('status_atual')
+        parecer = data.get('parecer')
+        data_agendamento = data.get('data_agendamento')
+
+        # 1. Atualiza no banco de dados (Supabase)
         update_data = {
-            "status_atual": data.get('status_atual'),
-            "parecer": data.get('parecer'),
-            "data_agendamento": data.get('data_agendamento')
+            "status_atual": novo_status,
+            "parecer": parecer,
+            "data_agendamento": data_agendamento
         }
         
-        # Atualiza a linha específica do paciente no Supabase
-        supabase.table('regulacoes').update(update_data).eq('id', id_reg).execute()
+        # Guardamos a resposta para pegar o unidade_id depois
+        response = supabase.table('regulacoes').update(update_data).eq('id', id_reg).execute()
         
+        # ========================================================
+        # 2. DISPARO DE E-MAIL PARA O PACIENTE
+        # ========================================================
+        paciente_email = data.get('paciente_email')
+        
+        if paciente_email:
+            paciente_nome = data.get('paciente_nome', 'Paciente')
+            protocolo = data.get('protocolo', 'N/A')
+            empresa_nome = data.get('empresa_nome', 'Unidade de Saúde')
+            empresa_logo = data.get('empresa_logo', '')
+            empresa_email_contato = data.get('empresa_email', '')
+            
+            remetente = os.environ.get("SMTP_EMAIL", "seu-email@gmail.com")
+            senha = os.environ.get("SMTP_PASSWORD", "sua-senha")
+            
+            img_tag = f'<img src="{empresa_logo}" style="max-height: 50px; margin-bottom: 15px;">' if empresa_logo else ''
+            assunto = f"Atualização no seu Protocolo #{protocolo}"
+            
+            # Formatação visual do e-mail
+            corpo_html = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; color: #333; padding: 20px;">
+                {img_tag}
+                <h2 style="color: #2563eb;">Olá, {paciente_nome}!</h2>
+                <p>Houve uma atualização na sua solicitação de regulação pela unidade <b>{empresa_nome}</b>.</p>
+                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #e2e8f0;">
+                    <p><b>Procedimento:</b> {data.get('procedimento', '')}</p>
+                    <p><b>Novo Status:</b> <span style="font-size: 16px; font-weight: bold; color: #10b981;">{novo_status}</span></p>
+                    <p><b>Parecer Médico / Instruções:</b><br>{parecer}</p>
+            """
+            
+            if novo_status == 'Agendado' and data_agendamento:
+                # Converte o 'T' da data HTML para um formato mais legível
+                data_formatada = data_agendamento.replace('T', ' às ')
+                corpo_html += f"<p><b>Data e Hora do Agendamento:</b> {data_formatada}</p>"
+                
+            corpo_html += f"""
+                </div>
+                <p>Atenciosamente,<br><b>{empresa_nome}</b></p>
+            </body>
+            </html>
+            """
+            
+            status_envio = "Falha no Envio"
+            try:
+                msg = MIMEMultipart()
+                # Camufla o remetente para aparecer o nome da clínica
+                msg['From'] = f"{empresa_nome} <{remetente}>"
+                msg['To'] = paciente_email
+                msg['Subject'] = assunto
+                
+                # Se o paciente clicar em "Responder", vai para o e-mail da clínica
+                if empresa_email_contato:
+                    msg.add_header('reply-to', empresa_email_contato)
+                    
+                msg.attach(MIMEText(corpo_html, 'html'))
+                
+                server = smtplib.SMTP('smtp.gmail.com', 587)
+                server.starttls()
+                server.login(remetente, senha)
+                server.send_message(msg)
+                server.quit()
+                status_envio = "Enviado com Sucesso"
+            except Exception as e:
+                print("Erro ao enviar e-mail ao paciente:", e)
+
+            # 3. Salva no Histórico de E-mails do Painel
+            try:
+                unidade_id_bd = response.data[0].get('unidade_id') if response.data else None
+                email_log = {
+                    "unidade_id": unidade_id_bd,
+                    "protocolo": protocolo,
+                    "destinatario": paciente_email,
+                    "paciente_nome": paciente_nome,
+                    "assunto": assunto,
+                    "status": status_envio
+                }
+                supabase.table('historico_emails').insert(email_log).execute()
+            except Exception as err:
+                pass # Ignora erro silencioso no log
+                
         return jsonify({"sucesso": True})
+        
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
