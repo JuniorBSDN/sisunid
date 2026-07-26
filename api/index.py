@@ -3,6 +3,9 @@ import uuid
 from flask import Flask, request, jsonify, send_from_directory, send_file
 from supabase import create_client, Client
 from supabase.lib.client_options import ClientOptions
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 app = Flask(__name__)
 
@@ -22,6 +25,29 @@ def serve_master():
         master_path = os.path.join(BASE_DIR, 'public', 'master.html')
     return send_file(master_path)
 
+
+# Função auxiliar para disparar e-mails
+def enviar_email(destinatario, assunto, corpo_html):
+    remetente = os.environ.get("SMTP_EMAIL", "seu-email@dominio.com")
+    senha = os.environ.get("SMTP_PASSWORD", "sua-senha-ou-app-password")
+    
+    msg = MIMEMultipart()
+    msg['From'] = remetente
+    msg['To'] = destinatario
+    msg['Subject'] = assunto
+    msg.attach(MIMEText(corpo_html, 'html'))
+    
+    try:
+        # Exemplo usando SMTP do Gmail. Altere o host/porta conforme seu provedor.
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(remetente, senha)
+        server.send_message(msg)
+        server.quit()
+        return True
+    except Exception as e:
+        print("Erro ao enviar e-mail:", e)
+        return False
 # ==========================================
 # 1. CONEXÕES SUPABASE (Inicialização Segura)
 # ==========================================
@@ -180,6 +206,31 @@ def get_regulacoes():
     unidade_id = request.args.get('unidade_id')
     if not unidade_id:
         return jsonify({"sucesso": False, "erro": "ID da unidade é obrigatório"}), 400
+
+    assunto_email = f"Confirmação de Requisição #{protocolo}"
+    corpo_email = f"""
+        <h2>Olá, {data.get("nome_paciente")}</h2>
+        <p>Sua requisição para <b>{data.get("procedimento")}</b> foi recebida pela nossa central.</p>
+        <p><b>Protocolo:</b> {protocolo}</p>
+        <p>Você será notificado assim que houver atualizações.</p>
+        """
+        
+    email_enviado = enviar_email(data.get("email"), assunto_email, corpo_email)
+    status_envio = "Enviado com Sucesso" if email_enviado else "Falha no Envio"
+
+        # 2. Registra o histórico com o status real
+    try:
+        email_log = {
+            "unidade_id": data.get("unidade_id"),
+            "protocolo": protocolo,
+            "destinatario": data.get("email"),
+            "paciente_nome": data.get("nome_paciente"),
+            "assunto": assunto_email,
+            "status": status_envio
+            }
+        supabase.table('historico_emails').insert(email_log).execute()
+    except Exception as err_mail:
+        print("Aviso: Falha ao salvar no historico_emails:", str(err_mail))
 
     try:
         response = supabase.table('regulacoes').select('*').eq('unidade_id', unidade_id).order('created_at', desc=True).execute()
