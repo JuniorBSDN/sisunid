@@ -26,15 +26,26 @@ def serve_master():
 # ==========================================
 # 1. CONEXÕES SUPABASE (Inicialização Dinâmica)
 # ==========================================
+
+from supabase import create_client, Client
+from supabase.lib.client_options import ClientOptions
+
 def get_supabase_client() -> Client:
     url = os.environ.get("SUPABASE_URL", "").strip()
     key = os.environ.get("SUPABASE_KEY", "").strip()
     if url and key:
         try:
-            return create_client(url, key)
+            # Força o bypass de argumentos incompatíveis (proxy)
+            options = ClientOptions(postgrest_client_timeout=10)
+            return create_client(url, key, options=options)
         except Exception as e:
-            print("Erro ao inicializar cliente Supabase:", str(e))
+            # Fallback seguro caso a versão não suporte options estrito
+            try:
+                return create_client(url, key)
+            except Exception as e2:
+                print("Erro crítico ao inicializar Supabase:", str(e2))
     return None
+
 
 MASTER_PASSWORD = (os.environ.get("MASTER_PASSWORD") or "admin").strip()
 BUCKET_NAME = "uploads"
