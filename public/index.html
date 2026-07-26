@@ -311,203 +311,198 @@
         </div>
     </div>
 
-    <!-- JAVASCRIPT: LÓGICA E INTEGRAÇÃO -->
-    <script>
-        // --- 1. LÓGICA DE LOGIN TENANT E WHITE-LABEL ---
-        document.getElementById('form-login-tenant').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const cnpj = document.getElementById('tenant-cnpj').value;
-            const senha = document.getElementById('tenant-senha').value;
-            const btn = this.querySelector('button');
-            btn.innerHTML = 'Verificando...';
+  <script>
+    // --- 1. LÓGICA DE LOGIN TENANT E WHITE-LABEL ---
+    document.getElementById('form-login-tenant').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const cnpj = document.getElementById('tenant-cnpj').value;
+        const senha = document.getElementById('tenant-senha').value;
+        const btn = this.querySelector('button');
+        btn.innerHTML = 'Verificando...';
 
-            try {
-                const response = await fetch('/api/tenant/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ cnpj, senha })
-                });
-                
-                const data = await response.json();
+        try {
+            const response = await fetch('/api/tenant/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cnpj, senha })
+            });
 
-                if (data.sucesso) {
-                    // Salva a sessão no navegador
-                    sessionStorage.setItem('unidade_id', data.unidade_id);
-                    sessionStorage.setItem('empresa_data', JSON.stringify(data.empresa));
-                    
-                    aplicarWhiteLabel(data.empresa);
-                    iniciarSistemaTenant();
-                } else {
-                    alert('Erro: ' + (data.erro || 'Credenciais inválidas'));
-                    btn.innerHTML = 'Entrar no Sistema';
-                }
-            } catch (error) {
-                // Fallback para design offline se o Python não estiver rodando
-                console.warn('Backend offline. Simulação de acesso iniciada.');
-                sessionStorage.setItem('unidade_id', 'offline_mode');
+            const data = await response.json();
+
+            if (data.sucesso) {
+                sessionStorage.setItem('unidade_id', data.unidade_id);
+                sessionStorage.setItem('empresa_data', JSON.stringify(data.empresa));
+                aplicarWhiteLabel(data.empresa);
                 iniciarSistemaTenant();
+            } else {
+                alert('Erro: ' + (data.erro || 'Credenciais inválidas'));
+                btn.innerHTML = 'Entrar no Sistema';
             }
-        });
+        } catch (error) {
+            alert('Erro de conexão com o servidor. Verifique sua rede ou variáveis do backend.');
+            btn.innerHTML = 'Entrar no Sistema';
+        }
+    });
 
-        function aplicarWhiteLabel(empresa) {
-            // CORREÇÃO: Acessando o JSON do tema
-            if (empresa.tema && empresa.tema.primaria) {
-                document.documentElement.style.setProperty('--primary', empresa.tema.primaria);
-                document.documentElement.style.setProperty('--primary-hover', empresa.tema.primaria);
-                document.documentElement.style.setProperty('--primary-light', empresa.tema.primaria + '20');
-            }
+    function aplicarWhiteLabel(empresa) {
+        if (!empresa) return;
 
-            // Atualiza os Textos
-            document.getElementById('nome-empresa-sidebar').innerText = empresa.nome || 'Unidade';
-            document.getElementById('nome-gestor-topbar').innerText = empresa.gestor || 'Gestor';
-            document.getElementById('slogan-topbar').innerText = empresa.slogan || 'Regulação Municipal';
-
-            // Atualiza a Logo (Se houver upload do Master)
-            if (empresa.logo_url) {
-                document.getElementById('icone-padrao-logo').style.display = 'none';
-                const imgLogo = document.getElementById('logo-branca-tenant');
-                imgLogo.src = empresa.logo_url;
-                imgLogo.style.display = 'block';
-            }
+        // Leitura do campo tema (JSONB ou Fallback)
+        let corPrimaria = null;
+        if (empresa.tema && empresa.tema.primaria) {
+            corPrimaria = empresa.tema.primaria;
+        } else if (empresa.tema_primaria) {
+            corPrimaria = empresa.tema_primaria;
         }
 
-        function iniciarSistemaTenant() {
-    document.getElementById('login-tenant-screen').style.display = 'none';
-    document.getElementById('tenant-app-container').style.display = 'flex';
-    
-    // Puxa e reaplica o tema sempre que o app for exibido
-    const empresaStr = sessionStorage.getItem('empresa_data');
-    if (empresaStr) {
-        try {
-            aplicarWhiteLabel(JSON.parse(empresaStr));
-        } catch (e) {
-            console.error("Erro ao aplicar tema da sessão:", e);
+        if (corPrimaria) {
+            document.documentElement.style.setProperty('--primary', corPrimaria);
+            document.documentElement.style.setProperty('--primary-hover', corPrimaria);
+            document.documentElement.style.setProperty('--primary-light', corPrimaria + '20');
+        }
+
+        document.getElementById('nome-empresa-sidebar').innerText = empresa.nome || 'sis_unid';
+        document.getElementById('nome-gestor-topbar').innerText = empresa.gestor || 'Gestor';
+        document.getElementById('slogan-topbar').innerText = empresa.slogan || 'Regulação Municipal';
+
+        if (empresa.logo_url) {
+            document.getElementById('icone-padrao-logo').style.display = 'none';
+            const imgLogo = document.getElementById('logo-branca-tenant');
+            imgLogo.src = empresa.logo_url;
+            imgLogo.style.display = 'block';
         }
     }
 
-    carregarRegulacoes();
-}
+    function iniciarSistemaTenant() {
+        document.getElementById('login-tenant-screen').style.display = 'none';
+        document.getElementById('tenant-app-container').style.display = 'flex';
 
-        function fazerLogoutTenant() {
-            sessionStorage.clear();
-            window.location.reload();
+        const empresaStr = sessionStorage.getItem('empresa_data');
+        if (empresaStr) {
+            try { aplicarWhiteLabel(JSON.parse(empresaStr)); } catch(e) {}
         }
 
-        window.onload = function() {
-            if(sessionStorage.getItem('unidade_id')) iniciarSistemaTenant();
-        }
+        carregarRegulacoes();
+    }
 
-        // --- 2. NAVEGAÇÃO E UI ---
-        function switchView(viewId, navElement) {
-            document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
-            if(navElement) {
-                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-                navElement.classList.add('active');
+    function fazerLogoutTenant() {
+        sessionStorage.clear();
+        window.location.reload();
+    }
+
+    window.onload = function() {
+        if (sessionStorage.getItem('unidade_id')) iniciarSistemaTenant();
+    }
+
+    // --- 2. NAVEGAÇÃO E UI ---
+    function switchView(viewId, navElement) {
+        document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+        if (navElement) {
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            navElement.classList.add('active');
+        }
+        document.getElementById(viewId).classList.add('active');
+        if (viewId === 'dashboard') carregarRegulacoes();
+    }
+
+    function showToast(titulo, mensagem) {
+        document.getElementById('toast-title').innerText = titulo;
+        document.getElementById('toast-msg').innerText = mensagem;
+        const toast = document.getElementById('toast');
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 4000);
+    }
+
+    // --- 3. DADOS: GET E POST REGULAÇÕES ---
+    async function carregarRegulacoes() {
+        const tbody = document.getElementById('tabela-regulacoes');
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Buscando regulações no banco...</td></tr>';
+
+        const unidade_id = sessionStorage.getItem('unidade_id');
+
+        try {
+            const response = await fetch(`/api/tenant/regulacoes?unidade_id=${unidade_id}`);
+            const data = await response.json();
+
+            if (response.ok && data.sucesso) {
+                renderTabelaRegulacoes(data.regulacoes);
+            } else {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhuma regulação encontrada ou erro na busca.</td></tr>';
             }
-            document.getElementById(viewId).classList.add('active');
-            if(viewId === 'dashboard') carregarRegulacoes();
+        } catch (e) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Erro ao conectar com a API.</td></tr>';
+        }
+    }
+
+    function renderTabelaRegulacoes(regulacoes) {
+        const tbody = document.getElementById('tabela-regulacoes');
+        tbody.innerHTML = '';
+        document.getElementById('kpi-total').innerText = regulacoes.length;
+
+        if (regulacoes.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">Fila vazia. Nenhuma recepção registrada.</td></tr>';
+            return;
         }
 
-        function showToast(titulo, mensagem) {
-            document.getElementById('toast-title').innerText = titulo;
-            document.getElementById('toast-msg').innerText = mensagem;
-            const toast = document.getElementById('toast');
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 4000);
-        }
+        regulacoes.forEach(reg => {
+            const tr = document.createElement('tr');
+            let corBadge = reg.status_atual === 'Em Análise' ? 'bg-warning' : 'bg-info';
+            let prioridadeColor = reg.prioridade === 'Urgência' ? 'var(--danger)' : 'var(--text-muted)';
 
-        // --- 3. DADOS: GET E POST REGULAÇÕES NO SUPABASE ---
-        async function carregarRegulacoes() {
-            const tbody = document.getElementById('tabela-regulacoes');
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Buscando regulações no banco...</td></tr>';
-            
-            const unidade_id = sessionStorage.getItem('unidade_id');
+            tr.innerHTML = `
+                <td style="font-weight: 600;">#${reg.protocolo || 'N/A'}</td>
+                <td>
+                    <div>${reg.nome_paciente}</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">${reg.email} • ${reg.telefone}</div>
+                </td>
+                <td>
+                    <div>${reg.procedimento}</div>
+                    <div style="font-size: 12px; color: ${prioridadeColor}; font-weight: 600;">${reg.prioridade}</div>
+                </td>
+                <td><span class="badge ${corBadge}">${reg.status_atual}</span></td>
+                <td><button class="btn-primary" style="padding: 6px 12px; font-size: 12px;">Ver Ficha</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
 
-            try {
-                const response = await fetch(`/api/tenant/regulacoes?unidade_id=${unidade_id}`);
-                const data = await response.json();
+    document.getElementById('form-recepcao').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const btnSalvar = document.getElementById('btn-salvar-reg');
+        const textoOriginal = btnSalvar.innerHTML;
+        btnSalvar.innerHTML = 'Enviando ao banco...';
 
-                if (response.ok && data.sucesso) {
-                    renderTabelaRegulacoes(data.regulacoes);
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhuma regulação encontrada ou erro.</td></tr>';
-                }
-            } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Rodando Offline.</td></tr>';
-            }
-        }
+        const payload = {
+            unidade_id: sessionStorage.getItem('unidade_id'),
+            nome_paciente: document.getElementById('input-nome-paciente').value,
+            cpf: document.getElementById('input-cpf').value,
+            email: document.getElementById('input-email-paciente').value,
+            telefone: document.getElementById('input-telefone').value,
+            procedimento: document.getElementById('input-procedimento').value,
+            prioridade: document.getElementById('input-prioridade').value
+        };
 
-        function renderTabelaRegulacoes(regulacoes) {
-            const tbody = document.getElementById('tabela-regulacoes');
-            tbody.innerHTML = '';
-            document.getElementById('kpi-total').innerText = regulacoes.length;
-
-            if (regulacoes.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">Fila vazia. Nenhuma recepção registrada.</td></tr>';
-                return;
-            }
-
-            regulacoes.forEach(reg => {
-                const tr = document.createElement('tr');
-                let corBadge = reg.status_atual === 'Em Análise' ? 'bg-warning' : 'bg-info';
-                let prioridadeColor = reg.prioridade === 'Urgência' ? 'var(--danger)' : 'var(--text-muted)';
-
-                tr.innerHTML = `
-                    <td style="font-weight: 600;">#${reg.protocolo || 'N/A'}</td>
-                    <td>
-                        <div>${reg.nome_paciente}</div>
-                        <div style="font-size: 12px; color: var(--text-muted);">${reg.email} • ${reg.telefone}</div>
-                    </td>
-                    <td>
-                        <div>${reg.procedimento}</div>
-                        <div style="font-size: 12px; color: ${prioridadeColor}; font-weight: 600;">${reg.prioridade}</div>
-                    </td>
-                    <td><span class="badge ${corBadge}">${reg.status_atual}</span></td>
-                    <td><button class="btn-primary" style="padding: 6px 12px; font-size: 12px;">Ver Ficha</button></td>
-                `;
-                tbody.appendChild(tr);
+        try {
+            const response = await fetch('/api/tenant/regulacoes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
             });
-        }
 
-        document.getElementById('form-recepcao').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const btnSalvar = document.getElementById('btn-salvar-reg');
-            const textoOriginal = btnSalvar.innerHTML;
-            btnSalvar.innerHTML = 'Enviando ao banco...';
-
-            const payload = {
-                unidade_id: sessionStorage.getItem('unidade_id'),
-                nome_paciente: document.getElementById('input-nome-paciente').value,
-                cpf: document.getElementById('input-cpf').value,
-                email: document.getElementById('input-email-paciente').value,
-                telefone: document.getElementById('input-telefone').value,
-                procedimento: document.getElementById('input-procedimento').value,
-                prioridade: document.getElementById('input-prioridade').value
-            };
-
-            try {
-                const response = await fetch('/api/tenant/regulacoes', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                
-                const data = await response.json();
-                if (data.sucesso) {
-                    showToast(`Protocolo ${data.protocolo} Gerado!`, 'O 1º alerta automático (se configurado) será enviado.');
-                    this.reset();
-                    switchView('dashboard', document.querySelectorAll('.nav-item')[0]);
-                } else {
-                    alert('Erro ao registrar.');
-                }
-            } catch (error) {
-                showToast(`Protocolo Local Gerado!`, 'Modo offline ativado.');
+            const data = await response.json();
+            if (data.sucesso) {
+                showToast(`Protocolo ${data.protocolo} Gerado!`, 'Cadastrado com sucesso.');
                 this.reset();
                 switchView('dashboard', document.querySelectorAll('.nav-item')[0]);
-            } finally {
-                btnSalvar.innerHTML = textoOriginal;
+            } else {
+                alert('Erro ao registrar: ' + (data.erro || 'Falha no servidor.'));
             }
-        });
-    </script>
+        } catch (error) {
+            alert('Erro de conexão ao enviar formulário.');
+        } finally {
+            btnSalvar.innerHTML = textoOriginal;
+        }
+    });
+</script>
 </body>
 </html>
