@@ -729,10 +729,28 @@
             const btn = document.getElementById('btn-salvar-avaliacao');
             btn.innerHTML = 'Salvando...';
 
+            // 1. Pega os dados do paciente que está sendo avaliado
+            const reg = listaRegulacoesCache.find(r => r.id === idReg);
+            
+            // 2. Pega os dados da empresa/unidade logada
+            const empresaStr = sessionStorage.getItem('empresa_data');
+            const empresa = empresaStr ? JSON.parse(empresaStr) : {};
+
+            // 3. Monta o pacote com tudo que o Python precisa para salvar E enviar o e-mail
             const payload = {
                 status_atual: document.getElementById('modal-status-select').value,
                 parecer: document.getElementById('modal-parecer').value,
-                data_agendamento: document.getElementById('modal-data-agendamento').value || null
+                data_agendamento: document.getElementById('modal-data-agendamento').value || null,
+                
+                // --- Dados para o E-mail Automático ---
+                paciente_nome: reg.nome_paciente,
+                paciente_email: reg.email,
+                protocolo: reg.protocolo,
+                procedimento: reg.procedimento,
+                
+                empresa_nome: empresa.nome || 'Unidade de Saúde',
+                empresa_email: empresa.email || '',
+                empresa_logo: empresa.logo_url || ''
             };
 
             try {
