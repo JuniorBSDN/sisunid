@@ -914,13 +914,28 @@
                 criticos.forEach(reg => {
                     tbody.innerHTML += `
                         <tr style="border-bottom: 1px solid var(--border);">
-                            <td style="padding: 12px; font-weight: 600;">${reg.nome_paciente}<br><span style="font-size: 12px; font-weight: normal; color: var(--text-muted);">Protocolo: ${reg.protocolo}</span></td>
-                            <td style="padding: 12px; color: var(--danger); font-weight: 600;">${reg.prioridade}</td>
+                            <td style="padding: 12px; font-weight: 600;">
+                                ${reg.nome_paciente}<br>
+                                <span style="font-size: 12px; font-weight: normal; color: var(--text-muted);">Protocolo: ${reg.protocolo}</span>
+                            </td>
+                            <td style="padding: 12px; color: var(--danger); font-weight: 600;">
+                                ${reg.prioridade}
+                            </td>
+                            <td style="padding: 12px; text-align: right;">
+                                <button class="btn-primary" style="padding: 6px 12px; font-size: 12px; display: inline-flex;" onclick="avaliarPeloAlerta('${reg.id}')">
+                                    Avaliar Agora
+                                </button>
+                            </td>
                         </tr>
                     `;
                 });
 
-                document.getElementById('modal-alertas-gestor').style.display = 'flex';
+                function avaliarPeloAlerta(idReg) {
+            // 1. Esconde o modal de alerta crítico
+            document.getElementById('modal-alertas-gestor').style.display = 'none';
+            
+            // 2. Chama a função nativa do sistema para abrir a avaliação daquele paciente
+            abrirModalAvaliar(idReg);
                 sessionStorage.setItem('alerta_visto', 'true');
             }
         }
