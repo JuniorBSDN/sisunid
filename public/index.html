@@ -31,6 +31,7 @@
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #0f172a; z-index: 9999;
             display: flex; align-items: center; justify-content: center;
+            padding: 16px;
         }
         .login-card {
             background: var(--surface); width: 100%; max-width: 400px; padding: 40px 32px;
@@ -42,7 +43,7 @@
         /* --- SIDEBAR & TOPBAR --- */
         .sidebar { width: 260px; background-color: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 20; }
         .logo { padding: 24px; font-size: 18px; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); }
-        .logo img { max-height: 32px; border-radius: 4px; }
+        .logo img { max-height: 40px; max-width: 140px; object-fit: contain; border-radius: 4px; }
 
         .nav-menu { padding: 24px 16px; display: flex; flex-direction: column; gap: 8px; }
         .nav-item { padding: 12px 16px; border-radius: 8px; color: var(--text-muted); text-decoration: none; display: flex; align-items: center; gap: 12px; font-weight: 500; transition: all 0.2s ease; cursor: pointer; border: none; background: transparent; width: 100%; text-align: left; font-size: 15px; }
@@ -77,9 +78,10 @@
         .card-header { padding: 20px 24px; border-bottom: 1px solid var(--border); font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
         .card-body { padding: 24px; }
 
+        .table-responsive { overflow-x: auto; width: 100%; }
         table { width: 100%; border-collapse: collapse; text-align: left; }
         th, td { padding: 16px 24px; border-bottom: 1px solid var(--border); }
-        th { background-color: #f8fafc; color: var(--text-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+        th { background-color: #f8fafc; color: var(--text-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
         td { font-size: 14px; vertical-align: middle; }
         tr:last-child td { border-bottom: none; }
         tr:hover { background-color: #f8fafc; }
@@ -125,25 +127,50 @@
         .timeline-item::before { content: ''; position: absolute; left: 19px; top: 40px; bottom: -32px; width: 2px; background-color: var(--border); }
         .timeline-item:last-child::before { display: none; }
         .timeline-icon { width: 40px; height: 40px; border-radius: 50%; background-color: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 20px; z-index: 2; flex-shrink: 0; border: 4px solid var(--surface); }
-        .timeline-content { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; flex: 1; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
-        .timeline-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .timeline-content { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; flex: 1; box-shadow: 0 1px 3px rgba(0,0,0,0.02); overflow-wrap: break-word; }
+        .timeline-header { display: flex; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
         .timeline-title { font-weight: 600; font-size: 15px; }
         .timeline-time { color: var(--text-muted); font-size: 13px; }
         .timeline-body { color: var(--text-muted); font-size: 14px; line-height: 1.5; }
 
-        /* --- MODAL DE AVALIAÇÃO --- */
+        /* --- RESPONSIVIDADE E MOBILE --- */
+        .btn-menu-mobile { display: none; background: none; border: none; font-size: 24px; color: var(--text-main); cursor: pointer; margin-right: 16px; }
+        .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 15; }
+
+        @media (max-width: 768px) {
+            .btn-menu-mobile { display: block; }
+            .sidebar { position: fixed; left: -260px; height: 100vh; transition: left 0.3s ease; box-shadow: 4px 0 10px rgba(0,0,0,0.1); z-index: 20; }
+            .sidebar.open { left: 0; }
+            .sidebar-overlay.active { display: block; }
+
+            .stats-grid { grid-template-columns: 1fr; gap: 16px; margin-bottom: 24px; }
+            .charts-grid { grid-template-columns: 1fr; }
+            .form-grid { grid-template-columns: 1fr; }
+            
+            .page-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+            .topbar { padding: 12px 16px; }
+            .search-bar input { width: 100%; max-width: none; }
+            
+            .user-actions { gap: 12px; }
+            .user-actions > div:last-child { display: none; } /* Oculta nome/slogan na topbar no celular */
+            
+            .view-section { padding: 16px; }
+            .card-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        /* --- MODAL --- */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
-            z-index: 9000; display: none; align-items: center; justify-content: center;
+            z-index: 9000; display: none; align-items: center; justify-content: center; padding: 16px;
         }
         .modal-card {
             background: var(--surface); width: 100%; max-width: 580px; border-radius: 12px;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden; animation: fadeIn 0.2s ease;
         }
         .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .modal-body { padding: 24px; }
-        .modal-footer { padding: 16px 24px; background: #f8fafc; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; }
+        .modal-body { padding: 24px; max-height: 60vh; overflow-y: auto; }
+        .modal-footer { padding: 16px 24px; background: #f8fafc; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap; }
 
         .toast { position: fixed; bottom: 24px; right: 24px; background: var(--success); color: white; padding: 16px 24px; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 12px; transform: translateY(100px); opacity: 0; transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 10000; }
         .toast.show { transform: translateY(0); opacity: 1; }
@@ -176,6 +203,8 @@
     <!-- SISTEMA PRINCIPAL -->
     <div id="tenant-app-container">
 
+        <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
         <aside class="sidebar">
             <div class="logo">
                 <i class="ph-fill ph-heartbeat" id="icone-padrao-logo"></i>
@@ -194,8 +223,11 @@
 
         <main class="main-content">
             <header class="topbar">
-                <div class="search-bar">
-                    <input type="text" id="input-busca-geral" placeholder="Buscar protocolo, CPF ou paciente..." onkeyup="filtrarTabelaDashboard()">
+                <div style="display: flex; align-items: center; flex: 1;">
+                    <button class="btn-menu-mobile" onclick="toggleSidebar()"><i class="ph ph-list"></i></button>
+                    <div class="search-bar" style="flex: 1; max-width: 400px;">
+                        <input type="text" id="input-busca-geral" placeholder="Buscar protocolo, CPF ou paciente..." onkeyup="filtrarTabelaDashboard()">
+                    </div>
                 </div>
                 <div class="user-actions">
                     <div class="notification"><i class="ph ph-bell"></i><span class="badge-alert"></span></div>
@@ -240,10 +272,10 @@
 
                 <div class="card">
                     <div class="card-header">
-                        <span>Prioridades do Dia (Fila Real do Supabase)</span>
+                        <span>Prioridades do Dia</span>
                         <button style="background:none; border:none; color:var(--primary); font-weight:600; cursor:pointer;" onclick="carregarRegulacoes()"><i class="ph ph-arrow-clockwise"></i> Atualizar</button>
                     </div>
-                    <div style="overflow-x: auto;">
+                    <div class="table-responsive">
                         <table>
                             <thead>
                                 <tr>
@@ -324,7 +356,7 @@
                                     </div>
                                 </div>
 
-                                <div class="form-group full-width" style="display: flex; justify-content: flex-end; gap: 16px; margin-top: 16px;">
+                                <div class="form-group full-width" style="display: flex; justify-content: flex-end; gap: 16px; margin-top: 16px; flex-wrap: wrap;">
                                     <button type="button" class="btn-primary" style="background: transparent; color: var(--text-muted); border: 1px solid var(--border);" onclick="document.getElementById('form-recepcao').reset()">Limpar</button>
                                     <button type="submit" class="btn-primary" id="btn-salvar-reg"><i class="ph ph-check-circle"></i> Registrar e Gerar Protocolo</button>
                                 </div>
@@ -344,19 +376,21 @@
                 </div>
 
                 <div class="card">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Paciente</th>
-                                <th>Cartão SUS / CPF</th>
-                                <th>Requisições</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabela-pacientes">
-                            <tr><td colspan="4" style="text-align:center;">Carregando histórico...</td></tr>
-                        </tbody>
-                    </table>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Paciente</th>
+                                    <th>Cartão SUS / CPF</th>
+                                    <th>Requisições</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-pacientes">
+                                <tr><td colspan="4" style="text-align:center;">Carregando histórico...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
@@ -512,6 +546,11 @@
     <script>
         let listaRegulacoesCache = [];
 
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+            document.getElementById('sidebar-overlay').classList.toggle('active');
+        }
+
         // --- 1. LOGIN TENANT ---
         document.getElementById('form-login-tenant').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -561,11 +600,15 @@
             document.getElementById('nome-gestor-topbar').innerText = empresa.gestor || 'Gestor';
             document.getElementById('slogan-topbar').innerText = empresa.slogan || 'Regulação Municipal';
 
+            // CORREÇÃO: Força a logo a aparecer sobrepondo a exibição do ícone padrão
             if (empresa.logo_url) {
                 document.getElementById('icone-padrao-logo').style.display = 'none';
                 const imgLogo = document.getElementById('logo-branca-tenant');
-                imgLogo.src = empresa.logo_url;
+                imgLogo.setAttribute('src', empresa.logo_url);
                 imgLogo.style.display = 'block';
+            } else {
+                document.getElementById('icone-padrao-logo').style.display = 'block';
+                document.getElementById('logo-branca-tenant').style.display = 'none';
             }
         }
 
@@ -594,9 +637,13 @@
         function switchView(viewId, navElement) {
             document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            
+
             if (navElement) navElement.classList.add('active');
             document.getElementById(viewId).classList.add('active');
+
+            // Fechar sidebar no mobile após clique
+            document.querySelector('.sidebar').classList.remove('open');
+            document.getElementById('sidebar-overlay').classList.remove('active');
 
             if (viewId === 'dashboard') carregarRegulacoes();
             if (viewId === 'pacientes') carregarPacientesBanco();
@@ -647,7 +694,7 @@
 
             regulacoes.forEach(reg => {
                 const tr = document.createElement('tr');
-                
+
                 let slaHtml = '<div class="sla-indicator text-success"><i class="ph-fill ph-check-circle"></i> Dentro do Prazo</div>';
                 let corBadge = 'bg-info';
 
@@ -690,7 +737,7 @@
 
         function filtrarTabelaDashboard() {
             const termo = document.getElementById('input-busca-geral').value.toLowerCase();
-            const filtrados = listaRegulacoesCache.filter(r => 
+            const filtrados = listaRegulacoesCache.filter(r =>
                 (r.nome_paciente && r.nome_paciente.toLowerCase().includes(termo)) ||
                 (r.cpf && r.cpf.includes(termo)) ||
                 (r.protocolo && r.protocolo.toLowerCase().includes(termo))
@@ -731,7 +778,7 @@
 
             // 1. Pega os dados do paciente que está sendo avaliado
             const reg = listaRegulacoesCache.find(r => r.id === idReg);
-            
+
             // 2. Pega os dados da empresa/unidade logada
             const empresaStr = sessionStorage.getItem('empresa_data');
             const empresa = empresaStr ? JSON.parse(empresaStr) : {};
@@ -741,13 +788,13 @@
                 status_atual: document.getElementById('modal-status-select').value,
                 parecer: document.getElementById('modal-parecer').value,
                 data_agendamento: document.getElementById('modal-data-agendamento').value || null,
-                
+
                 // --- Dados para o E-mail Automático ---
                 paciente_nome: reg.nome_paciente,
                 paciente_email: reg.email,
                 protocolo: reg.protocolo,
                 procedimento: reg.procedimento,
-                
+
                 empresa_nome: empresa.nome || 'Unidade de Saúde',
                 empresa_email: empresa.email || '',
                 empresa_logo: empresa.logo_url || ''
@@ -900,17 +947,16 @@
 
         // --- SISTEMA DE ALERTA DO GESTOR ---
         function checarPacientesCriticos(regulacoes) {
-            // Evita abrir o modal repetidas vezes na mesma sessão
             if (sessionStorage.getItem('alerta_visto') === 'true') return;
 
-            const criticos = regulacoes.filter(r => 
+            const criticos = regulacoes.filter(r =>
                 r.status_atual === 'Em Análise' && (r.prioridade === 'Urgência' || r.prioridade === 'Prioridade')
             );
 
             if (criticos.length > 0) {
                 const tbody = document.getElementById('lista-pacientes-criticos');
                 tbody.innerHTML = '';
-                
+
                 criticos.forEach(reg => {
                     tbody.innerHTML += `
                         <tr style="border-bottom: 1px solid var(--border);">
@@ -926,19 +972,17 @@
         }
 
         function notificarGestorEmail() {
-            // Usa os dados que já estão salvos no cache do sistema para montar o e-mail
-            const criticos = listaRegulacoesCache.filter(r => 
+            const criticos = listaRegulacoesCache.filter(r =>
                 r.status_atual === 'Em Análise' && (r.prioridade === 'Urgência' || r.prioridade === 'Prioridade')
             );
-            
+
             let corpo = "Atenção Gestor,%0D%0A%0D%0AOs pacientes abaixo precisam de avaliação imediata no sisUnid:%0D%0A%0D%0A";
             criticos.forEach(reg => {
                 corpo += `- ${reg.nome_paciente} (Protocolo: ${reg.protocolo}) - ${reg.prioridade}%0D%0A`;
             });
-            
-            // Abre o aplicativo de e-mail padrão do computador do usuário (Outlook, Gmail, etc)
+
             window.location.href = `mailto:?subject=Urgente - Pacientes aguardando Regulação&body=${corpo}`;
-            
+
             document.getElementById('modal-alertas-gestor').style.display = 'none';
         }
     </script>
