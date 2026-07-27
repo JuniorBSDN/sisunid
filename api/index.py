@@ -7,10 +7,10 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-
 app = Flask(__name__)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 
 # ==========================================
 # 0. ROTAS DO FRONT-END (Telas)
@@ -18,6 +18,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 @app.route('/')
 def serve_tenant():
     return send_from_directory(os.path.join(BASE_DIR, 'public'), 'index.html')
+
 
 @app.route('/master')
 def serve_master():
@@ -31,13 +32,13 @@ def serve_master():
 def enviar_email(destinatario, assunto, corpo_html):
     remetente = os.environ.get("SMTP_EMAIL", "seu-email@dominio.com")
     senha = os.environ.get("SMTP_PASSWORD", "sua-senha-ou-app-password")
-    
+
     msg = MIMEMultipart()
     msg['From'] = remetente
     msg['To'] = destinatario
     msg['Subject'] = assunto
     msg.attach(MIMEText(corpo_html, 'html'))
-    
+
     try:
         # Exemplo usando SMTP do Gmail. Altere o host/porta conforme seu provedor.
         server = smtplib.SMTP('smtp.gmail.com', 587)
@@ -49,6 +50,8 @@ def enviar_email(destinatario, assunto, corpo_html):
     except Exception as e:
         print("Erro ao enviar e-mail:", e)
         return False
+
+
 # ==========================================
 # 1. CONEXÕES SUPABASE (Inicialização Segura)
 # ==========================================
@@ -66,8 +69,10 @@ def get_supabase_client() -> Client:
                 print("Erro crítico ao inicializar Supabase:", str(e))
     return None
 
+
 MASTER_PASSWORD = (os.environ.get("MASTER_PASSWORD") or "admin").strip()
 BUCKET_NAME = "uploads"
+
 
 # ==========================================
 # 2. ROTAS DO PAINEL MASTER
@@ -86,8 +91,9 @@ def master_login():
 def get_unidades():
     supabase = get_supabase_client()
     if not supabase:
-        return jsonify({"sucesso": False, "erro": "Supabase offline. Verifique as Variáveis de Ambiente na Vercel."}), 500
-    
+        return jsonify(
+            {"sucesso": False, "erro": "Supabase offline. Verifique as Variáveis de Ambiente na Vercel."}), 500
+
     try:
         response = supabase.table('unidades').select('*').order('created_at', desc=True).execute()
         return jsonify({"sucesso": True, "unidades": response.data})
@@ -178,7 +184,8 @@ def tenant_login():
     senha = data.get('senha')
 
     try:
-        response = supabase.table('unidades').select('*').eq('cnpj', cnpj).eq('senha_acesso', senha).eq('status', 'ativa').execute()
+        response = supabase.table('unidades').select('*').eq('cnpj', cnpj).eq('senha_acesso', senha).eq('status',
+                                                                                                        'ativa').execute()
 
         if len(response.data) > 0:
             unidade = response.data[0]
@@ -209,10 +216,12 @@ def get_regulacoes():
         return jsonify({"sucesso": False, "erro": "ID da unidade é obrigatório"}), 400
 
     try:
-        response = supabase.table('regulacoes').select('*').eq('unidade_id', unidade_id).order('created_at', desc=True).execute()
+        response = supabase.table('regulacoes').select('*').eq('unidade_id', unidade_id).order('created_at',
+                                                                                               desc=True).execute()
         return jsonify({"sucesso": True, "regulacoes": response.data})
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
+
 
 @app.route('/api/tenant/regulacoes', methods=['POST'])
 def criar_regulacao():
@@ -272,8 +281,9 @@ def get_pacientes():
 
     unidade_id = request.args.get('unidade_id')
     try:
-        response = supabase.table('regulacoes').select('*').eq('unidade_id', unidade_id).order('created_at', desc=True).execute()
-        
+        response = supabase.table('regulacoes').select('*').eq('unidade_id', unidade_id).order('created_at',
+                                                                                               desc=True).execute()
+
         pacientes_dict = {}
         for reg in response.data:
             cpf = reg.get('cpf', 'Sem CPF')
@@ -304,7 +314,8 @@ def get_relatorios():
 
     unidade_id = request.args.get('unidade_id')
     try:
-        response = supabase.table('regulacoes').select('procedimento, prioridade, status_atual').eq('unidade_id', unidade_id).execute()
+        response = supabase.table('regulacoes').select('procedimento, prioridade, status_atual').eq('unidade_id',
+                                                                                                    unidade_id).execute()
         data = response.data or []
 
         stats = {
@@ -331,12 +342,14 @@ def get_emails():
 
     unidade_id = request.args.get('unidade_id')
     try:
-        response = supabase.table('historico_emails').select('*').eq('unidade_id', unidade_id).order('created_at', desc=True).execute()
+        response = supabase.table('historico_emails').select('*').eq('unidade_id', unidade_id).order('created_at',
+                                                                                                     desc=True).execute()
         return jsonify({"sucesso": True, "emails": response.data})
     except Exception:
         # Fallback de e-mails extraídos da própria tabela de regulações caso a historico_emails não tenha sido criada no SQL
         try:
-            response = supabase.table('regulacoes').select('protocolo, email, nome_paciente, created_at').eq('unidade_id', unidade_id).order('created_at', desc=True).execute()
+            response = supabase.table('regulacoes').select('protocolo, email, nome_paciente, created_at').eq(
+                'unidade_id', unidade_id).order('created_at', desc=True).execute()
             emails_mock = []
             for r in response.data:
                 emails_mock.append({
@@ -359,7 +372,7 @@ def atualizar_regulacao(id_reg):
         return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
 
     data = request.get_json(silent=True) or {}
-    
+
     try:
         novo_status = data.get('status_atual')
         parecer = data.get('parecer')
@@ -371,28 +384,28 @@ def atualizar_regulacao(id_reg):
             "parecer": parecer,
             "data_agendamento": data_agendamento
         }
-        
+
         # Guardamos a resposta para pegar o unidade_id depois
         response = supabase.table('regulacoes').update(update_data).eq('id', id_reg).execute()
-        
+
         # ========================================================
         # 2. DISPARO DE E-MAIL PARA O PACIENTE
         # ========================================================
         paciente_email = data.get('paciente_email')
-        
+
         if paciente_email:
             paciente_nome = data.get('paciente_nome', 'Paciente')
             protocolo = data.get('protocolo', 'N/A')
             empresa_nome = data.get('empresa_nome', 'Unidade de Saúde')
             empresa_logo = data.get('empresa_logo', '')
             empresa_email_contato = data.get('empresa_email', '')
-            
+
             remetente = os.environ.get("SMTP_EMAIL", "seu-email@gmail.com")
             senha = os.environ.get("SMTP_PASSWORD", "sua-senha")
-            
+
             img_tag = f'<img src="{empresa_logo}" style="max-height: 50px; margin-bottom: 15px;">' if empresa_logo else ''
             assunto = f"Atualização no seu Protocolo #{protocolo}"
-            
+
             # Formatação visual do e-mail
             corpo_html = f"""
             <html>
@@ -405,19 +418,19 @@ def atualizar_regulacao(id_reg):
                     <p><b>Novo Status:</b> <span style="font-size: 16px; font-weight: bold; color: #10b981;">{novo_status}</span></p>
                     <p><b>Parecer Médico / Instruções:</b><br>{parecer}</p>
             """
-            
+
             if novo_status == 'Agendado' and data_agendamento:
                 # Converte o 'T' da data HTML para um formato mais legível
                 data_formatada = data_agendamento.replace('T', ' às ')
                 corpo_html += f"<p><b>Data e Hora do Agendamento:</b> {data_formatada}</p>"
-                
+
             corpo_html += f"""
                 </div>
                 <p>Atenciosamente,<br><b>{empresa_nome}</b></p>
             </body>
             </html>
             """
-            
+
             status_envio = "Falha no Envio"
             try:
                 msg = MIMEMultipart()
@@ -425,13 +438,13 @@ def atualizar_regulacao(id_reg):
                 msg['From'] = f"{empresa_nome} <{remetente}>"
                 msg['To'] = paciente_email
                 msg['Subject'] = assunto
-                
+
                 # Se o paciente clicar em "Responder", vai para o e-mail da clínica
                 if empresa_email_contato:
                     msg.add_header('reply-to', empresa_email_contato)
-                    
+
                 msg.attach(MIMEText(corpo_html, 'html'))
-                
+
                 server = smtplib.SMTP('smtp.gmail.com', 587)
                 server.starttls()
                 server.login(remetente, senha)
@@ -454,12 +467,13 @@ def atualizar_regulacao(id_reg):
                 }
                 supabase.table('historico_emails').insert(email_log).execute()
             except Exception as err:
-                pass # Ignora erro silencioso no log
-                
+                pass  # Ignora erro silencioso no log
+
         return jsonify({"sucesso": True})
-        
+
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
+
 
 @app.route('/api/tenant/alertar-gestor', methods=['POST'])
 def alertar_gestor_email():
@@ -468,20 +482,18 @@ def alertar_gestor_email():
     nome_empresa = data.get('nome_empresa', 'sisUnid')
     logo_url = data.get('logo_url', '')
     pacientes = data.get('pacientes', [])
-    
+
     if not email_gestor or not pacientes:
         return jsonify({"sucesso": False, "erro": "Faltam dados para envio"}), 400
 
-    # Configurações do seu e-mail (Coloque suas credenciais reais aqui ou na Vercel)
     remetente = os.environ.get("SMTP_EMAIL", "seu-email@gmail.com")
     senha = os.environ.get("SMTP_PASSWORD", "sua-senha-de-app")
-    
-    # Monta a lista de pacientes em HTML
-    lista_html = "".join([f"<li><b>{p['nome']}</b> (Protocolo: {p['protocolo']}) - {p['prioridade']}</li>" for p in pacientes])
-    
-    # Monta o corpo do e-mail com a Logo
+
+    lista_html = "".join(
+        [f"<li><b>{p['nome']}</b> (Protocolo: {p['protocolo']}) - {p['prioridade']}</li>" for p in pacientes])
+
     img_tag = f'<img src="{logo_url}" alt="Logo" style="max-height: 60px; margin-bottom: 20px;">' if logo_url else ''
-    
+
     corpo_html = f"""
     <html>
     <body style="font-family: Arial, sans-serif; color: #333; padding: 20px;">
@@ -493,15 +505,15 @@ def alertar_gestor_email():
     </body>
     </html>
     """
-    
+
     msg = MIMEMultipart()
     msg['From'] = remetente
     msg['To'] = email_gestor
     msg['Subject'] = f"ALERTA URGENTE: Regulação {nome_empresa}"
     msg.attach(MIMEText(corpo_html, 'html'))
-    
+
     try:
-        server = smtplib.SMTP('smtp.gmail.com', 587) # Mude se não for Gmail
+        server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
         server.login(remetente, senha)
         server.send_message(msg)
