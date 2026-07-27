@@ -26,8 +26,8 @@
         /* --- LOGIN MASTER --- */
         #login-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--master-dark); z-index: 9999; 
-            display: flex; align-items: center; justify-content: center;
+            background: var(--master-dark); z-index: 9999;
+            display: flex; align-items: center; justify-content: center; padding: 16px;
         }
         .login-card {
             background: var(--surface); width: 100%; max-width: 400px; padding: 40px 32px;
@@ -44,9 +44,9 @@
         .nav-item:hover { background-color: rgba(255,255,255,0.1); color: white; }
         .nav-item.active { background-color: var(--master-primary); color: white; }
 
-        .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; position: relative; }
         .topbar { background-color: var(--surface); padding: 16px 32px; display: flex; justify-content: flex-end; align-items: center; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
-        
+
         /* --- VIEWS --- */
         .view-section { display: none; padding: 32px; max-width: 1200px; margin: 0 auto; width: 100%; animation: fadeIn 0.3s ease; }
         .view-section.active { display: block; }
@@ -56,15 +56,15 @@
         .page-header { margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; }
         .page-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
 
-        .btn-primary { background-color: var(--master-primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; transition: 0.2s; }
+        .btn-primary { background-color: var(--master-primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; transition: 0.2s; white-space: nowrap; }
         .btn-primary:hover { background-color: var(--master-hover); }
-        .btn-outline { background: transparent; color: var(--text-main); border: 1px solid var(--border); padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; }
+        .btn-outline { background: transparent; color: var(--text-main); border: 1px solid var(--border); padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; white-space: nowrap; }
         .btn-action { background: none; border: 1px solid var(--border); padding: 8px; border-radius: 6px; color: var(--text-muted); cursor: pointer; transition: 0.2s; }
         .btn-action:hover { color: var(--master-primary); border-color: var(--master-primary); background: var(--bg-color); }
         .btn-action.danger:hover { color: var(--danger); border-color: var(--danger); }
 
         .card { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; padding: 24px; }
-        
+
         /* --- DASHBOARD WIDGETS --- */
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 24px; }
         .stat-card { padding: 24px; background: var(--surface); border-radius: 12px; border: 1px solid var(--border); }
@@ -72,8 +72,8 @@
         .stat-card .value { font-size: 32px; font-weight: 700; }
 
         /* --- FILTROS DE IMPRESSÃO --- */
-        .filter-bar { display: flex; gap: 16px; align-items: flex-end; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid var(--border); }
-        
+        .filter-bar { display: flex; gap: 16px; align-items: flex-end; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid var(--border); flex-wrap: wrap; }
+
         /* --- FORMULÁRIOS --- */
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .form-group { display: flex; flex-direction: column; gap: 8px; }
@@ -84,16 +84,37 @@
         .color-item { display: flex; align-items: center; gap: 8px; }
         .color-item input[type="color"] { width: 40px; height: 40px; border: none; border-radius: 8px; cursor: pointer; padding: 0; }
         .upload-logo { border: 2px dashed var(--border); border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; background: #f8fafc; }
-        
+
         /* --- TABELA --- */
         .table-container { overflow-x: auto; margin-top: 16px; border-radius: 8px; border: 1px solid var(--border); }
         table { width: 100%; border-collapse: collapse; text-align: left; }
         th, td { padding: 16px; border-bottom: 1px solid var(--border); font-size: 14px; }
-        th { background-color: #f8fafc; color: var(--text-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; }
+        th { background-color: #f8fafc; color: var(--text-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; white-space: nowrap; }
         .badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
         .badge.bg-success { background: #ecfdf5; color: var(--success); }
         .badge.bg-danger { background: #fef2f2; color: var(--danger); }
         .action-group { display: flex; gap: 8px; }
+
+        /* --- RESPONSIVIDADE MASTER --- */
+        .btn-menu-mobile { display: none; background: none; border: none; font-size: 24px; color: var(--text-main); cursor: pointer; margin-right: 16px; }
+        .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 15; }
+
+        @media (max-width: 768px) {
+            .btn-menu-mobile { display: block; }
+            .sidebar { position: fixed; left: -260px; height: 100vh; transition: 0.3s ease; box-shadow: 2px 0 8px rgba(0,0,0,0.1); z-index: 20; }
+            .sidebar.open { left: 0; }
+            .sidebar-overlay.active { display: block; }
+            
+            .stats-grid { grid-template-columns: 1fr; }
+            .form-grid { grid-template-columns: 1fr; }
+            .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .topbar { padding: 12px 16px; justify-content: space-between; }
+            
+            .view-section { padding: 16px; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .filter-bar .form-group { flex: none; width: 100%; }
+            .filter-bar .btn-primary { width: 100%; justify-content: center; }
+        }
     </style>
 </head>
 <body>
@@ -118,6 +139,7 @@
 
     <!-- SISTEMA MASTER -->
     <div id="app-container">
+        <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
         <aside class="sidebar">
             <div class="logo"><i class="ph-fill ph-rocket-launch"></i> sisUnid</div>
             <nav class="nav-menu">
@@ -128,6 +150,7 @@
 
         <main class="main-content">
             <header class="topbar">
+                <button class="btn-menu-mobile" onclick="toggleSidebar()" style="color: var(--text-main);"><i class="ph ph-list"></i></button>
                 <button onclick="fazerLogoutMaster()" class="btn-outline" style="border-color: var(--danger); color: var(--danger);">
                     <i class="ph ph-sign-out"></i> Sair
                 </button>
@@ -188,7 +211,7 @@
                 <div class="card" id="bloco-formulario" style="display: none; border-left: 4px solid var(--master-primary);">
                     <h3 style="margin-bottom: 24px; font-size: 18px;">Cadastrar Cliente/Empresa</h3>
                     <form id="form-novo-cliente" class="form-grid">
-                        
+
                         <!-- Dados da Empresa -->
                         <div class="form-group">
                             <label class="form-label">Nome da Empresa</label>
@@ -246,7 +269,7 @@
                             </div>
                         </div>
 
-                        <div class="form-group full" style="display: flex; justify-content: flex-end; gap: 16px; margin-top: 16px;">
+                        <div class="form-group full" style="display: flex; justify-content: flex-end; gap: 16px; margin-top: 16px; flex-wrap: wrap;">
                             <button type="button" class="btn-outline" onclick="toggleFormulario()">Cancelar</button>
                             <button type="submit" class="btn-primary" id="btn-salvar-cliente"><i class="ph ph-floppy-disk"></i> Salvar Registro</button>
                         </div>
@@ -292,6 +315,11 @@
 
     <!-- SCRIPTS MANTENDO LÓGICA DE API -->
     <script>
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+            document.getElementById('sidebar-overlay').classList.toggle('active');
+        }
+
         // --- 1. LOGIN ---
         document.getElementById('form-login-master').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -347,6 +375,11 @@
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             navElement.classList.add('active');
             document.getElementById(viewId).classList.add('active');
+
+            // Fechar sidebar no mobile
+            document.querySelector('.sidebar').classList.remove('open');
+            document.getElementById('sidebar-overlay').classList.remove('active');
+
             if (viewId === 'gestao-clientes') carregarUnidades();
         }
 
@@ -373,7 +406,6 @@
                     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Erro no servidor Python.</td></tr>';
                 }
             } catch (e) {
-                // Se der erro (ex: Python offline), carrega mock temporário
                 const mockData = [
                     { id: "1", nome_empresa: "Prefeitura de Vigia", gestor: "João Silva", cnpj: "00.000/0001", senha_acesso: "XyZ123", status: "ativa" }
                 ];
@@ -384,7 +416,7 @@
         function renderTabela(dados) {
             const tbody = document.getElementById('tabela-clientes');
             tbody.innerHTML = '';
-            
+
             if(!dados || dados.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhuma empresa cadastrada ainda.</td></tr>';
                 document.getElementById('dash-total').innerText = 0;
@@ -420,7 +452,6 @@
             });
         }
 
-        // Submissão do Formulário de Cadastro (Aqui corrigimos o retorno real de erro)
         document.getElementById('form-novo-cliente').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btnSalvar = document.getElementById('btn-salvar-cliente');
@@ -436,7 +467,7 @@
             formData.append('endereco', document.getElementById('input-endereco').value);
             formData.append('slogan', document.getElementById('input-slogan').value);
             formData.append('tema_primaria', document.getElementById('input-cor-1').value);
-            formData.append('tema_secundaria', document.getElementById('input-cor-2').value); 
+            formData.append('tema_secundaria', document.getElementById('input-cor-2').value);
             formData.append('senha_acesso', Math.random().toString(36).slice(-8));
 
             const arquivo = document.getElementById('input-logo').files[0];
@@ -445,14 +476,13 @@
             try {
                 const response = await fetch('/api/master/unidades', { method: 'POST', body: formData });
                 const data = await response.json();
-                
-                // Valida EXATAMENTE o que a API enviou de volta
+
                 if (response.ok && data.sucesso) {
                     alert('Cliente cadastrado com sucesso!');
                     this.reset();
                     document.getElementById('nome-arquivo-logo').innerText = 'Clique para anexar a Logo';
                     toggleFormulario();
-                    carregarUnidades(); // Atualiza a tabela com o banco novo
+                    carregarUnidades();
                 } else {
                     alert('⚠️ Erro ao salvar no banco: ' + (data.erro || 'Verifique o Supabase.'));
                 }
