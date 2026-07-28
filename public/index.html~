@@ -152,7 +152,7 @@
             .search-bar input { width: 100%; max-width: none; }
             
             .user-actions { gap: 12px; }
-            .user-actions > div:last-child { display: none; } /* Oculta nome/slogan na topbar no celular */
+            .user-actions > div:last-child { display: none; }
             
             .view-section { padding: 16px; }
             .card-header { flex-direction: column; align-items: flex-start; gap: 12px; }
@@ -174,6 +174,28 @@
 
         .toast { position: fixed; bottom: 24px; right: 24px; background: var(--success); color: white; padding: 16px 24px; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 12px; transform: translateY(100px); opacity: 0; transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 10000; }
         .toast.show { transform: translateY(0); opacity: 1; }
+
+       /* --- ESTILOS DE IMPRESSÃO CORRIGIDOS --- */
+        @media print {
+            html, body { height: auto !important; overflow: visible !important; display: block !important; background: white !important; }
+            #tenant-app-container, .main-content { display: block !important; height: auto !important; overflow: visible !important; flex: none !important; margin: 0 !important; padding: 0 !important; }
+
+            .sidebar, .topbar, .btn-menu-mobile, .filter-bar, button, .toast, .page-subtitle {
+                display: none !important;
+            }
+
+            .view-section { display: none !important; }
+            .view-section.active { display: block !important; padding: 0 !important; max-width: 100% !important; margin: 0 !important; }
+
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .card { box-shadow: none !important; border: 1px solid #e2e8f0 !important; page-break-inside: avoid; break-inside: avoid; margin-bottom: 24px !important; }
+
+            body.printing-prontuario #tenant-app-container { display: none !important; }
+            body.printing-prontuario .modal-overlay { position: relative !important; display: block !important; background: white !important; padding: 0 !important; }
+            body.printing-prontuario .modal-card { max-width: 100% !important; box-shadow: none !important; border: none !important; margin: 0 !important; }
+            body.printing-prontuario .modal-footer, body.printing-prontuario .modal-header button { display: none !important; }
+            body.printing-prontuario .modal-body { overflow: visible !important; max-height: none !important; padding: 0 24px !important; }
+        }
     </style>
 </head>
 <body>
@@ -396,52 +418,95 @@
 
             <!-- VIEW 4: RELATÓRIOS -->
             <section id="relatorios" class="view-section">
-                <div class="page-header">
+                <div class="page-header" style="align-items: center;">
                     <div>
                         <h1 class="page-title">Relatórios e Desempenho</h1>
-                        <p class="page-subtitle">Análise automática de produtividade e cumprimento de SLAs.</p>
+                        <p class="page-subtitle" style="margin-top: 4px;">Filtre os dados e gere arquivos consolidados da sua regulação.</p>
                     </div>
-                    <button class="btn-primary" onclick="window.print()"><i class="ph ph-download-simple"></i> Exportar PDF</button>
+                    <button class="btn-primary" onclick="window.print()"><i class="ph ph-download-simple"></i> Exportar Relatório PDF</button>
                 </div>
 
-                <div class="charts-grid">
+                <!-- BARRA DE FILTROS -->
+                <div class="card filter-bar" style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; padding: 16px; background: #f8fafc;">
+                    <div class="form-group" style="flex: 1; min-width: 150px;">
+                        <label class="form-label">Data Inicial</label>
+                        <input type="date" id="rel-data-ini" class="form-control">
+                    </div>
+                    <div class="form-group" style="flex: 1; min-width: 150px;">
+                        <label class="form-label">Data Final</label>
+                        <input type="date" id="rel-data-fim" class="form-control">
+                    </div>
+                    <div class="form-group" style="flex: 2; min-width: 250px;">
+                        <label class="form-label">Tipo de Relatório</label>
+                        <select id="rel-tipo" class="form-control">
+                            <option value="geral">Visão Geral (Gráficos e Volumes)</option>
+                            <option value="agendados">Lista Detalhada: Pacientes Agendados</option>
+                            <option value="atrasados">Lista Crítica: Urgências em Análise</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <button class="btn-primary" onclick="gerarRelatorioNaTela()"><i class="ph ph-funnel"></i> Aplicar Filtros</button>
+                    </div>
+                </div>
+
+                <!-- OPÇÃO 1: GRÁFICOS -->
+                <div class="charts-grid" id="relatorio-graficos">
                     <div class="card">
                         <div class="card-header">Desempenho de Prazos (SLA)</div>
                         <div class="card-body">
                             <div class="bar-chart-row">
                                 <div class="bar-label">Dentro do Prazo</div>
-                                <div class="bar-track"><div class="bar-fill" style="width: 85%; background: var(--success);"></div></div>
-                                <div class="bar-value">85%</div>
+                                <div class="bar-track"><div class="bar-fill" id="bar-prazo" style="width: 0%; background: var(--success); transition: width 0.5s;"></div></div>
+                                <div class="bar-value" id="val-prazo">0%</div>
                             </div>
                             <div class="bar-chart-row">
                                 <div class="bar-label">Alerta (Próximos)</div>
-                                <div class="bar-track"><div class="bar-fill" style="width: 10%; background: var(--warning);"></div></div>
-                                <div class="bar-value">10%</div>
+                                <div class="bar-track"><div class="bar-fill" id="bar-alerta" style="width: 0%; background: var(--warning); transition: width 0.5s;"></div></div>
+                                <div class="bar-value" id="val-alerta">0%</div>
                             </div>
                             <div class="bar-chart-row">
-                                <div class="bar-label">Atrasados</div>
-                                <div class="bar-track"><div class="bar-fill" style="width: 5%; background: var(--danger);"></div></div>
-                                <div class="bar-value">5%</div>
+                                <div class="bar-label">Atrasados (Crítico)</div>
+                                <div class="bar-track"><div class="bar-fill" id="bar-atraso" style="width: 0%; background: var(--danger); transition: width 0.5s;"></div></div>
+                                <div class="bar-value" id="val-atraso">0%</div>
                             </div>
                         </div>
                     </div>
 
                     <div class="card">
-                        <div class="card-header">Volume por Tipo</div>
+                        <div class="card-header">Volume por Procedimento</div>
                         <div class="card-body" style="display:flex; flex-direction:column; gap:16px;">
                             <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:8px;">
                                 <span style="color:var(--text-muted);">Consultas</span>
                                 <span style="font-weight:600;" id="vol-consultas">0</span>
                             </div>
                             <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:8px;">
-                                <span style="color:var(--text-muted);">Exames Imagem</span>
+                                <span style="color:var(--text-muted);">Exames de Imagem / Lab</span>
                                 <span style="font-weight:600;" id="vol-exames">0</span>
                             </div>
                             <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:8px;">
-                                <span style="color:var(--text-muted);">Procedimentos</span>
+                                <span style="color:var(--text-muted);">Cirurgias</span>
                                 <span style="font-weight:600;" id="vol-procedimentos">0</span>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- OPÇÃO 2: TABELA DE DADOS DETALHADA -->
+                <div class="card" id="relatorio-tabela-container" style="display: none;">
+                    <div class="card-header" id="relatorio-titulo-tabela" style="font-size: 18px; color: var(--primary);">Relatório Detalhado</div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Data / Hora</th>
+                                    <th>Protocolo</th>
+                                    <th>Paciente</th>
+                                    <th>Procedimento / Prioridade</th>
+                                    <th>Status Atual</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-relatorio-gerado"></tbody>
+                        </table>
                     </div>
                 </div>
             </section>
@@ -523,9 +588,7 @@
             </div>
             <div class="modal-body" style="max-height: 300px; overflow-y: auto; padding: 0;">
                 <table style="margin: 0; width: 100%;">
-                    <tbody id="lista-pacientes-criticos">
-                        <!-- Preenchido via JS -->
-                    </tbody>
+                    <tbody id="lista-pacientes-criticos"></tbody>
                 </table>
             </div>
             <div class="modal-footer" style="background: var(--surface);">
@@ -534,6 +597,40 @@
             </div>
         </div>
     </div>
+    
+    <!-- MODAL DO PRONTUÁRIO COMPLETO -->
+    <div id="modal-prontuario" class="modal-overlay">
+        <div class="modal-card" style="max-width: 750px;">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="ph-fill ph-file-text" style="font-size: 28px; color: var(--primary);"></i>
+                    <div>
+                        <h3 style="font-size: 18px; margin: 0;">Prontuário Digital do Paciente</h3>
+                        <p style="font-size: 13px; color: var(--text-muted);" id="pront-cpf">CPF: 000.000.000-00</p>
+                    </div>
+                </div>
+                <button onclick="fecharProntuario()" style="background:none; border:none; font-size:24px; cursor:pointer; color:var(--text-muted);">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; background: var(--bg-color); padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+                    <div><span style="color: var(--text-muted); font-size: 12px; display: block;">Nome do Paciente</span><strong id="pront-nome" style="font-size: 15px;">-</strong></div>
+                    <div><span style="color: var(--text-muted); font-size: 12px; display: block;">E-mail de Contato</span><strong id="pront-email" style="font-size: 15px;">-</strong></div>
+                    <div><span style="color: var(--text-muted); font-size: 12px; display: block;">Telefone / WhatsApp</span><strong id="pront-telefone" style="font-size: 15px;">-</strong></div>
+                    <div><span style="color: var(--text-muted); font-size: 12px; display: block;">Total de Requisições</span><strong id="pront-total" style="font-size: 15px; color: var(--primary);">0</strong></div>
+                </div>
+
+                <h4 style="margin-bottom: 12px; color: var(--text-main); font-size: 16px;">Histórico de Regulações</h4>
+                <div id="pront-historico-lista" style="display: flex; flex-direction: column; gap: 16px;"></div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn-primary" style="background: transparent; color: var(--text-main); border: 1px solid var(--border);" onclick="fecharProntuario()">Fechar</button>
+                <button type="button" class="btn-primary" onclick="imprimirProntuario()"><i class="ph ph-printer"></i> Salvar PDF / Imprimir</button>
+            </div>
+        </div>
+    </div>
+    
     <!-- TOAST -->
     <div id="toast" class="toast">
         <i class="ph-fill ph-check-circle" style="font-size: 24px;"></i>
@@ -545,6 +642,7 @@
 
     <script>
         let listaRegulacoesCache = [];
+        let listaPacientesCache = [];
 
         function toggleSidebar() {
             document.querySelector('.sidebar').classList.toggle('open');
@@ -600,15 +698,21 @@
             document.getElementById('nome-gestor-topbar').innerText = empresa.gestor || 'Gestor';
             document.getElementById('slogan-topbar').innerText = empresa.slogan || 'Regulação Municipal';
 
-            // CORREÇÃO: Força a logo a aparecer sobrepondo a exibição do ícone padrão
-            if (empresa.logo_url) {
-                document.getElementById('icone-padrao-logo').style.display = 'none';
-                const imgLogo = document.getElementById('logo-branca-tenant');
-                imgLogo.setAttribute('src', empresa.logo_url);
+            const iconePadrao = document.getElementById('icone-padrao-logo');
+            const imgLogo = document.getElementById('logo-branca-tenant');
+
+            if (empresa.logo_url && empresa.logo_url !== 'null' && empresa.logo_url !== '') {
+                iconePadrao.style.display = 'none';
+                imgLogo.src = empresa.logo_url;
                 imgLogo.style.display = 'block';
+
+                imgLogo.onerror = function() {
+                    this.style.display = 'none';
+                    iconePadrao.style.display = 'block';
+                };
             } else {
-                document.getElementById('icone-padrao-logo').style.display = 'block';
-                document.getElementById('logo-branca-tenant').style.display = 'none';
+                iconePadrao.style.display = 'block';
+                imgLogo.style.display = 'none';
             }
         }
 
@@ -641,7 +745,6 @@
             if (navElement) navElement.classList.add('active');
             document.getElementById(viewId).classList.add('active');
 
-            // Fechar sidebar no mobile após clique
             document.querySelector('.sidebar').classList.remove('open');
             document.getElementById('sidebar-overlay').classList.remove('active');
 
@@ -663,7 +766,6 @@
         async function carregarRegulacoes() {
             const tbody = document.getElementById('tabela-regulacoes');
             tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Buscando regulações no banco...</td></tr>';
-
             const unidade_id = sessionStorage.getItem('unidade_id');
 
             try {
@@ -694,7 +796,6 @@
 
             regulacoes.forEach(reg => {
                 const tr = document.createElement('tr');
-
                 let slaHtml = '<div class="sla-indicator text-success"><i class="ph-fill ph-check-circle"></i> Dentro do Prazo</div>';
                 let corBadge = 'bg-info';
 
@@ -720,9 +821,7 @@
                     </td>
                     <td>${slaHtml}</td>
                     <td><span class="badge ${corBadge}">${reg.status_atual || 'Em Análise'}</span></td>
-                    <td>
-                        <button class="btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="abrirModalAvaliar('${reg.id}')">Avaliar</button>
-                    </td>
+                    <td><button class="btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="abrirModalAvaliar('${reg.id}')">Avaliar</button></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -745,7 +844,7 @@
             renderTabelaRegulacoes(filtrados);
         }
 
-        // --- 4. LÓGICA DO MODAL DE AVALIAÇÃO ---
+        // --- 4. MODAL DE AVALIAÇÃO ---
         function abrirModalAvaliar(idReg) {
             const reg = listaRegulacoesCache.find(r => r.id === idReg);
             if (!reg) return;
@@ -776,25 +875,18 @@
             const btn = document.getElementById('btn-salvar-avaliacao');
             btn.innerHTML = 'Salvando...';
 
-            // 1. Pega os dados do paciente que está sendo avaliado
             const reg = listaRegulacoesCache.find(r => r.id === idReg);
-
-            // 2. Pega os dados da empresa/unidade logada
             const empresaStr = sessionStorage.getItem('empresa_data');
             const empresa = empresaStr ? JSON.parse(empresaStr) : {};
 
-            // 3. Monta o pacote com tudo que o Python precisa para salvar E enviar o e-mail
             const payload = {
                 status_atual: document.getElementById('modal-status-select').value,
                 parecer: document.getElementById('modal-parecer').value,
                 data_agendamento: document.getElementById('modal-data-agendamento').value || null,
-
-                // --- Dados para o E-mail Automático ---
                 paciente_nome: reg.nome_paciente,
                 paciente_email: reg.email,
                 protocolo: reg.protocolo,
                 procedimento: reg.procedimento,
-
                 empresa_nome: empresa.nome || 'Unidade de Saúde',
                 empresa_email: empresa.email || '',
                 empresa_logo: empresa.logo_url || ''
@@ -809,7 +901,7 @@
 
                 const data = await response.json();
                 if (data.sucesso) {
-                    showToast('Avaliação Concluída!', 'A decisão do regulador foi salva e atualizada na fila.');
+                    showToast('Avaliação Concluída!', 'A decisão foi salva e atualizada na fila.');
                     fecharModalAvaliar();
                     carregarRegulacoes();
                 } else {
@@ -826,29 +918,33 @@
         document.getElementById('form-recepcao').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btnSalvar = document.getElementById('btn-salvar-reg');
-            btnSalvar.innerHTML = 'Enviando...';
+            btnSalvar.innerHTML = 'Enviando e Carregando Arquivos...';
 
-            const payload = {
-                unidade_id: sessionStorage.getItem('unidade_id'),
-                nome_paciente: document.getElementById('input-nome-paciente').value,
-                cpf: document.getElementById('input-cpf').value,
-                email: document.getElementById('input-email-paciente').value,
-                telefone: document.getElementById('input-telefone').value,
-                procedimento: document.getElementById('input-procedimento').value,
-                prioridade: document.getElementById('input-prioridade').value
-            };
+            const formData = new FormData();
+            formData.append('unidade_id', sessionStorage.getItem('unidade_id'));
+            formData.append('nome_paciente', document.getElementById('input-nome-paciente').value);
+            formData.append('cpf', document.getElementById('input-cpf').value);
+            formData.append('email', document.getElementById('input-email-paciente').value);
+            formData.append('telefone', document.getElementById('input-telefone').value);
+            formData.append('procedimento', document.getElementById('input-procedimento').value);
+            formData.append('prioridade', document.getElementById('input-prioridade').value);
+
+            const inputArquivos = document.getElementById('file-upload');
+            for (let i = 0; i < inputArquivos.files.length; i++) {
+                formData.append('anexos', inputArquivos.files[i]);
+            }
 
             try {
                 const response = await fetch('/api/tenant/regulacoes', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: formData
                 });
 
                 const data = await response.json();
                 if (response.ok && data.sucesso) {
                     showToast(`Protocolo ${data.protocolo} Gerado!`, 'Inclusão salva no banco de dados.');
                     this.reset();
+                    document.getElementById('label-arquivo-anexo').innerHTML = 'Arraste arquivos aqui ou <span style="color:var(--primary); font-weight:600;">Clique para buscar</span> no computador';
                     switchView('dashboard', document.querySelectorAll('.nav-item')[0]);
                 } else {
                     alert('Erro ao salvar: ' + (data.erro || 'Falha no servidor.'));
@@ -860,7 +956,7 @@
             }
         });
 
-        // --- 6. DEMAIS CONSULTAS ---
+        // --- 6. PACIENTES E PRONTUÁRIO ---
         async function carregarPacientesBanco() {
             const tbody = document.getElementById('tabela-pacientes');
             tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Buscando base de pacientes...</td></tr>';
@@ -871,7 +967,9 @@
                 const data = await res.json();
 
                 if (data.sucesso && data.pacientes.length > 0) {
+                    listaPacientesCache = data.pacientes;
                     tbody.innerHTML = '';
+                    
                     data.pacientes.forEach(p => {
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
@@ -881,7 +979,7 @@
                             </td>
                             <td>${p.cpf}</td>
                             <td><span class="badge bg-warning">${p.total_requisicoes} Requisição(ões)</span></td>
-                            <td><button class="btn-primary" style="background: transparent; color: var(--primary); border: 1px solid var(--primary); padding: 6px 12px;">Ver Prontuário</button></td>
+                            <td><button class="btn-primary" style="background: transparent; color: var(--primary); border: 1px solid var(--primary); padding: 6px 12px;" onclick="abrirProntuario('${p.cpf}')">Ver Prontuário</button></td>
                         `;
                         tbody.appendChild(tr);
                     });
@@ -893,6 +991,160 @@
             }
         }
 
+      function abrirProntuario(cpf) {
+            const paciente = listaPacientesCache.find(p => p.cpf === cpf);
+            if (!paciente) return;
+
+            document.getElementById('pront-nome').innerText = paciente.nome || 'Não informado';
+            document.getElementById('pront-cpf').innerText = `CPF: ${paciente.cpf}`;
+            document.getElementById('pront-email').innerText = paciente.email || 'Não informado';
+            document.getElementById('pront-telefone').innerText = paciente.telefone || 'Não informado';
+            document.getElementById('pront-total').innerText = paciente.total_requisicoes;
+
+            const containerHist = document.getElementById('pront-historico-lista');
+            containerHist.innerHTML = '';
+
+            paciente.historico.forEach(reg => {
+                const dataReq = new Date(reg.created_at).toLocaleDateString('pt-BR');
+                let corBadge = reg.status_atual === 'Agendado' ? 'bg-success' : (reg.status_atual === 'Em Análise' ? 'bg-warning' : 'bg-info');
+                
+                let htmlAgendamento = reg.data_agendamento ? 
+                    `<div style="font-size: 13px; color: var(--success); margin-top: 4px;"><strong><i class="ph ph-calendar"></i> Agendado para:</strong> ${reg.data_agendamento.replace('T', ' às ')}</div>` : '';
+                
+                let htmlParecer = reg.parecer ? 
+                    `<div style="margin-top: 12px; padding: 12px; background: #f8fafc; border-radius: 6px; font-size: 13px; border-left: 3px solid var(--primary);"><strong>Parecer do Regulador:</strong><br>${reg.parecer}</div>` : '';
+
+                let listaAnexosHtml = '';
+                const anexos = (reg.anexos && Array.isArray(reg.anexos)) ? reg.anexos : [];
+
+                if (anexos.length > 0) {
+                    listaAnexosHtml = `<div style="margin-top: 12px; border-top: 1px dashed var(--border); padding-top: 10px;">
+                        <div style="font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px;">Documentos Anexados (${anexos.length}):</div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">`;
+
+                    anexos.forEach((url, index) => {
+                        let nomeArquivo = url.split('/').pop().split('?')[0];
+                        if (nomeArquivo.length > 30) nomeArquivo = `Documento_${index + 1}.${nomeArquivo.split('.').pop()}`;
+
+                        listaAnexosHtml += `
+                            <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-color); padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border);">
+                                <span style="font-size: 13px; font-weight: 500; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+                                    <i class="ph ph-file-pdf" style="font-size: 16px; color: var(--danger);"></i> ${nomeArquivo}
+                                </span>
+                                <div style="display: flex; gap: 6px;">
+                                    <a href="${url}" target="_blank" class="btn-action" title="Baixar / Visualizar" style="padding: 4px 8px; font-size: 12px; text-decoration: none; display: inline-flex; align-items: center; background:var(--primary); color:white; border-radius:4px;">
+                                        <i class="ph ph-download-simple"></i>
+                                    </a>
+                                    <button class="btn-action danger" title="Excluir Documento" onclick="excluirDocumento('${reg.id}', '${url}')" style="padding: 4px 8px; font-size: 12px; background:var(--danger); color:white; border:none; border-radius:4px; cursor:pointer;">
+                                        <i class="ph ph-trash"></i>
+                                    </button>
+                                </div>
+                            </div>`;
+                    });
+                    listaAnexosHtml += `</div></div>`;
+                } else {
+                    listaAnexosHtml = `<div style="margin-top: 10px; font-size: 13px; color: var(--text-muted); font-style: italic;">Nenhum documento anexado a esta requisição.</div>`;
+                }
+
+                containerHist.innerHTML += `
+                    <div style="border: 1px solid var(--border); border-radius: 8px; padding: 16px; background: var(--surface); margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                            <div>
+                                <strong style="color: var(--primary); font-size: 15px;">Protocolo #${reg.protocolo}</strong>
+                                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Solicitado em ${dataReq}</div>
+                            </div>
+                            <span class="badge ${corBadge}">${reg.status_atual}</span>
+                        </div>
+                        
+                        <div style="font-size: 14px; margin-bottom: 4px;"><strong>Procedimento:</strong> ${reg.procedimento}</div>
+                        <div style="font-size: 14px; margin-bottom: 4px;"><strong>Prioridade:</strong> ${reg.prioridade}</div>
+                        ${htmlAgendamento}
+                        ${htmlParecer}
+                        ${listaAnexosHtml}
+
+                        <div style="margin-top: 14px; display: flex; justify-content: flex-end;">
+                            <label class="btn-primary" style="padding: 8px 16px; font-size: 13px; cursor: pointer; margin: 0; display: inline-flex; align-items: center; gap: 8px;">
+                                <i class="ph ph-plus-circle" style="font-size: 16px;"></i> Adicionar Novos Documentos
+                                <input type="file" id="input-file-${reg.id}" style="display: none;" multiple onchange="enviarNovosDocumentos('${reg.id}', this)">
+                            </label>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('modal-prontuario').style.display = 'flex';
+        }
+
+        
+       async function enviarNovosDocumentos(idRegulacao, inputElement) {
+            // Pega os arquivos direto do input que disparou o evento
+            const arquivos = inputElement.files;
+            if (!arquivos || arquivos.length === 0) {
+                alert("Nenhum arquivo selecionado.");
+                return;
+            }
+
+            const formData = new FormData();
+            // IMPORTANTE: O nome 'novos_anexos' deve ser exatamente igual ao que o Python procura em request.files.getlist()
+            for (let i = 0; i < arquivos.length; i++) {
+                formData.append('novos_anexos', arquivos.item(i));
+            }
+
+            showToast('Enviando...', 'Fazendo upload dos novos documentos para o prontuário.');
+
+            try {
+                const response = await fetch(`/api/tenant/regulacoes/${idRegulacao}/anexos`, {
+                    method: 'PATCH',
+                    body: formData
+                });
+                
+                const data = await response.json();
+
+                if (response.ok && data.sucesso) {
+                    showToast('Sucesso!', 'Novos documentos adicionados.');
+                    await carregarPacientesBanco();
+                    const cpfAtual = document.getElementById('pront-cpf').innerText.replace('CPF: ', '').trim();
+                    abrirProntuario(cpfAtual);
+                } else {
+                    alert('Erro ao enviar anexos: ' + (data.erro || 'Falha no servidor.'));
+                }
+            } catch (err) {
+                console.error("Erro no fetch:", err);
+                alert('Erro de conexão ao enviar documentos.');
+            }
+        }
+
+        async function excluirDocumento(idRegulacao, urlAnexo) {
+            if (!confirm("Deseja realmente remover este documento do prontuário?")) return;
+
+            showToast('Removendo...', 'Excluindo o documento selecionado.');
+
+            try {
+                const response = await fetch(`/api/tenant/regulacoes/${idRegulacao}/anexos`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: urlAnexo })
+                });
+                const data = await response.json();
+
+                if (response.ok && data.sucesso) {
+                    showToast('Removido!', 'O documento foi excluído com sucesso.');
+                    await carregarPacientesBanco();
+                    const cpfAtual = document.getElementById('pront-cpf').innerText.replace('CPF: ', '').trim();
+                    abrirProntuario(cpfAtual);
+                } else {
+                    alert('Erro ao excluir documento: ' + (data.erro || 'Falha no servidor.'));
+                }
+            } catch (err) {
+                alert('Erro de conexão ao excluir documento.');
+            }
+        }
+
+        function fecharProntuario() {
+            document.getElementById('modal-prontuario').style.display = 'none';
+        }
+
+        // --- 7. RELATÓRIOS E E-MAILS ---
         async function carregarRelatoriosBanco() {
             const unidade_id = sessionStorage.getItem('unidade_id');
             try {
@@ -982,8 +1234,110 @@
             });
 
             window.location.href = `mailto:?subject=Urgente - Pacientes aguardando Regulação&body=${corpo}`;
-
             document.getElementById('modal-alertas-gestor').style.display = 'none';
+        }
+
+        // --- RELATÓRIOS E FILTRAGEM ---
+        function gerarRelatorioNaTela() {
+            const dataIni = document.getElementById('rel-data-ini').value;
+            const dataFim = document.getElementById('rel-data-fim').value;
+            const tipo = document.getElementById('rel-tipo').value;
+
+            let dadosFiltrados = listaRegulacoesCache;
+
+            if (dataIni) {
+                dadosFiltrados = dadosFiltrados.filter(r => r.created_at.split('T')[0] >= dataIni);
+            }
+            if (dataFim) {
+                dadosFiltrados = dadosFiltrados.filter(r => r.created_at.split('T')[0] <= dataFim);
+            }
+
+            const containerGraficos = document.getElementById('relatorio-graficos');
+            const containerTabela = document.getElementById('relatorio-tabela-container');
+            const tbody = document.getElementById('tabela-relatorio-gerado');
+            const tituloTabela = document.getElementById('relatorio-titulo-tabela');
+
+            if (tipo === 'geral') {
+                containerGraficos.style.display = 'grid';
+                containerTabela.style.display = 'none';
+
+                let consultas = 0, exames = 0, cirurgias = 0;
+                let noPrazo = 0, alerta = 0, atrasados = 0;
+
+                dadosFiltrados.forEach(r => {
+                    if (r.procedimento === 'Consulta Especializada') consultas++;
+                    else if (r.procedimento === 'Procedimento Cirúrgico') cirurgias++;
+                    else exames++;
+
+                    if (r.status_atual === 'Agendado' || r.prioridade === 'Rotina') noPrazo++;
+                    else if (r.status_atual === 'Em Análise' && r.prioridade === 'Prioridade') alerta++;
+                    else if (r.status_atual === 'Em Análise' && r.prioridade === 'Urgência') atrasados++;
+                });
+
+                document.getElementById('vol-consultas').innerText = consultas;
+                document.getElementById('vol-exames').innerText = exames;
+                document.getElementById('vol-procedimentos').innerText = cirurgias;
+
+                let total = dadosFiltrados.length || 1;
+                document.getElementById('bar-prazo').style.width = `${(noPrazo/total)*100}%`;
+                document.getElementById('val-prazo').innerText = `${Math.round((noPrazo/total)*100)}%`;
+
+                document.getElementById('bar-alerta').style.width = `${(alerta/total)*100}%`;
+                document.getElementById('val-alerta').innerText = `${Math.round((alerta/total)*100)}%`;
+
+                document.getElementById('bar-atraso').style.width = `${(atrasados/total)*100}%`;
+                document.getElementById('val-atraso').innerText = `${Math.round((atrasados/total)*100)}%`;
+
+            } else {
+                containerGraficos.style.display = 'none';
+                containerTabela.style.display = 'block';
+
+                let filtradosPorTipo = [];
+                let textoFiltroData = "";
+                if(dataIni || dataFim) {
+                    textoFiltroData = ` (Período: ${dataIni ? dataIni.split('-').reverse().join('/') : 'Início'} até ${dataFim ? dataFim.split('-').reverse().join('/') : 'Hoje'})`;
+                }
+
+                if (tipo === 'agendados') {
+                    tituloTabela.innerText = "Relatório: Pacientes Agendados / Concluídos" + textoFiltroData;
+                    filtradosPorTipo = dadosFiltrados.filter(r => r.status_atual === 'Agendado');
+                } else if (tipo === 'atrasados') {
+                    tituloTabela.innerText = "Relatório Crítico: Urgências Pendentes" + textoFiltroData;
+                    filtradosPorTipo = dadosFiltrados.filter(r => r.status_atual === 'Em Análise' && r.prioridade === 'Urgência');
+                }
+
+                tbody.innerHTML = '';
+                if (filtradosPorTipo.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum registro encontrado com estes filtros.</td></tr>';
+                } else {
+                    filtradosPorTipo.forEach(r => {
+                        const d = new Date(r.created_at);
+                        const dataBr = d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                        tbody.innerHTML += `
+                            <tr>
+                                <td style="font-size: 13px;">${dataBr}</td>
+                                <td style="font-weight:bold; color:var(--primary);">#${r.protocolo}</td>
+                                <td>${r.nome_paciente}</td>
+                                <td>${r.procedimento}<br><small style="font-weight:600; color:var(--text-muted);">${r.prioridade}</small></td>
+                                <td><span class="badge ${r.status_atual === 'Agendado' ? 'bg-success' : 'bg-warning'}">${r.status_atual}</span></td>
+                            </tr>
+                        `;
+                    });
+                }
+            }
+        }
+
+        const btnRelatorios = document.querySelector('.nav-item[onclick*="relatorios"]');
+        if (btnRelatorios) {
+            btnRelatorios.addEventListener('click', () => {
+                gerarRelatorioNaTela(); 
+            });
+        }
+
+        function imprimirProntuario() {
+            document.body.classList.add('printing-prontuario');
+            window.print();
+            setTimeout(() => document.body.classList.remove('printing-prontuario'), 500);
         }
     </script>
 </body>
