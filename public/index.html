@@ -991,7 +991,7 @@
             }
         }
 
-        function abrirProntuario(cpf) {
+      function abrirProntuario(cpf) {
             const paciente = listaPacientesCache.find(p => p.cpf === cpf);
             if (!paciente) return;
 
@@ -1063,9 +1063,9 @@
                         ${listaAnexosHtml}
 
                         <div style="margin-top: 14px; display: flex; justify-content: flex-end;">
-                            <label class="btn-primary" style="padding: 6px 12px; font-size: 12px; cursor: pointer; margin: 0;">
-                                <i class="ph ph-plus-circle"></i> Adicionar Novos Documentos
-                                <input type="file" style="display: none;" multiple onchange="enviarNovosDocumentos('${reg.id}', this)">
+                            <label class="btn-primary" style="padding: 8px 16px; font-size: 13px; cursor: pointer; margin: 0; display: inline-flex; align-items: center; gap: 8px;">
+                                <i class="ph ph-plus-circle" style="font-size: 16px;"></i> Adicionar Novos Documentos
+                                <input type="file" id="input-file-${reg.id}" style="display: none;" multiple onchange="enviarNovosDocumentos('${reg.id}', this)">
                             </label>
                         </div>
                     </div>
@@ -1075,6 +1075,7 @@
             document.getElementById('modal-prontuario').style.display = 'flex';
         }
 
+        
        async function enviarNovosDocumentos(idRegulacao, inputElement) {
             // Pega os arquivos direto do input que disparou o evento
             const arquivos = inputElement.files;
