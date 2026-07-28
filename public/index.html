@@ -885,32 +885,40 @@
         });
 
         // --- 5. CADASTRO DE RECEPÇÃO ---
+       // --- 5. CADASTRO DE RECEPÇÃO ---
         document.getElementById('form-recepcao').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btnSalvar = document.getElementById('btn-salvar-reg');
-            btnSalvar.innerHTML = 'Enviando...';
+            btnSalvar.innerHTML = 'Enviando e Carregando Arquivos...'; // Atualiza o texto para feedback
 
-            const payload = {
-                unidade_id: sessionStorage.getItem('unidade_id'),
-                nome_paciente: document.getElementById('input-nome-paciente').value,
-                cpf: document.getElementById('input-cpf').value,
-                email: document.getElementById('input-email-paciente').value,
-                telefone: document.getElementById('input-telefone').value,
-                procedimento: document.getElementById('input-procedimento').value,
-                prioridade: document.getElementById('input-prioridade').value
-            };
+            // Usamos FormData para suportar o envio de arquivos (Multipart)
+            const formData = new FormData();
+            formData.append('unidade_id', sessionStorage.getItem('unidade_id'));
+            formData.append('nome_paciente', document.getElementById('input-nome-paciente').value);
+            formData.append('cpf', document.getElementById('input-cpf').value);
+            formData.append('email', document.getElementById('input-email-paciente').value);
+            formData.append('telefone', document.getElementById('input-telefone').value);
+            formData.append('procedimento', document.getElementById('input-procedimento').value);
+            formData.append('prioridade', document.getElementById('input-prioridade').value);
+
+            // Captura todos os arquivos anexados no input
+            const inputArquivos = document.getElementById('file-upload');
+            for (let i = 0; i < inputArquivos.files.length; i++) {
+                formData.append('anexos', inputArquivos.files[i]);
+            }
 
             try {
+                // Removemos o 'Content-Type': 'application/json' porque o navegador define automaticamente para FormData
                 const response = await fetch('/api/tenant/regulacoes', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: formData
                 });
 
                 const data = await response.json();
                 if (response.ok && data.sucesso) {
                     showToast(`Protocolo ${data.protocolo} Gerado!`, 'Inclusão salva no banco de dados.');
                     this.reset();
+                    document.getElementById('label-arquivo-anexo').innerHTML = 'Arraste arquivos aqui ou <span style="color:var(--primary); font-weight:600;">Clique para buscar</span> no computador';
                     switchView('dashboard', document.querySelectorAll('.nav-item')[0]);
                 } else {
                     alert('Erro ao salvar: ' + (data.erro || 'Falha no servidor.'));
@@ -921,7 +929,6 @@
                 btnSalvar.innerHTML = '<i class="ph ph-check-circle"></i> Registrar e Gerar Protocolo';
             }
         });
-
         // --- 6. DEMAIS CONSULTAS ---
         let listaPacientesCache = []; // Criamos um cache para o prontuário
 
@@ -1017,11 +1024,21 @@
         }
 
         function baixarAnexos(protocolo) {
-            // Nota de candura: Deixei a interface de download pronta aqui, 
-            // porém, lembre-se que nossa lógica atual do `app.py` não está salvando os PDFs/arquivos
-            // no bucket do Supabase durante a rota 'Nova Recepção'. Você precisará atualizar o backend
-            // para lidar com os arquivos depois, mas o botão já está 100% no lugar correto!
-            alert(`Buscando anexos do protocolo ${protocolo}...\n\nAviso: O backend em Python precisará ser ajustado na próxima etapa para enviar a URL dos PDFs do Supabase para o Frontend.`);
+            // Varre o cache de pacientes para encontrar a regulação exata pelo protocolo
+            let regEncontrada = null;
+            listaPacientesCache.forEach(paciente => {
+                const busca = paciente.historico.find(r => r.protocolo === protocolo);
+                if (busca) regEncontrada = busca;
+            });
+
+            if (regEncontrada && regEncontrada.anexos && regEncontrada.anexos.length > 0) {
+                // Se houver anexos, abre cada um em uma nova guia
+                regEncontrada.anexos.forEach(url => {
+                    window.open(url, '_blank');
+                });
+            } else {
+                alert(`Nenhum documento anexado ao protocolo ${protocolo}.`);
+            }
         }
 
         async function carregarRelatoriosBanco() {
