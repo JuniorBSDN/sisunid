@@ -1029,8 +1029,7 @@
             }
         }
 
-        // --- FUNÇÕES DO MODAL PRONTUÁRIO ---
-        function abrirProntuario(cpf) {
+       function abrirProntuario(cpf) {
             const paciente = listaPacientesCache.find(p => p.cpf === cpf);
             if (!paciente) return;
 
@@ -1053,11 +1052,42 @@
                 let htmlParecer = reg.parecer ? 
                     `<div style="margin-top: 12px; padding: 12px; background: #f8fafc; border-radius: 6px; font-size: 13px; border-left: 3px solid var(--primary);"><strong>Parecer do Regulador:</strong><br>${reg.parecer}</div>` : '';
 
-                // Verifica quantos anexos já existem salvos
-                let qtdAnexos = (reg.anexos && Array.isArray(reg.anexos)) ? reg.anexos.length : 0;
+                // Lista de Anexos em formato HTML amigável
+                let listaAnexosHtml = '';
+                const anexos = (reg.anexos && Array.isArray(reg.anexos)) ? reg.anexos : [];
+
+                if (anexos.length > 0) {
+                    listaAnexosHtml = `<div style="margin-top: 12px; border-top: 1px dashed var(--border); padding-top: 10px;">
+                        <div style="font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px;">Documentos Anexados (${anexos.length}):</div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">`;
+
+                    anexos.forEach((url, index) => {
+                        // Extrai um nome limpo do arquivo direto da URL do Supabase
+                        let nomeArquivo = url.split('/').pop().split('?')[0];
+                        if (nomeArquivo.length > 30) nomeArquivo = `Documento_${index + 1}.${nomeArquivo.split('.').pop()}`;
+
+                        listaAnexosHtml += `
+                            <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-color); padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border);">
+                                <span style="font-size: 13px; font-weight: 500; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+                                    <i class="ph ph-file-pdf" style="font-size: 16px; color: var(--danger);"></i> ${nomeArquivo}
+                                </span>
+                                <div style="display: flex; gap: 6px;">
+                                    <a href="${url}" target="_blank" class="btn-action" title="Baixar / Visualizar" style="padding: 4px 8px; font-size: 12px; text-decoration: none; display: inline-flex; align-items: center;">
+                                        <i class="ph ph-download-simple"></i>
+                                    </a>
+                                    <button class="btn-action danger" title="Excluir Documento" onclick="excluirDocumento('${reg.id}', '${url}')" style="padding: 4px 8px; font-size: 12px;">
+                                        <i class="ph ph-trash"></i>
+                                    </button>
+                                </div>
+                            </div>`;
+                    });
+                    listaAnexosHtml += `</div></div>`;
+                } else {
+                    listaAnexosHtml = `<div style="margin-top: 10px; font-size: 13px; color: var(--text-muted); font-style: italic;">Nenhum documento anexado a esta requisição.</div>`;
+                }
 
                 containerHist.innerHTML += `
-                    <div style="border: 1px solid var(--border); border-radius: 8px; padding: 16px; background: var(--surface);">
+                    <div style="border: 1px solid var(--border); border-radius: 8px; padding: 16px; background: var(--surface); margin-bottom: 12px;">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
                             <div>
                                 <strong style="color: var(--primary); font-size: 15px;">Protocolo #${reg.protocolo}</strong>
@@ -1071,12 +1101,11 @@
                         ${htmlAgendamento}
                         ${htmlParecer}
                         
-                        <!-- BOTÕES DE DOCUMENTOS E ADIÇÃO -->
-                        <div style="margin-top: 16px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; border-top: 1px solid var(--border); pt: 12px; padding-top: 12px;">
-                            <button class="btn-primary" style="padding: 6px 12px; font-size: 12px; background: transparent; color: var(--text-main); border: 1px solid var(--border);" onclick="baixarAnexos('${reg.protocolo}')">
-                                <i class="ph ph-folder-open"></i> Ver Documentos (${qtdAnexos})
-                            </button>
-                            
+                        <!-- RENDERIZA A LISTA DOS DOCUMENTOS -->
+                        ${listaAnexosHtml}
+
+                        <!-- BOTÃO DE ADICIONAR NOVOS -->
+                        <div style="margin-top: 14px; display: flex; justify-content: flex-end;">
                             <label class="btn-primary" style="padding: 6px 12px; font-size: 12px; cursor: pointer; margin: 0;">
                                 <i class="ph ph-plus-circle"></i> Adicionar Novos Documentos
                                 <input type="file" style="display: none;" multiple onchange="enviarNovosDocumentos('${reg.id}', this)">
@@ -1089,7 +1118,6 @@
             document.getElementById('modal-prontuario').style.display = 'flex';
         }
 
-        // Função auxiliar para disparar o upload de novos arquivos direto para o registro existente
         async function enviarNovosDocumentos(idRegulacao, inputElement) {
             if (!inputElement.files || inputElement.files.length === 0) return;
 
@@ -1108,10 +1136,8 @@
                 const data = await response.json();
 
                 if (response.ok && data.sucesso) {
-                    showToast('Sucesso!', 'Novos documentos adicionados ao prontuário.');
-                    // Atualiza o cache local e recarrega a tabela de pacientes para refletir a mudança
+                    showToast('Sucesso!', 'Novos documentos adicionados.');
                     await carregarPacientesBanco();
-                    // Reabre o prontuário atualizado automaticamente
                     const cpfAtual = document.getElementById('pront-cpf').innerText.replace('CPF: ', '').trim();
                     abrirProntuario(cpfAtual);
                 } else {
@@ -1122,6 +1148,38 @@
             }
         }
 
+        async function excluirDocumento(idRegulacao, urlAnexo) {
+            if (!confirm("Deseja realmente remover este documento do prontuário?")) return;
+
+            showToast('Removendo...', 'Excluindo o documento selecionado.');
+
+            try {
+                const response = await fetch(`/api/tenant/regulacoes/${idRegulacao}/anexos`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: urlAnexo })
+                });
+                const data = await response.json();
+
+                if (response.ok && data.sucesso) {
+                    showToast('Removido!', 'O documento foi excluído com sucesso.');
+                    await carregarPacientesBanco();
+                    const cpfAtual = document.getElementById('pront-cpf').innerText.replace('CPF: ', '').trim();
+                    abrirProntuario(cpfAtual);
+                } else {
+                    alert('Erro ao excluir documento: ' + (data.erro || 'Falha no servidor.'));
+                }
+            } catch (err) {
+                alert('Erro de conexão ao excluir documento.');
+            }
+        }
+            document.getElementById('modal-prontuario').style.display = 'flex';
+        }
+
+        
+        
+        
+     
         function baixarAnexos(protocolo) {
             let regEncontrada = null;
             listaPacientesCache.forEach(paciente => {
