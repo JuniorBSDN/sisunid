@@ -659,7 +659,7 @@
         </div>
     </div>
 
-    <!-- NOVO MODAL: EDIÇÃO DE REGISTRO (ADICIONADO AQUI) -->
+   <!-- NOVO MODAL: EDIÇÃO DE REGISTRO (ATUALIZADO COM ENDEREÇO) -->
     <div id="modal-editar-registro" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-header">
@@ -686,7 +686,15 @@
                             <label class="form-label">Telefone</label>
                             <input type="text" id="edit-telefone" class="form-control" required>
                         </div>
+
+                        <!-- NOVO CAMPO DE ENDEREÇO ADICIONADO AQUI -->
+                        <div class="form-group full-width">
+                            <label class="form-label">Endereço Completo</label>
+                            <input type="text" id="edit-endereco" class="form-control" placeholder="Rua, Número, Bairro, Cidade..." required>
+                        </div>
+
                         <div class="form-group full-width" style="border-top: 1px solid var(--border); margin: 8px 0;"></div>
+                        
                         <div class="form-group">
                             <label class="form-label">Unidade Solicitante / Destino</label>
                             <input type="text" id="edit-unidade" class="form-control" required>
