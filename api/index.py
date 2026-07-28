@@ -11,7 +11,6 @@ app = Flask(__name__)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
 # ==========================================
 # 0. ROTAS DO FRONT-END (Telas)
 # ==========================================
@@ -19,14 +18,12 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def serve_tenant():
     return send_from_directory(os.path.join(BASE_DIR, 'public'), 'index.html')
 
-
 @app.route('/master')
 def serve_master():
     master_path = os.path.join(BASE_DIR, 'master.html')
     if not os.path.exists(master_path):
         master_path = os.path.join(BASE_DIR, 'public', 'master.html')
     return send_file(master_path)
-
 
 # Função auxiliar para disparar e-mails
 def enviar_email(destinatario, assunto, corpo_html):
@@ -40,7 +37,6 @@ def enviar_email(destinatario, assunto, corpo_html):
     msg.attach(MIMEText(corpo_html, 'html'))
 
     try:
-        # Exemplo usando SMTP do Gmail. Altere o host/porta conforme seu provedor.
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
         server.login(remetente, senha)
@@ -50,7 +46,6 @@ def enviar_email(destinatario, assunto, corpo_html):
     except Exception as e:
         print("Erro ao enviar e-mail:", e)
         return False
-
 
 # ==========================================
 # 1. CONEXÕES SUPABASE (Inicialização Segura)
@@ -69,10 +64,8 @@ def get_supabase_client() -> Client:
                 print("Erro crítico ao inicializar Supabase:", str(e))
     return None
 
-
 MASTER_PASSWORD = (os.environ.get("MASTER_PASSWORD") or "admin").strip()
 BUCKET_NAME = "uploads"
-
 
 # ==========================================
 # 2. ROTAS DO PAINEL MASTER
@@ -86,13 +79,11 @@ def master_login():
         return jsonify({"sucesso": True})
     return jsonify({"sucesso": False, "erro": "Senha incorreta"}), 401
 
-
 @app.route('/api/master/unidades', methods=['GET'])
 def get_unidades():
     supabase = get_supabase_client()
     if not supabase:
-        return jsonify(
-            {"sucesso": False, "erro": "Supabase offline. Verifique as Variáveis de Ambiente na Vercel."}), 500
+        return jsonify({"sucesso": False, "erro": "Supabase offline. Verifique as Variáveis de Ambiente na Vercel."}), 500
 
     try:
         response = supabase.table('unidades').select('*').order('created_at', desc=True).execute()
@@ -103,7 +94,6 @@ def get_unidades():
             return jsonify({"sucesso": True, "unidades": response.data})
         except Exception as e:
             return jsonify({"sucesso": False, "erro": str(e)}), 500
-
 
 @app.route('/api/master/unidades', methods=['POST'])
 def criar_unidade():
@@ -155,7 +145,6 @@ def criar_unidade():
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
-
 @app.route('/api/master/unidades/<id>/status', methods=['PATCH'])
 def alterar_status_unidade(id):
     supabase = get_supabase_client()
@@ -168,7 +157,6 @@ def alterar_status_unidade(id):
         return jsonify({"sucesso": True})
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
-
 
 # ==========================================
 # 3. ROTAS DO PAINEL DO CLIENTE (TENANT)
@@ -203,8 +191,6 @@ def tenant_login():
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
-
-
 @app.route('/api/tenant/regulacoes/<id_reg>/anexos', methods=['DELETE'])
 def deletar_anexo_regulacao(id_reg):
     supabase = get_supabase_client()
@@ -218,7 +204,6 @@ def deletar_anexo_regulacao(id_reg):
         return jsonify({"sucesso": False, "erro": "URL do arquivo é obrigatória."}), 400
 
     try:
-        # 1. Busca a regulação atual
         reg_atual = supabase.table('regulacoes').select('anexos').eq('id', id_reg).execute()
         if not reg_atual.data:
             return jsonify({"sucesso": False, "erro": "Regulação não encontrada."}), 404
@@ -227,10 +212,8 @@ def deletar_anexo_regulacao(id_reg):
         if not isinstance(anexos_atuais, list):
             anexos_atuais = []
 
-        # 2. Filtra a lista removendo a URL correspondente
         novos_anexos = [url for url in anexos_atuais if url != url_para_remover]
 
-        # 3. Atualiza a lista na tabela 'regulacoes' do Supabase
         supabase.table('regulacoes').update({"anexos": novos_anexos}).eq('id', id_reg).execute()
 
         return jsonify({"sucesso": True, "anexos": novos_anexos})
@@ -238,8 +221,6 @@ def deletar_anexo_regulacao(id_reg):
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
-
-# ---> ROTA GET RESTAURADA AQUI <---
 @app.route('/api/tenant/regulacoes/<id_reg>/anexos', methods=['PATCH'])
 def adicionar_anexos_regulacao(id_reg):
     supabase = get_supabase_client()
@@ -247,7 +228,6 @@ def adicionar_anexos_regulacao(id_reg):
         return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
 
     try:
-        # 1. Busca a regulação atual no banco para pegar os anexos que já existem
         reg_atual = supabase.table('regulacoes').select('protocolo, anexos').eq('id', id_reg).execute()
         if not reg_atual.data:
             return jsonify({"sucesso": False, "erro": "Regulação não encontrada."}), 404
@@ -257,7 +237,6 @@ def adicionar_anexos_regulacao(id_reg):
         if not isinstance(anexos_atuais, list):
             anexos_atuais = []
 
-        # 2. Processa os novos arquivos enviados
         novos_links = []
         arquivos = request.files.getlist('novos_anexos')
 
@@ -278,17 +257,14 @@ def adicionar_anexos_regulacao(id_reg):
                 except Exception as err_supa:
                     print(f"Erro no upload do arquivo adicional {file.filename}:", str(err_supa))
 
-        # 3. Junta os arquivos antigos com os novos
         anexos_atualizados = anexos_atuais + novos_links
 
-        # 4. Atualiza no Supabase
         supabase.table('regulacoes').update({"anexos": anexos_atualizados}).eq('id', id_reg).execute()
 
         return jsonify({"sucesso": True, "anexos": anexos_atualizados})
 
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
-
 
 @app.route('/api/tenant/regulacoes', methods=['GET'])
 def get_regulacoes():
@@ -306,7 +282,6 @@ def get_regulacoes():
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
-
 @app.route('/api/tenant/regulacoes', methods=['POST'])
 def criar_regulacao():
     supabase = get_supabase_client()
@@ -317,14 +292,12 @@ def criar_regulacao():
         data = request.form
         protocolo = f"REQ-{str(uuid.uuid4())[:4].upper()}"
         
-        # 1. PROCESSAMENTO DE MÚLTIPLOS ANEXOS
         urls_anexos = []
-        arquivos = request.files.getlist('anexos') # 'anexos' será o nome do campo no Frontend
+        arquivos = request.files.getlist('anexos')
         
         for file in arquivos:
             if file and file.filename != '':
                 file_ext = file.filename.split('.')[-1]
-                # Salva no bucket organizado por protocolo
                 unique_filename = f"regulacoes/{protocolo}/{uuid.uuid4().hex}.{file_ext}"
                 file_bytes = file.read()
                 
@@ -339,7 +312,6 @@ def criar_regulacao():
                 except Exception as err_supa:
                     print(f"Erro no upload do arquivo {file.filename}:", str(err_supa))
 
-        # 2. MONTA O OBJETO PARA O BANCO
         novo_paciente = {
             "unidade_id": data.get("unidade_id"),
             "protocolo": protocolo,
@@ -350,13 +322,11 @@ def criar_regulacao():
             "procedimento": data.get("procedimento"),
             "prioridade": data.get("prioridade"),
             "status_atual": "Em Análise",
-            "anexos": urls_anexos  # <- NOVA COLUNA NO BANCO COM A LISTA DE LINKS
+            "anexos": urls_anexos
         }
 
-        # 3. SALVA NO SUPABASE
         supabase.table('regulacoes').insert(novo_paciente).execute()
 
-        # 4. TENTA SALVAR O HISTÓRICO DE E-MAIL
         try:
             email_log = {
                 "unidade_id": data.get("unidade_id"),
@@ -375,12 +345,9 @@ def criar_regulacao():
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
-
 # ==========================================
 # 4. NOVAS ROTAS DOS MÓDULOS (DINÂMICAS)
 # ==========================================
-
-# Módulo 1: Base de Pacientes (Agrupado por CPF com prontuário real)
 @app.route('/api/tenant/pacientes', methods=['GET'])
 def get_pacientes():
     supabase = get_supabase_client()
@@ -411,8 +378,6 @@ def get_pacientes():
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
-
-# Módulo 2: Relatórios e Estatísticas Reais
 @app.route('/api/tenant/relatorios', methods=['GET'])
 def get_relatorios():
     supabase = get_supabase_client()
@@ -438,8 +403,6 @@ def get_relatorios():
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
-
-# Módulo 3: Timeline de E-mails Enviados
 @app.route('/api/tenant/emails', methods=['GET'])
 def get_emails():
     supabase = get_supabase_client()
@@ -451,7 +414,6 @@ def get_emails():
         response = supabase.table('historico_emails').select('*').eq('unidade_id', unidade_id).order('created_at', desc=True).execute()
         return jsonify({"sucesso": True, "emails": response.data})
     except Exception:
-        # Fallback de e-mails extraídos da própria tabela de regulações caso a historico_emails não tenha sido criada no SQL
         try:
             response = supabase.table('regulacoes').select('protocolo, email, nome_paciente, created_at').eq('unidade_id', unidade_id).order('created_at', desc=True).execute()
             emails_mock = []
@@ -468,7 +430,6 @@ def get_emails():
         except Exception as e2:
             return jsonify({"sucesso": False, "erro": str(e2)}), 500
 
-
 @app.route('/api/tenant/regulacoes/<id_reg>', methods=['PATCH'])
 def atualizar_regulacao(id_reg):
     supabase = get_supabase_client()
@@ -482,19 +443,14 @@ def atualizar_regulacao(id_reg):
         parecer = data.get('parecer')
         data_agendamento = data.get('data_agendamento')
 
-        # 1. Atualiza no banco de dados (Supabase)
         update_data = {
             "status_atual": novo_status,
             "parecer": parecer,
             "data_agendamento": data_agendamento
         }
 
-        # Guardamos a resposta para pegar o unidade_id depois
         response = supabase.table('regulacoes').update(update_data).eq('id', id_reg).execute()
 
-        # ========================================================
-        # 2. DISPARO DE E-MAIL PARA O PACIENTE
-        # ========================================================
         paciente_email = data.get('paciente_email')
 
         if paciente_email:
@@ -510,7 +466,6 @@ def atualizar_regulacao(id_reg):
             img_tag = f'<img src="{empresa_logo}" style="max-height: 50px; margin-bottom: 15px;">' if empresa_logo else ''
             assunto = f"Atualização no seu Protocolo #{protocolo}"
 
-            # Formatação visual do e-mail
             corpo_html = f"""
             <html>
             <body style="font-family: Arial, sans-serif; color: #333; padding: 20px;">
@@ -524,7 +479,6 @@ def atualizar_regulacao(id_reg):
             """
 
             if novo_status == 'Agendado' and data_agendamento:
-                # Converte o 'T' da data HTML para um formato mais legível
                 data_formatada = data_agendamento.replace('T', ' às ')
                 corpo_html += f"<p><b>Data e Hora do Agendamento:</b> {data_formatada}</p>"
 
@@ -538,12 +492,10 @@ def atualizar_regulacao(id_reg):
             status_envio = "Falha no Envio"
             try:
                 msg = MIMEMultipart()
-                # Camufla o remetente para aparecer o nome da clínica
                 msg['From'] = f"{empresa_nome} <{remetente}>"
                 msg['To'] = paciente_email
                 msg['Subject'] = assunto
 
-                # Se o paciente clicar em "Responder", vai para o e-mail da clínica
                 if empresa_email_contato:
                     msg.add_header('reply-to', empresa_email_contato)
 
@@ -558,7 +510,6 @@ def atualizar_regulacao(id_reg):
             except Exception as e:
                 print("Erro ao enviar e-mail ao paciente:", e)
 
-            # 3. Salva no Histórico de E-mails do Painel
             try:
                 unidade_id_bd = response.data[0].get('unidade_id') if response.data else None
                 email_log = {
@@ -571,13 +522,12 @@ def atualizar_regulacao(id_reg):
                 }
                 supabase.table('historico_emails').insert(email_log).execute()
             except Exception as err:
-                pass  # Ignora erro silencioso no log
+                pass
 
         return jsonify({"sucesso": True})
 
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
-
 
 @app.route('/api/tenant/alertar-gestor', methods=['POST'])
 def alertar_gestor_email():
@@ -625,7 +575,6 @@ def alertar_gestor_email():
     except Exception as e:
         print("Erro envio e-mail:", str(e))
         return jsonify({"sucesso": False, "erro": str(e)}), 500
-
 
 if __name__ == '__main__':
     app.run(debug=True)
