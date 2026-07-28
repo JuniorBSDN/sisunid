@@ -355,8 +355,18 @@
                                     <input type="text" id="input-telefone" class="form-control" placeholder="(00) 00000-0000" required>
                                 </div>
 
+                                <div class="form-group full-width">
+                                    <label class="form-label">Endereço Completo</label>
+                                    <input type="text" id="input-endereco-paciente" class="form-control" placeholder="Rua, Número, Bairro, Cidade..." required>
+                                </div>
+
                                 <div class="form-group full-width" style="border-top: 1px solid var(--border); margin: 8px 0;"></div>
 
+                                <div class="form-group full-width">
+                                    <label class="form-label">Endereço Completo</label>
+                                    <input type="text" id="edit-endereco" class="form-control" required>
+                                </div>
+                                
                                 <!-- NOVOS CAMPOS INSERIDOS CORRETAMENTE AQUI -->
                                 <div class="form-group">
                                     <label class="form-label">Unidade Solicitante / Destino</label>
@@ -926,7 +936,8 @@
             const filtrados = listaRegulacoesCache.filter(r =>
                 (r.nome_paciente && r.nome_paciente.toLowerCase().includes(termo)) ||
                 (r.cpf && r.cpf.includes(termo)) ||
-                (r.protocolo && r.protocolo.toLowerCase().includes(termo))
+                (r.protocolo && r.protocolo.toLowerCase().includes(termo)) ||
+                (r.endereco && r.endereco.toLowerCase().includes(termo)) // <-- Busca por endereço adicionada!
             );
             renderTabelaRegulacoes(filtrados);
         }
@@ -1015,6 +1026,7 @@
             formData.append('telefone', document.getElementById('input-telefone').value);
             formData.append('procedimento', document.getElementById('input-procedimento').value);
             formData.append('prioridade', document.getElementById('input-prioridade').value);
+            formData.append('endereco', document.getElementById('input-endereco-paciente').value);
             
             // NOVOS CAMPOS AQUI
             formData.append('unidade_saude', document.getElementById('input-unidade-saude').value);
@@ -1335,8 +1347,8 @@
             const dataIni = document.getElementById('rel-data-ini').value;
             const dataFim = document.getElementById('rel-data-fim').value;
             const tipo = document.getElementById('rel-tipo').value;
-
             let dadosFiltrados = listaRegulacoesCache;
+
 
             if (dataIni) {
                 dadosFiltrados = dadosFiltrados.filter(r => r.created_at.split('T')[0] >= dataIni);
@@ -1485,6 +1497,7 @@
             document.getElementById('edit-especificacao').value = reg.especificacao_sus || '';
             document.getElementById('edit-procedimento').value = reg.procedimento || 'Consulta Especializada';
             document.getElementById('edit-prioridade').value = reg.prioridade || 'Rotina';
+            document.getElementById('edit-endereco').value = reg.endereco || '';
 
             document.getElementById('modal-editar-registro').style.display = 'flex';
         }
@@ -1507,7 +1520,8 @@
                 unidade_saude: document.getElementById('edit-unidade').value,
                 especificacao_sus: document.getElementById('edit-especificacao').value,
                 procedimento: document.getElementById('edit-procedimento').value,
-                prioridade: document.getElementById('edit-prioridade').value
+                prioridade: document.getElementById('edit-prioridade').value,
+                endereco: document.getElementById('edit-endereco').value
             };
 
             try {
