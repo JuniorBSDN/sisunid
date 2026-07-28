@@ -584,33 +584,45 @@
         });
 
         function aplicarWhiteLabel(empresa) {
-            if (!empresa) return;
+    if (!empresa) return;
 
-            let corPrimaria = null;
-            if (empresa.tema && empresa.tema.primaria) corPrimaria = empresa.tema.primaria;
-            else if (empresa.tema_primaria) corPrimaria = empresa.tema_primaria;
+    // Log para você inspecionar se a URL da logo está chegando do backend
+    console.log("Dados da empresa carregados:", empresa); 
 
-            if (corPrimaria) {
-                document.documentElement.style.setProperty('--primary', corPrimaria);
-                document.documentElement.style.setProperty('--primary-hover', corPrimaria);
-                document.documentElement.style.setProperty('--primary-light', corPrimaria + '20');
-            }
+    let corPrimaria = null;
+    if (empresa.tema && empresa.tema.primaria) corPrimaria = empresa.tema.primaria;
+    else if (empresa.tema_primaria) corPrimaria = empresa.tema_primaria;
 
-            document.getElementById('nome-empresa-sidebar').innerText = empresa.nome || 'sis_unid';
-            document.getElementById('nome-gestor-topbar').innerText = empresa.gestor || 'Gestor';
-            document.getElementById('slogan-topbar').innerText = empresa.slogan || 'Regulação Municipal';
+    if (corPrimaria) {
+        document.documentElement.style.setProperty('--primary', corPrimaria);
+        document.documentElement.style.setProperty('--primary-hover', corPrimaria);
+        document.documentElement.style.setProperty('--primary-light', corPrimaria + '20');
+    }
 
-            // CORREÇÃO: Força a logo a aparecer sobrepondo a exibição do ícone padrão
-            if (empresa.logo_url) {
-                document.getElementById('icone-padrao-logo').style.display = 'none';
-                const imgLogo = document.getElementById('logo-branca-tenant');
-                imgLogo.setAttribute('src', empresa.logo_url);
-                imgLogo.style.display = 'block';
-            } else {
-                document.getElementById('icone-padrao-logo').style.display = 'block';
-                document.getElementById('logo-branca-tenant').style.display = 'none';
-            }
-        }
+    document.getElementById('nome-empresa-sidebar').innerText = empresa.nome || 'sis_unid';
+    document.getElementById('nome-gestor-topbar').innerText = empresa.gestor || 'Gestor';
+    document.getElementById('slogan-topbar').innerText = empresa.slogan || 'Regulação Municipal';
+
+    // CONTROLE DE EXIBIÇÃO DA LOGO
+    const iconePadrao = document.getElementById('icone-padrao-logo');
+    const imgLogo = document.getElementById('logo-branca-tenant');
+
+    if (empresa.logo_url && empresa.logo_url !== 'null' && empresa.logo_url !== '') {
+        iconePadrao.style.display = 'none';
+        imgLogo.src = empresa.logo_url;
+        imgLogo.style.display = 'block';
+
+        // Fallback: Se a URL da logo estiver quebrada ou bloqueada no Supabase
+        imgLogo.onerror = function() {
+            console.error("Erro ao carregar a logo. Verifique se o Bucket no Supabase é 'Public'. URL:", empresa.logo_url);
+            this.style.display = 'none';
+            iconePadrao.style.display = 'block';
+        };
+    } else {
+        iconePadrao.style.display = 'block';
+        imgLogo.style.display = 'none';
+    }
+}
 
         function iniciarSistemaTenant() {
             document.getElementById('login-tenant-screen').style.display = 'none';
