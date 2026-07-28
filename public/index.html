@@ -1034,14 +1034,12 @@
             const paciente = listaPacientesCache.find(p => p.cpf === cpf);
             if (!paciente) return;
 
-            // Preenche Cabeçalho
             document.getElementById('pront-nome').innerText = paciente.nome || 'Não informado';
             document.getElementById('pront-cpf').innerText = `CPF: ${paciente.cpf}`;
             document.getElementById('pront-email').innerText = paciente.email || 'Não informado';
             document.getElementById('pront-telefone').innerText = paciente.telefone || 'Não informado';
             document.getElementById('pront-total').innerText = paciente.total_requisicoes;
 
-            // Preenche Histórico
             const containerHist = document.getElementById('pront-historico-lista');
             containerHist.innerHTML = '';
 
@@ -1054,6 +1052,9 @@
                 
                 let htmlParecer = reg.parecer ? 
                     `<div style="margin-top: 12px; padding: 12px; background: #f8fafc; border-radius: 6px; font-size: 13px; border-left: 3px solid var(--primary);"><strong>Parecer do Regulador:</strong><br>${reg.parecer}</div>` : '';
+
+                // Verifica quantos anexos já existem salvos
+                let qtdAnexos = (reg.anexos && Array.isArray(reg.anexos)) ? reg.anexos.length : 0;
 
                 containerHist.innerHTML += `
                     <div style="border: 1px solid var(--border); border-radius: 8px; padding: 16px; background: var(--surface);">
@@ -1070,10 +1071,16 @@
                         ${htmlAgendamento}
                         ${htmlParecer}
                         
-                        <div style="margin-top: 16px; display: flex; gap: 8px;">
+                        <!-- BOTÕES DE DOCUMENTOS E ADIÇÃO -->
+                        <div style="margin-top: 16px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; border-top: 1px solid var(--border); pt: 12px; padding-top: 12px;">
                             <button class="btn-primary" style="padding: 6px 12px; font-size: 12px; background: transparent; color: var(--text-main); border: 1px solid var(--border);" onclick="baixarAnexos('${reg.protocolo}')">
-                                <i class="ph ph-download-simple"></i> Baixar Documentos
+                                <i class="ph ph-folder-open"></i> Ver Documentos (${qtdAnexos})
                             </button>
+                            
+                            <label class="btn-primary" style="padding: 6px 12px; font-size: 12px; cursor: pointer; margin: 0;">
+                                <i class="ph ph-plus-circle"></i> Adicionar Novos Documentos
+                                <input type="file" style="display: none;" multiple onchange="enviarNovosDocumentos('${reg.id}', this)">
+                            </label>
                         </div>
                     </div>
                 `;
@@ -1082,12 +1089,40 @@
             document.getElementById('modal-prontuario').style.display = 'flex';
         }
 
-        function fecharProntuario() {
-            document.getElementById('modal-prontuario').style.display = 'none';
+        // Função auxiliar para disparar o upload de novos arquivos direto para o registro existente
+        async function enviarNovosDocumentos(idRegulacao, inputElement) {
+            if (!inputElement.files || inputElement.files.length === 0) return;
+
+            const formData = new FormData();
+            for (let i = 0; i < inputElement.files.length; i++) {
+                formData.append('novos_anexos', inputElement.files[i]);
+            }
+
+            showToast('Enviando...', 'Fazendo upload dos novos documentos para o prontuário.');
+
+            try {
+                const response = await fetch(`/api/tenant/regulacoes/${idRegulacao}/anexos`, {
+                    method: 'PATCH',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (response.ok && data.sucesso) {
+                    showToast('Sucesso!', 'Novos documentos adicionados ao prontuário.');
+                    // Atualiza o cache local e recarrega a tabela de pacientes para refletir a mudança
+                    await carregarPacientesBanco();
+                    // Reabre o prontuário atualizado automaticamente
+                    const cpfAtual = document.getElementById('pront-cpf').innerText.replace('CPF: ', '').trim();
+                    abrirProntuario(cpfAtual);
+                } else {
+                    alert('Erro ao enviar anexos: ' + (data.erro || 'Falha no servidor.'));
+                }
+            } catch (err) {
+                alert('Erro de conexão ao enviar documentos.');
+            }
         }
 
         function baixarAnexos(protocolo) {
-            // Varre o cache de pacientes para encontrar a regulação exata pelo protocolo
             let regEncontrada = null;
             listaPacientesCache.forEach(paciente => {
                 const busca = paciente.historico.find(r => r.protocolo === protocolo);
@@ -1095,7 +1130,6 @@
             });
 
             if (regEncontrada && regEncontrada.anexos && regEncontrada.anexos.length > 0) {
-                // Se houver anexos, abre cada um em uma nova guia
                 regEncontrada.anexos.forEach(url => {
                     window.open(url, '_blank');
                 });
@@ -1103,7 +1137,11 @@
                 alert(`Nenhum documento anexado ao protocolo ${protocolo}.`);
             }
         }
+        function fecharProntuario() {
+            document.getElementById('modal-prontuario').style.display = 'none';
+        }
 
+    
         async function carregarRelatoriosBanco() {
             const unidade_id = sessionStorage.getItem('unidade_id');
             try {
