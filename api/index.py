@@ -275,51 +275,6 @@ def criar_regulacao():
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
 
-@app.route('/api/tenant/regulacoes', methods=['POST'])
-def criar_regulacao():
-    supabase = get_supabase_client()
-    if not supabase:
-        return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
-
-    data = request.get_json(silent=True) or {}
-    try:
-        protocolo = f"REQ-{str(uuid.uuid4())[:4].upper()}"
-
-        novo_paciente = {
-            "unidade_id": data.get("unidade_id"),
-            "protocolo": protocolo,
-            "nome_paciente": data.get("nome_paciente"),
-            "cpf": data.get("cpf"),
-            "email": data.get("email"),
-            "telefone": data.get("telefone"),
-            "procedimento": data.get("procedimento"),
-            "prioridade": data.get("prioridade"),
-            "status_atual": "Em Análise"
-        }
-
-        # 1. Salva na tabela 'regulacoes'
-        supabase.table('regulacoes').insert(novo_paciente).execute()
-
-        # 2. Tenta registrar o histórico de e-mail (se a tabela existir)
-        try:
-            email_log = {
-                "unidade_id": data.get("unidade_id"),
-                "protocolo": protocolo,
-                "destinatario": data.get("email"),
-                "paciente_nome": data.get("nome_paciente"),
-                "assunto": f"Confirmação de Requisição #{protocolo}",
-                "status": "Enviado com Sucesso"
-            }
-            supabase.table('historico_emails').insert(email_log).execute()
-        except Exception as err_mail:
-            print("Aviso: Falha ao salvar no historico_emails:", str(err_mail))
-
-        return jsonify({"sucesso": True, "protocolo": protocolo})
-
-    except Exception as e:
-        return jsonify({"sucesso": False, "erro": str(e)}), 500
-
-
 # ==========================================
 # 4. NOVAS ROTAS DOS MÓDULOS (DINÂMICAS)
 # ==========================================
