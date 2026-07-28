@@ -416,52 +416,97 @@
 
             <!-- VIEW 4: RELATÓRIOS -->
             <section id="relatorios" class="view-section">
-                <div class="page-header">
+                <div class="page-header" style="align-items: center;">
                     <div>
                         <h1 class="page-title">Relatórios e Desempenho</h1>
-                        <p class="page-subtitle">Análise automática de produtividade e cumprimento de SLAs.</p>
+                        <p class="page-subtitle" style="margin-top: 4px;">Filtre os dados e gere arquivos consolidados da sua regulação.</p>
                     </div>
-                    <button class="btn-primary" onclick="window.print()"><i class="ph ph-download-simple"></i> Exportar PDF</button>
+                    <button class="btn-primary" onclick="window.print()"><i class="ph ph-download-simple"></i> Exportar Relatório PDF</button>
                 </div>
 
-                <div class="charts-grid">
+                <!-- BARRA DE FILTROS -->
+                <div class="card filter-bar" style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; padding: 16px; background: #f8fafc;">
+                    <div class="form-group" style="flex: 1; min-width: 150px;">
+                        <label class="form-label">Data Inicial</label>
+                        <input type="date" id="rel-data-ini" class="form-control">
+                    </div>
+                    <div class="form-group" style="flex: 1; min-width: 150px;">
+                        <label class="form-label">Data Final</label>
+                        <input type="date" id="rel-data-fim" class="form-control">
+                    </div>
+                    <div class="form-group" style="flex: 2; min-width: 250px;">
+                        <label class="form-label">Tipo de Relatório</label>
+                        <select id="rel-tipo" class="form-control">
+                            <option value="geral">Visão Geral (Gráficos e Volumes)</option>
+                            <option value="agendados">Lista Detalhada: Pacientes Agendados</option>
+                            <option value="atrasados">Lista Crítica: Urgências em Análise</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <button class="btn-primary" onclick="gerarRelatorioNaTela()"><i class="ph ph-funnel"></i> Aplicar Filtros</button>
+                    </div>
+                </div>
+
+                <!-- OPÇÃO 1: GRÁFICOS (Padrão) -->
+                <div class="charts-grid" id="relatorio-graficos">
                     <div class="card">
                         <div class="card-header">Desempenho de Prazos (SLA)</div>
                         <div class="card-body">
                             <div class="bar-chart-row">
                                 <div class="bar-label">Dentro do Prazo</div>
-                                <div class="bar-track"><div class="bar-fill" style="width: 85%; background: var(--success);"></div></div>
-                                <div class="bar-value">85%</div>
+                                <div class="bar-track"><div class="bar-fill" id="bar-prazo" style="width: 0%; background: var(--success); transition: width 0.5s;"></div></div>
+                                <div class="bar-value" id="val-prazo">0%</div>
                             </div>
                             <div class="bar-chart-row">
                                 <div class="bar-label">Alerta (Próximos)</div>
-                                <div class="bar-track"><div class="bar-fill" style="width: 10%; background: var(--warning);"></div></div>
-                                <div class="bar-value">10%</div>
+                                <div class="bar-track"><div class="bar-fill" id="bar-alerta" style="width: 0%; background: var(--warning); transition: width 0.5s;"></div></div>
+                                <div class="bar-value" id="val-alerta">0%</div>
                             </div>
                             <div class="bar-chart-row">
-                                <div class="bar-label">Atrasados</div>
-                                <div class="bar-track"><div class="bar-fill" style="width: 5%; background: var(--danger);"></div></div>
-                                <div class="bar-value">5%</div>
+                                <div class="bar-label">Atrasados (Crítico)</div>
+                                <div class="bar-track"><div class="bar-fill" id="bar-atraso" style="width: 0%; background: var(--danger); transition: width 0.5s;"></div></div>
+                                <div class="bar-value" id="val-atraso">0%</div>
                             </div>
                         </div>
                     </div>
 
                     <div class="card">
-                        <div class="card-header">Volume por Tipo</div>
+                        <div class="card-header">Volume por Procedimento</div>
                         <div class="card-body" style="display:flex; flex-direction:column; gap:16px;">
                             <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:8px;">
                                 <span style="color:var(--text-muted);">Consultas</span>
                                 <span style="font-weight:600;" id="vol-consultas">0</span>
                             </div>
                             <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:8px;">
-                                <span style="color:var(--text-muted);">Exames Imagem</span>
+                                <span style="color:var(--text-muted);">Exames de Imagem / Lab</span>
                                 <span style="font-weight:600;" id="vol-exames">0</span>
                             </div>
                             <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:8px;">
-                                <span style="color:var(--text-muted);">Procedimentos</span>
+                                <span style="color:var(--text-muted);">Cirurgias</span>
                                 <span style="font-weight:600;" id="vol-procedimentos">0</span>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- OPÇÃO 2: TABELA DE DADOS DETALHADA (Escondida por padrão) -->
+                <div class="card" id="relatorio-tabela-container" style="display: none;">
+                    <div class="card-header" id="relatorio-titulo-tabela" style="font-size: 18px; color: var(--primary);">Relatório Detalhado</div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Data / Hora</th>
+                                    <th>Protocolo</th>
+                                    <th>Paciente</th>
+                                    <th>Procedimento / Prioridade</th>
+                                    <th>Status Atual</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-relatorio-gerado">
+                                <!-- Preenchido dinamicamente pelo JS -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </section>
@@ -1143,6 +1188,117 @@
             window.location.href = `mailto:?subject=Urgente - Pacientes aguardando Regulação&body=${corpo}`;
 
             document.getElementById('modal-alertas-gestor').style.display = 'none';
+        }
+        // --- FUNÇÕES DE RELATÓRIO E FILTRAGEM ---
+        function gerarRelatorioNaTela() {
+            // Pega os valores da barra de filtros
+            const dataIni = document.getElementById('rel-data-ini').value;
+            const dataFim = document.getElementById('rel-data-fim').value;
+            const tipo = document.getElementById('rel-tipo').value;
+
+            // Começa com todas as regulações do cache e filtra
+            let dadosFiltrados = listaRegulacoesCache;
+
+            // Filtro por Data Inicial (Y-m-d)
+            if (dataIni) {
+                dadosFiltrados = dadosFiltrados.filter(r => r.created_at.split('T')[0] >= dataIni);
+            }
+            // Filtro por Data Final (Y-m-d)
+            if (dataFim) {
+                dadosFiltrados = dadosFiltrados.filter(r => r.created_at.split('T')[0] <= dataFim);
+            }
+
+            const containerGraficos = document.getElementById('relatorio-graficos');
+            const containerTabela = document.getElementById('relatorio-tabela-container');
+            const tbody = document.getElementById('tabela-relatorio-gerado');
+            const tituloTabela = document.getElementById('relatorio-titulo-tabela');
+
+            if (tipo === 'geral') {
+                containerGraficos.style.display = 'grid'; // Mostra gráficos
+                containerTabela.style.display = 'none';   // Esconde tabela
+
+                let consultas = 0, exames = 0, cirurgias = 0;
+                let noPrazo = 0, alerta = 0, atrasados = 0;
+
+                dadosFiltrados.forEach(r => {
+                    // Contagem de Volumes
+                    if (r.procedimento === 'Consulta Especializada') consultas++;
+                    else if (r.procedimento === 'Procedimento Cirúrgico') cirurgias++;
+                    else exames++;
+
+                    // Contagem de SLA (Regra de Negócio)
+                    if (r.status_atual === 'Agendado' || r.prioridade === 'Rotina') noPrazo++;
+                    else if (r.status_atual === 'Em Análise' && r.prioridade === 'Prioridade') alerta++;
+                    else if (r.status_atual === 'Em Análise' && r.prioridade === 'Urgência') atrasados++;
+                });
+
+                document.getElementById('vol-consultas').innerText = consultas;
+                document.getElementById('vol-exames').innerText = exames;
+                document.getElementById('vol-procedimentos').innerText = cirurgias;
+
+                let total = dadosFiltrados.length || 1; // Previne divisão por zero
+                document.getElementById('bar-prazo').style.width = `${(noPrazo/total)*100}%`;
+                document.getElementById('val-prazo').innerText = `${Math.round((noPrazo/total)*100)}%`;
+
+                document.getElementById('bar-alerta').style.width = `${(alerta/total)*100}%`;
+                document.getElementById('val-alerta').innerText = `${Math.round((alerta/total)*100)}%`;
+
+                document.getElementById('bar-atraso').style.width = `${(atrasados/total)*100}%`;
+                document.getElementById('val-atraso').innerText = `${Math.round((atrasados/total)*100)}%`;
+
+            } else {
+                containerGraficos.style.display = 'none';  // Esconde gráficos
+                containerTabela.style.display = 'block';   // Mostra tabela
+
+                let filtradosPorTipo = [];
+                let textoFiltroData = "";
+                if(dataIni || dataFim) {
+                    textoFiltroData = ` (Período: ${dataIni ? dataIni.split('-').reverse().join('/') : 'Início'} até ${dataFim ? dataFim.split('-').reverse().join('/') : 'Hoje'})`;
+                }
+
+                if (tipo === 'agendados') {
+                    tituloTabela.innerText = "Relatório: Pacientes Agendados / Concluídos" + textoFiltroData;
+                    filtradosPorTipo = dadosFiltrados.filter(r => r.status_atual === 'Agendado');
+                } else if (tipo === 'atrasados') {
+                    tituloTabela.innerText = "Relatório Crítico: Urgências Pendentes" + textoFiltroData;
+                    filtradosPorTipo = dadosFiltrados.filter(r => r.status_atual === 'Em Análise' && r.prioridade === 'Urgência');
+                }
+
+                tbody.innerHTML = '';
+                if (filtradosPorTipo.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum registro encontrado com estes filtros.</td></tr>';
+                } else {
+                    filtradosPorTipo.forEach(r => {
+                        const d = new Date(r.created_at);
+                        const dataBr = d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                        tbody.innerHTML += `
+                            <tr>
+                                <td style="font-size: 13px;">${dataBr}</td>
+                                <td style="font-weight:bold; color:var(--primary);">#${r.protocolo}</td>
+                                <td>${r.nome_paciente}</td>
+                                <td>${r.procedimento}<br><small style="font-weight:600; color:var(--text-muted);">${r.prioridade}</small></td>
+                                <td><span class="badge ${r.status_atual === 'Agendado' ? 'bg-success' : 'bg-warning'}">${r.status_atual}</span></td>
+                            </tr>
+                        `;
+                    });
+                }
+            }
+        }
+
+        // --- ATIVAR FILTRO AO ABRIR A ABA ---
+        // Quando clicar no menu lateral "Relatórios", gera o relatório padrão logo de cara
+        const btnRelatorios = document.querySelector('.nav-item[onclick*="relatorios"]');
+        if (btnRelatorios) {
+            btnRelatorios.addEventListener('click', () => {
+                gerarRelatorioNaTela(); 
+            });
+        }
+
+        // --- IMPRESSÃO EXCLUSIVA PARA O PRONTUÁRIO (Garante que um não interfira no outro) ---
+        function imprimirProntuario() {
+            document.body.classList.add('printing-prontuario');
+            window.print();
+            setTimeout(() => document.body.classList.remove('printing-prontuario'), 500);
         }
     </script>
 </body>
