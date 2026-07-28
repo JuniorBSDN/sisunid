@@ -819,7 +819,7 @@
         }
 
         // --- 2. NAVEGAÇÃO ---
-        function switchView(viewId, navElement) {
+     function switchView(viewId, navElement) {
             document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
 
@@ -829,9 +829,10 @@
             document.querySelector('.sidebar').classList.remove('open');
             document.getElementById('sidebar-overlay').classList.remove('active');
 
+            // --- LISTA ATUALIZADA AQUI ---
             if (viewId === 'dashboard') carregarRegulacoes();
             if (viewId === 'pacientes') carregarPacientesBanco();
-            if (viewId === 'relatorios') carregarRelatoriosBanco();
+            if (viewId === 'relatorios') gerarRelatorioNaTela(); // SUBSTITUÍDO AQUI
             if (viewId === 'emails') carregarEmailsBanco();
         }
 
@@ -1327,8 +1328,10 @@
             document.getElementById('modal-alertas-gestor').style.display = 'none';
         }
 
+        
+        
         // --- RELATÓRIOS E FILTRAGEM ---
-        function gerarRelatorioNaTela() {
+       function gerarRelatorioNaTela() {
             const dataIni = document.getElementById('rel-data-ini').value;
             const dataFim = document.getElementById('rel-data-fim').value;
             const tipo = document.getElementById('rel-tipo').value;
@@ -1355,28 +1358,48 @@
                 let noPrazo = 0, alerta = 0, atrasados = 0;
 
                 dadosFiltrados.forEach(r => {
+                    // 1. Consolidação Exata de Volumes
                     if (r.procedimento === 'Consulta Especializada') consultas++;
                     else if (r.procedimento === 'Procedimento Cirúrgico') cirurgias++;
-                    else exames++;
+                    else if (r.procedimento === 'Exame de Imagem' || r.procedimento === 'Exame Laboratorial') exames++;
 
-                    if (r.status_atual === 'Agendado' || r.prioridade === 'Rotina') noPrazo++;
-                    else if (r.status_atual === 'Em Análise' && r.prioridade === 'Prioridade') alerta++;
-                    else if (r.status_atual === 'Em Análise' && r.prioridade === 'Urgência') atrasados++;
+                    // 2. Consolidação Exata de Prazos (SLA)
+                    if (r.status_atual === 'Agendado' || r.prioridade === 'Rotina') {
+                        noPrazo++;
+                    } else if (r.status_atual === 'Em Análise') {
+                        if (r.prioridade === 'Prioridade') alerta++;
+                        else if (r.prioridade === 'Urgência') atrasados++;
+                        else noPrazo++;
+                    } else {
+                        noPrazo++; // Status Devolvidos, Negados ou Aguardando entram como resolvidos/finalizados
+                    }
                 });
 
+                // Atualiza os números na tela
                 document.getElementById('vol-consultas').innerText = consultas;
                 document.getElementById('vol-exames').innerText = exames;
                 document.getElementById('vol-procedimentos').innerText = cirurgias;
 
-                let total = dadosFiltrados.length || 1;
-                document.getElementById('bar-prazo').style.width = `${(noPrazo/total)*100}%`;
-                document.getElementById('val-prazo').innerText = `${Math.round((noPrazo/total)*100)}%`;
+                // Atualiza as barras (Prevenindo erro de divisão por zero)
+                let total = dadosFiltrados.length;
+                
+                if (total === 0) {
+                    document.getElementById('bar-prazo').style.width = '0%';
+                    document.getElementById('val-prazo').innerText = '0%';
+                    document.getElementById('bar-alerta').style.width = '0%';
+                    document.getElementById('val-alerta').innerText = '0%';
+                    document.getElementById('bar-atraso').style.width = '0%';
+                    document.getElementById('val-atraso').innerText = '0%';
+                } else {
+                    document.getElementById('bar-prazo').style.width = `${(noPrazo/total)*100}%`;
+                    document.getElementById('val-prazo').innerText = `${Math.round((noPrazo/total)*100)}%`;
 
-                document.getElementById('bar-alerta').style.width = `${(alerta/total)*100}%`;
-                document.getElementById('val-alerta').innerText = `${Math.round((alerta/total)*100)}%`;
+                    document.getElementById('bar-alerta').style.width = `${(alerta/total)*100}%`;
+                    document.getElementById('val-alerta').innerText = `${Math.round((alerta/total)*100)}%`;
 
-                document.getElementById('bar-atraso').style.width = `${(atrasados/total)*100}%`;
-                document.getElementById('val-atraso').innerText = `${Math.round((atrasados/total)*100)}%`;
+                    document.getElementById('bar-atraso').style.width = `${(atrasados/total)*100}%`;
+                    document.getElementById('val-atraso').innerText = `${Math.round((atrasados/total)*100)}%`;
+                }
 
             } else {
                 containerGraficos.style.display = 'none';
@@ -1416,14 +1439,7 @@
                 }
             }
         }
-
-        const btnRelatorios = document.querySelector('.nav-item[onclick*="relatorios"]');
-        if (btnRelatorios) {
-            btnRelatorios.addEventListener('click', () => {
-                gerarRelatorioNaTela(); 
-            });
-        }
-
+        
         function imprimirProntuario() {
             document.body.classList.add('printing-prontuario');
             window.print();
