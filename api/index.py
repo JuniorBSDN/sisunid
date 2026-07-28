@@ -205,20 +205,72 @@ def tenant_login():
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
 
-@app.route('/api/tenant/regulacoes', methods=['GET'])
-def get_regulacoes():
+@app.route('/api/tenant/regulacoes', methods=['POST'])
+def criar_regulacao():
     supabase = get_supabase_client()
     if not supabase:
         return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
 
-    unidade_id = request.args.get('unidade_id')
-    if not unidade_id:
-        return jsonify({"sucesso": False, "erro": "ID da unidade é obrigatório"}), 400
-
     try:
-        response = supabase.table('regulacoes').select('*').eq('unidade_id', unidade_id).order('created_at',
-                                                                                               desc=True).execute()
-        return jsonify({"sucesso": True, "regulacoes": response.data})
+        # Agora usamos request.form em vez de request.get_json() pois enviaremos arquivos
+        data = request.form
+        protocolo = f"REQ-{str(uuid.uuid4())[:4].upper()}"
+        
+        # 1. PROCESSAMENTO DE MÚLTIPLOS ANEXOS
+        urls_anexos = []
+        arquivos = request.files.getlist('anexos') # 'anexos' será o nome do campo no Frontend
+        
+        for file in arquivos:
+            if file and file.filename != '':
+                file_ext = file.filename.split('.')[-1]
+                # Salva no bucket organizado por protocolo
+                unique_filename = f"regulacoes/{protocolo}/{uuid.uuid4().hex}.{file_ext}"
+                file_bytes = file.read()
+                
+                try:
+                    supabase.storage.from_(BUCKET_NAME).upload(
+                        path=unique_filename,
+                        file=file_bytes,
+                        file_options={"content-type": file.content_type}
+                    )
+                    file_url = supabase.storage.from_(BUCKET_NAME).get_public_url(unique_filename)
+                    urls_anexos.append(file_url)
+                except Exception as err_supa:
+                    print(f"Erro no upload do arquivo {file.filename}:", str(err_supa))
+
+        # 2. MONTA O OBJETO PARA O BANCO
+        novo_paciente = {
+            "unidade_id": data.get("unidade_id"),
+            "protocolo": protocolo,
+            "nome_paciente": data.get("nome_paciente"),
+            "cpf": data.get("cpf"),
+            "email": data.get("email"),
+            "telefone": data.get("telefone"),
+            "procedimento": data.get("procedimento"),
+            "prioridade": data.get("prioridade"),
+            "status_atual": "Em Análise",
+            "anexos": urls_anexos  # <- NOVA COLUNA NO BANCO COM A LISTA DE LINKS
+        }
+
+        # 3. SALVA NO SUPABASE
+        supabase.table('regulacoes').insert(novo_paciente).execute()
+
+        # 4. TENTA SALVAR O HISTÓRICO DE E-MAIL
+        try:
+            email_log = {
+                "unidade_id": data.get("unidade_id"),
+                "protocolo": protocolo,
+                "destinatario": data.get("email"),
+                "paciente_nome": data.get("nome_paciente"),
+                "assunto": f"Confirmação de Requisição #{protocolo}",
+                "status": "Enviado com Sucesso"
+            }
+            supabase.table('historico_emails').insert(email_log).execute()
+        except Exception as err_mail:
+            print("Aviso: Falha ao salvar no historico_emails:", str(err_mail))
+
+        return jsonify({"sucesso": True, "protocolo": protocolo})
+
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
