@@ -330,19 +330,26 @@
                     <div class="card-header">Dados do Paciente e Requisição</div>
                     <div class="card-body">
                         <form id="form-recepcao">
+                            
+                            
                             <div class="form-grid">
+                               
                                 <div class="form-group">
                                     <label class="form-label">Nome Completo</label>
                                     <input type="text" id="input-nome-paciente" class="form-control" placeholder="Ex: Carlos Eduardo de Almeida" required>
                                 </div>
+                               
+                                
                                 <div class="form-group">
                                     <label class="form-label">Cartão SUS ou CPF</label>
                                     <input type="text" id="input-cpf" class="form-control" placeholder="000.000.000-00" required>
                                 </div>
+                                
                                 <div class="form-group">
                                     <label class="form-label">E-mail do Paciente (Para receber alertas)</label>
                                     <input type="email" id="input-email-paciente" class="form-control" placeholder="email@exemplo.com" required>
                                 </div>
+                                
                                 <div class="form-group">
                                     <label class="form-label">Celular / WhatsApp</label>
                                     <input type="text" id="input-telefone" class="form-control" placeholder="(00) 00000-0000" required>
@@ -350,10 +357,20 @@
 
                                 <div class="form-group full-width" style="border-top: 1px solid var(--border); margin: 8px 0;"></div>
 
+                                <!-- NOVOS CAMPOS INSERIDOS CORRETAMENTE AQUI -->
                                 <div class="form-group">
-                                    <label class="form-label">Tipo de Requisição / Procedimento</label>
+                                    <label class="form-label">Unidade Solicitante / Destino</label>
+                                    <input type="text" id="input-unidade-saude" class="form-control" placeholder="Informe a unidade..." required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Procedimento SUS (Consulta/Exame Específico)</label>
+                                    <input type="text" id="input-especificacao-sus" class="form-control" placeholder="Ex: Raio-X de Tórax, Consulta Cardiologista..." required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Categoria do Procedimento</label>
                                     <select id="input-procedimento" class="form-control" required>
-                                        <option value="">Selecione...</option>
+                                        <option value="">Selecione a Categoria...</option>
                                         <option value="Consulta Especializada">Consulta Especializada</option>
                                         <option value="Exame de Imagem">Exame de Imagem</option>
                                         <option value="Exame Laboratorial">Exame Laboratorial</option>
@@ -368,6 +385,7 @@
                                         <option value="Urgência">Urgência (SLA 72 horas)</option>
                                     </select>
                                 </div>
+                                <!-- FIM DOS NOVOS CAMPOS -->
 
                                 <div class="form-group full-width">
                                     <label class="form-label">Anexar Documentos (Guia médica, fotos, PDFs)</label>
@@ -630,6 +648,69 @@
             </div>
         </div>
     </div>
+
+    <!-- NOVO MODAL: EDIÇÃO DE REGISTRO (ADICIONADO AQUI) -->
+    <div id="modal-editar-registro" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 style="font-size: 18px;">Editar Registro do Paciente</h3>
+                <button onclick="fecharModalEditar()" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-muted);">&times;</button>
+            </div>
+            <form id="form-modal-editar">
+                <input type="hidden" id="edit-id-reg">
+                <div class="modal-body">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Nome Completo</label>
+                            <input type="text" id="edit-nome" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">CPF</label>
+                            <input type="text" id="edit-cpf" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">E-mail</label>
+                            <input type="email" id="edit-email" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Telefone</label>
+                            <input type="text" id="edit-telefone" class="form-control" required>
+                        </div>
+                        <div class="form-group full-width" style="border-top: 1px solid var(--border); margin: 8px 0;"></div>
+                        <div class="form-group">
+                            <label class="form-label">Unidade Solicitante / Destino</label>
+                            <input type="text" id="edit-unidade" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Procedimento SUS</label>
+                            <input type="text" id="edit-especificacao" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Categoria</label>
+                            <select id="edit-procedimento" class="form-control" required>
+                                <option value="Consulta Especializada">Consulta Especializada</option>
+                                <option value="Exame de Imagem">Exame de Imagem</option>
+                                <option value="Exame Laboratorial">Exame Laboratorial</option>
+                                <option value="Procedimento Cirúrgico">Procedimento Cirúrgico</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Prioridade</label>
+                            <select id="edit-prioridade" class="form-control" required>
+                                <option value="Rotina">Rotina</option>
+                                <option value="Prioridade">Prioridade</option>
+                                <option value="Urgência">Urgência</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-primary" style="background: transparent; color: var(--text-muted); border: 1px solid var(--border);" onclick="fecharModalEditar()">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="btn-salvar-edicao"><i class="ph ph-floppy-disk"></i> Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
     
     <!-- TOAST -->
     <div id="toast" class="toast">
@@ -809,6 +890,7 @@
 
                 if (reg.status_atual === 'Agendado') corBadge = 'bg-success';
 
+                // BOTOES DE AÇÃO ATUALIZADOS AQUI
                 tr.innerHTML = `
                     <td style="font-weight: 600;">#${reg.protocolo || 'N/A'}</td>
                     <td>
@@ -821,7 +903,11 @@
                     </td>
                     <td>${slaHtml}</td>
                     <td><span class="badge ${corBadge}">${reg.status_atual || 'Em Análise'}</span></td>
-                    <td><button class="btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="abrirModalAvaliar('${reg.id}')">Avaliar</button></td>
+                    <td style="display: flex; gap: 8px;">
+                        <button class="btn-primary" style="padding: 6px; font-size: 16px;" title="Avaliar" onclick="abrirModalAvaliar('${reg.id}')"><i class="ph ph-stethoscope"></i></button>
+                        <button class="btn-primary" style="padding: 6px; font-size: 16px; background: var(--info); border: none;" title="Editar" onclick="abrirModalEditar('${reg.id}')"><i class="ph ph-pencil-simple"></i></button>
+                        <button class="btn-primary" style="padding: 6px; font-size: 16px; background: var(--danger); border: none;" title="Excluir" onclick="excluirRegistro('${reg.id}')"><i class="ph ph-trash"></i></button>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -928,6 +1014,10 @@
             formData.append('telefone', document.getElementById('input-telefone').value);
             formData.append('procedimento', document.getElementById('input-procedimento').value);
             formData.append('prioridade', document.getElementById('input-prioridade').value);
+            
+            // NOVOS CAMPOS AQUI
+            formData.append('unidade_saude', document.getElementById('input-unidade-saude').value);
+            formData.append('especificacao_sus', document.getElementById('input-especificacao-sus').value);
 
             const inputArquivos = document.getElementById('file-upload');
             for (let i = 0; i < inputArquivos.files.length; i++) {
@@ -1339,6 +1429,92 @@
             window.print();
             setTimeout(() => document.body.classList.remove('printing-prontuario'), 500);
         }
+
+        // ==========================================
+        // NOVAS FUNÇÕES DE EDIÇÃO E EXCLUSÃO
+        // ==========================================
+
+        async function excluirRegistro(idReg) {
+            if(!confirm("Tem certeza absoluta que deseja EXCLUIR este registro? Esta ação não pode ser desfeita e removerá o paciente da fila.")) return;
+
+            showToast('Processando...', 'Excluindo o registro do banco de dados.');
+
+            try {
+                const response = await fetch(`/api/tenant/regulacoes/${idReg}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+
+                if (response.ok && data.sucesso) {
+                    showToast('Excluído!', 'Registro removido com sucesso.');
+                    carregarRegulacoes(); // Atualiza a tabela
+                } else {
+                    alert('Erro ao excluir: ' + (data.erro || 'Falha no servidor.'));
+                }
+            } catch (err) {
+                alert('Erro de conexão ao excluir o registro.');
+            }
+        }
+
+        function abrirModalEditar(idReg) {
+            const reg = listaRegulacoesCache.find(r => r.id === idReg);
+            if (!reg) return;
+
+            document.getElementById('edit-id-reg').value = reg.id;
+            document.getElementById('edit-nome').value = reg.nome_paciente || '';
+            document.getElementById('edit-cpf').value = reg.cpf || '';
+            document.getElementById('edit-email').value = reg.email || '';
+            document.getElementById('edit-telefone').value = reg.telefone || '';
+            document.getElementById('edit-unidade').value = reg.unidade_saude || '';
+            document.getElementById('edit-especificacao').value = reg.especificacao_sus || '';
+            document.getElementById('edit-procedimento').value = reg.procedimento || 'Consulta Especializada';
+            document.getElementById('edit-prioridade').value = reg.prioridade || 'Rotina';
+
+            document.getElementById('modal-editar-registro').style.display = 'flex';
+        }
+
+        function fecharModalEditar() {
+            document.getElementById('modal-editar-registro').style.display = 'none';
+        }
+
+        document.getElementById('form-modal-editar').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const idReg = document.getElementById('edit-id-reg').value;
+            const btn = document.getElementById('btn-salvar-edicao');
+            btn.innerHTML = 'Salvando...';
+
+            const payload = {
+                nome_paciente: document.getElementById('edit-nome').value,
+                cpf: document.getElementById('edit-cpf').value,
+                email: document.getElementById('edit-email').value,
+                telefone: document.getElementById('edit-telefone').value,
+                unidade_saude: document.getElementById('edit-unidade').value,
+                especificacao_sus: document.getElementById('edit-especificacao').value,
+                procedimento: document.getElementById('edit-procedimento').value,
+                prioridade: document.getElementById('edit-prioridade').value
+            };
+
+            try {
+                const response = await fetch(`/api/tenant/regulacoes/${idReg}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                if (data.sucesso) {
+                    showToast('Atualizado!', 'Os dados do paciente foram alterados com sucesso.');
+                    fecharModalEditar();
+                    carregarRegulacoes(); // Atualiza a tabela com os novos dados
+                } else {
+                    alert('Erro ao salvar edição: ' + data.erro);
+                }
+            } catch(error) {
+                alert('Erro de conexão ao salvar edição.');
+            } finally {
+                btn.innerHTML = '<i class="ph ph-floppy-disk"></i> Salvar Alterações';
+            }
+        });
     </script>
 </body>
 </html>
