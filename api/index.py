@@ -204,7 +204,59 @@ def tenant_login():
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
 
+
+
 # ---> ROTA GET RESTAURADA AQUI <---
+@app.route('/api/tenant/regulacoes/<id_reg>/anexos', methods=['PATCH'])
+def adicionar_anexos_regulacao(id_reg):
+    supabase = get_supabase_client()
+    if not supabase:
+        return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
+
+    try:
+        # 1. Busca a regulação atual no banco para pegar os anexos que já existem
+        reg_atual = supabase.table('regulacoes').select('protocolo, anexos').eq('id', id_reg).execute()
+        if not reg_atual.data:
+            return jsonify({"sucesso": False, "erro": "Regulação não encontrada."}), 404
+
+        protocolo = reg_atual.data[0].get('protocolo')
+        anexos_atuais = reg_atual.data[0].get('anexos') or []
+        if not isinstance(anexos_atuais, list):
+            anexos_atuais = []
+
+        # 2. Processa os novos arquivos enviados
+        novos_links = []
+        arquivos = request.files.getlist('novos_anexos')
+
+        for file in arquivos:
+            if file and file.filename != '':
+                file_ext = file.filename.split('.')[-1]
+                unique_filename = f"regulacoes/{protocolo}/{uuid.uuid4().hex}.{file_ext}"
+                file_bytes = file.read()
+
+                try:
+                    supabase.storage.from_(BUCKET_NAME).upload(
+                        path=unique_filename,
+                        file=file_bytes,
+                        file_options={"content-type": file.content_type}
+                    )
+                    file_url = supabase.storage.from_(BUCKET_NAME).get_public_url(unique_filename)
+                    novos_links.append(file_url)
+                except Exception as err_supa:
+                    print(f"Erro no upload do arquivo adicional {file.filename}:", str(err_supa))
+
+        # 3. Junta os arquivos antigos com os novos
+        anexos_atualizados = anexos_atuais + novos_links
+
+        # 4. Atualiza no Supabase
+        supabase.table('regulacoes').update({"anexos": anexos_atualizados}).eq('id', id_reg).execute()
+
+        return jsonify({"sucesso": True, "anexos": anexos_atualizados})
+
+    except Exception as e:
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
+
+
 @app.route('/api/tenant/regulacoes', methods=['GET'])
 def get_regulacoes():
     supabase = get_supabase_client()
