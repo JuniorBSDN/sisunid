@@ -205,6 +205,39 @@ def tenant_login():
 
 
 
+@app.route('/api/tenant/regulacoes/<id_reg>/anexos', methods=['DELETE'])
+def deletar_anexo_regulacao(id_reg):
+    supabase = get_supabase_client()
+    if not supabase:
+        return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
+
+    data = request.get_json(silent=True) or {}
+    url_para_remover = data.get('url')
+
+    if not url_para_remover:
+        return jsonify({"sucesso": False, "erro": "URL do arquivo é obrigatória."}), 400
+
+    try:
+        # 1. Busca a regulação atual
+        reg_atual = supabase.table('regulacoes').select('anexos').eq('id', id_reg).execute()
+        if not reg_atual.data:
+            return jsonify({"sucesso": False, "erro": "Regulação não encontrada."}), 404
+
+        anexos_atuais = reg_atual.data[0].get('anexos') or []
+        if not isinstance(anexos_atuais, list):
+            anexos_atuais = []
+
+        # 2. Filtra a lista removendo a URL correspondente
+        novos_anexos = [url for url in anexos_atuais if url != url_para_remover]
+
+        # 3. Atualiza a lista na tabela 'regulacoes' do Supabase
+        supabase.table('regulacoes').update({"anexos": novos_anexos}).eq('id', id_reg).execute()
+
+        return jsonify({"sucesso": True, "anexos": novos_anexos})
+
+    except Exception as e:
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
+
 
 # ---> ROTA GET RESTAURADA AQUI <---
 @app.route('/api/tenant/regulacoes/<id_reg>/anexos', methods=['PATCH'])
