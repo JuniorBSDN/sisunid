@@ -315,7 +315,8 @@ def editar_registro_regulacao(id_reg):
             "procedimento": data.get("procedimento"),
             "prioridade": data.get("prioridade"),
             "unidade_saude": data.get("unidade_saude"), # NOVO CAMPO
-            "especificacao_sus": data.get("especificacao_sus") # NOVO CAMPO
+            "especificacao_sus": data.get("especificacao_sus"),
+            "endereco": data.get("endereco")
         }
         
         # Limpa as chaves nulas para não sobrescrever com None
@@ -384,8 +385,9 @@ def criar_regulacao():
             "prioridade": data.get("prioridade"),
             "status_atual": "Em Análise",
             "anexos": urls_anexos,
-            "unidade_saude": data.get("unidade_saude"), # NOVO CAMPO ADCIONADO
-            "especificacao_sus": data.get("especificacao_sus") # NOVO CAMPO ADCIONADO
+            "unidade_saude": data.get("unidade_saude"), 
+            "especificacao_sus": data.get("especificacao_sus"), 
+            "endereco": data.get("endereco")
         }
 
         supabase.table('regulacoes').insert(novo_paciente).execute()
