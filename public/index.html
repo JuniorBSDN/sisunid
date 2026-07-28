@@ -1075,12 +1075,18 @@
             document.getElementById('modal-prontuario').style.display = 'flex';
         }
 
-        async function enviarNovosDocumentos(idRegulacao, inputElement) {
-            if (!inputElement.files || inputElement.files.length === 0) return;
+       async function enviarNovosDocumentos(idRegulacao, inputElement) {
+            // Pega os arquivos direto do input que disparou o evento
+            const arquivos = inputElement.files;
+            if (!arquivos || arquivos.length === 0) {
+                alert("Nenhum arquivo selecionado.");
+                return;
+            }
 
             const formData = new FormData();
-            for (let i = 0; i < inputElement.files.length; i++) {
-                formData.append('novos_anexos', inputElement.files[i]);
+            // IMPORTANTE: O nome 'novos_anexos' deve ser exatamente igual ao que o Python procura em request.files.getlist()
+            for (let i = 0; i < arquivos.length; i++) {
+                formData.append('novos_anexos', arquivos.item(i));
             }
 
             showToast('Enviando...', 'Fazendo upload dos novos documentos para o prontuário.');
@@ -1090,6 +1096,7 @@
                     method: 'PATCH',
                     body: formData
                 });
+                
                 const data = await response.json();
 
                 if (response.ok && data.sucesso) {
@@ -1101,6 +1108,7 @@
                     alert('Erro ao enviar anexos: ' + (data.erro || 'Falha no servidor.'));
                 }
             } catch (err) {
+                console.error("Erro no fetch:", err);
                 alert('Erro de conexão ao enviar documentos.');
             }
         }
