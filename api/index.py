@@ -221,6 +221,8 @@ def deletar_anexo_regulacao(id_reg):
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
+
+
 @app.route('/api/tenant/regulacoes/<id_reg>/anexos', methods=['PATCH'])
 def adicionar_anexos_regulacao(id_reg):
     supabase = get_supabase_client()
@@ -228,6 +230,7 @@ def adicionar_anexos_regulacao(id_reg):
         return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
 
     try:
+        # 1. Busca a regulação atual no banco
         reg_atual = supabase.table('regulacoes').select('protocolo, anexos').eq('id', id_reg).execute()
         if not reg_atual.data:
             return jsonify({"sucesso": False, "erro": "Regulação não encontrada."}), 404
@@ -237,9 +240,14 @@ def adicionar_anexos_regulacao(id_reg):
         if not isinstance(anexos_atuais, list):
             anexos_atuais = []
 
-        novos_links = []
+        # 2. Captura os arquivos usando tanto 'novos_anexos' quanto 'anexos' por segurança
         arquivos = request.files.getlist('novos_anexos')
+        if not arquivos or len(arquivos) == 0:
+            arquivos = request.files.getlist('anexos')
 
+        print(f"DEBUG: Recebidos {len(arquivos)} arquivos para o protocolo {protocolo}")
+
+        novos_links = []
         for file in arquivos:
             if file and file.filename != '':
                 file_ext = file.filename.split('.')[-1]
@@ -254,17 +262,25 @@ def adicionar_anexos_regulacao(id_reg):
                     )
                     file_url = supabase.storage.from_(BUCKET_NAME).get_public_url(unique_filename)
                     novos_links.append(file_url)
+                    print(f"DEBUG: Upload OK -> {file_url}")
                 except Exception as err_supa:
                     print(f"Erro no upload do arquivo adicional {file.filename}:", str(err_supa))
 
+        if len(novos_links) == 0:
+            return jsonify({"sucesso": False, "erro": "Nenhum arquivo válido foi processado."}), 400
+
+        # 3. Junta os arquivos antigos com os novos
         anexos_atualizados = anexos_atuais + novos_links
 
+        # 4. Atualiza no Supabase
         supabase.table('regulacoes').update({"anexos": anexos_atualizados}).eq('id', id_reg).execute()
 
         return jsonify({"sucesso": True, "anexos": anexos_atualizados})
 
     except Exception as e:
+        print(f"Erro crítico na rota de anexos: {str(e)}")
         return jsonify({"sucesso": False, "erro": str(e)}), 500
+        
 
 @app.route('/api/tenant/regulacoes', methods=['GET'])
 def get_regulacoes():
