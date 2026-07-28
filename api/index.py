@@ -184,8 +184,7 @@ def tenant_login():
     senha = data.get('senha')
 
     try:
-        response = supabase.table('unidades').select('*').eq('cnpj', cnpj).eq('senha_acesso', senha).eq('status',
-                                                                                                        'ativa').execute()
+        response = supabase.table('unidades').select('*').eq('cnpj', cnpj).eq('senha_acesso', senha).eq('status', 'ativa').execute()
 
         if len(response.data) > 0:
             unidade = response.data[0]
@@ -205,6 +204,24 @@ def tenant_login():
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
 
+# ---> ROTA GET RESTAURADA AQUI <---
+@app.route('/api/tenant/regulacoes', methods=['GET'])
+def get_regulacoes():
+    supabase = get_supabase_client()
+    if not supabase:
+        return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
+
+    unidade_id = request.args.get('unidade_id')
+    if not unidade_id:
+        return jsonify({"sucesso": False, "erro": "ID da unidade é obrigatório"}), 400
+
+    try:
+        response = supabase.table('regulacoes').select('*').eq('unidade_id', unidade_id).order('created_at', desc=True).execute()
+        return jsonify({"sucesso": True, "regulacoes": response.data})
+    except Exception as e:
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
+
+
 @app.route('/api/tenant/regulacoes', methods=['POST'])
 def criar_regulacao():
     supabase = get_supabase_client()
@@ -212,7 +229,6 @@ def criar_regulacao():
         return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
 
     try:
-        # Agora usamos request.form em vez de request.get_json() pois enviaremos arquivos
         data = request.form
         protocolo = f"REQ-{str(uuid.uuid4())[:4].upper()}"
         
@@ -288,8 +304,7 @@ def get_pacientes():
 
     unidade_id = request.args.get('unidade_id')
     try:
-        response = supabase.table('regulacoes').select('*').eq('unidade_id', unidade_id).order('created_at',
-                                                                                               desc=True).execute()
+        response = supabase.table('regulacoes').select('*').eq('unidade_id', unidade_id).order('created_at', desc=True).execute()
 
         pacientes_dict = {}
         for reg in response.data:
@@ -321,8 +336,7 @@ def get_relatorios():
 
     unidade_id = request.args.get('unidade_id')
     try:
-        response = supabase.table('regulacoes').select('procedimento, prioridade, status_atual').eq('unidade_id',
-                                                                                                    unidade_id).execute()
+        response = supabase.table('regulacoes').select('procedimento, prioridade, status_atual').eq('unidade_id', unidade_id).execute()
         data = response.data or []
 
         stats = {
@@ -349,14 +363,12 @@ def get_emails():
 
     unidade_id = request.args.get('unidade_id')
     try:
-        response = supabase.table('historico_emails').select('*').eq('unidade_id', unidade_id).order('created_at',
-                                                                                                     desc=True).execute()
+        response = supabase.table('historico_emails').select('*').eq('unidade_id', unidade_id).order('created_at', desc=True).execute()
         return jsonify({"sucesso": True, "emails": response.data})
     except Exception:
         # Fallback de e-mails extraídos da própria tabela de regulações caso a historico_emails não tenha sido criada no SQL
         try:
-            response = supabase.table('regulacoes').select('protocolo, email, nome_paciente, created_at').eq(
-                'unidade_id', unidade_id).order('created_at', desc=True).execute()
+            response = supabase.table('regulacoes').select('protocolo, email, nome_paciente, created_at').eq('unidade_id', unidade_id).order('created_at', desc=True).execute()
             emails_mock = []
             for r in response.data:
                 emails_mock.append({
@@ -496,8 +508,7 @@ def alertar_gestor_email():
     remetente = os.environ.get("SMTP_EMAIL", "seu-email@gmail.com")
     senha = os.environ.get("SMTP_PASSWORD", "sua-senha-de-app")
 
-    lista_html = "".join(
-        [f"<li><b>{p['nome']}</b> (Protocolo: {p['protocolo']}) - {p['prioridade']}</li>" for p in pacientes])
+    lista_html = "".join([f"<li><b>{p['nome']}</b> (Protocolo: {p['protocolo']}) - {p['prioridade']}</li>" for p in pacientes])
 
     img_tag = f'<img src="{logo_url}" alt="Logo" style="max-height: 60px; margin-bottom: 20px;">' if logo_url else ''
 
