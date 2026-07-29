@@ -444,7 +444,30 @@
                         <h1 class="page-title">Relatórios e Desempenho</h1>
                         <p class="page-subtitle" style="margin-top: 4px;">Filtre os dados e gere arquivos consolidados da sua regulação.</p>
                     </div>
+                    
+                    <!-- MÓDULO DE BACKUP DE DADOS -->
+                    <div class="card" style="border-left: 4px solid var(--danger); margin-top: 24px;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                            <i class="ph-fill ph-hard-drives" style="font-size: 24px; color: var(--danger);"></i>
+                            <div>
+                                <h3 style="font-size: 16px; margin: 0;">Backup Local e Limpeza de Nuvem (Supabase)</h3>
+                                <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Salve os dados no servidor local (SQLite) e limpe a nuvem para não estourar o limite de uso gratuito do banco de dados.</p>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <button class="btn-primary" style="background: var(--master-primary);" onclick="fazerBackupLocal()" id="btn-backup">
+                                <i class="ph ph-download-simple"></i> Fazer Backup para SQLite
+                            </button>
+                            <button class="btn-outline" style="border-color: var(--danger); color: var(--danger);" onclick="limparNuvem()" id="btn-limpar">
+                                <i class="ph ph-trash"></i> Esvaziar Banco em Nuvem
+                            </button>
+                        </div>
+                        <div id="backup-log" style="margin-top: 16px; font-size: 13px; font-weight: 500; color: var(--success);"></div>
+                    </div>
+                    
                     <button class="btn-primary" onclick="window.print()"><i class="ph ph-download-simple"></i> Exportar Relatório PDF</button>
+                
                 </div>
 
                 <!-- BARRA DE FILTROS -->
