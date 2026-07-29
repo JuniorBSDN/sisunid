@@ -1451,10 +1451,18 @@ window.addEventListener('DOMContentLoaded', inicializarSelectCategorias);
 
                 dadosFiltrados.forEach(r => {
                     // 1. Consolidação Exata de Volumes
-                    if (r.procedimento === 'Consulta Especializada') consultas++;
-                    else if (r.procedimento === 'Procedimento Cirúrgico') cirurgias++;
-                    else if (r.procedimento === 'Exame de Imagem' || r.procedimento === 'Exame Laboratorial') exames++;
-
+                    // 1. Consolidação Exata de Volumes (Atualizado para as novas categorias)
+                    if (r.procedimento && r.procedimento.includes('Consulta')) {
+                        consultas++;
+                    } else if (r.procedimento === 'Cirurgias') {
+                        cirurgias++;
+                    } else if (r.procedimento && (r.procedimento.includes('Exame') || r.procedimento === 'Endoscopias')) {
+                        exames++;
+                    } else {
+                        // Para vacinas, odontologia, etc., você pode decidir se soma em exames/consultas ou cria um novo contador no futuro.
+                        // Por enquanto, podemos somar em consultas genéricas ou apenas ignorar nos 3 contadores principais.
+                        consultas++; 
+                    }
                     // 2. Consolidação Exata de Prazos (SLA)
                     if (r.status_atual === 'Agendado' || r.prioridade === 'Rotina') {
                         noPrazo++;
