@@ -1,11 +1,13 @@
 import os
 import uuid
-from flask import Flask, request, jsonify, send_from_directory, send_file
+from flask import Flask, request, jsonify, send_from_directory, send_file, Response
 from supabase import create_client, Client
 from supabase.lib.client_options import ClientOptions
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import json
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
@@ -639,6 +641,67 @@ def alertar_gestor_email():
         return jsonify({"sucesso": True})
     except Exception as e:
         print("Erro envio e-mail:", str(e))
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
+
+# ==========================================
+# 5. MÓDULO DE BACKUP E ALERTA MENSAL
+# ==========================================
+@app.route('/api/master/sistema/status', methods=['GET'])
+def status_banco():
+    supabase = get_supabase_client()
+    if not supabase:
+        return jsonify({"sucesso": False}), 500
+    try:
+        # Conta a quantidade total de regulações para disparar o alerta
+        res = supabase.table('regulacoes').select('id', count='exact').execute()
+        total_regs = res.count if res.count is not None else len(res.data)
+        return jsonify({"sucesso": True, "total_registros": total_regs})
+    except Exception:
+        return jsonify({"sucesso": False}), 500
+
+@app.route('/api/master/backup/executar', methods=['GET'])
+def executar_backup_local():
+    supabase = get_supabase_client()
+    if not supabase:
+        return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
+
+    try:
+        reg_resp = supabase.table('regulacoes').select('*').execute()
+        email_resp = supabase.table('historico_emails').select('*').execute()
+
+        backup_data = {
+            "data_backup": datetime.now().isoformat(),
+            "regulacoes": reg_resp.data or [],
+            "emails": email_resp.data or []
+        }
+
+        json_str = json.dumps(backup_data, ensure_ascii=False, indent=4)
+        nome_arquivo = f"backup_sisunid_{datetime.now().strftime('%Y_%m_%d')}.json"
+        
+        return Response(
+            json_str,
+            mimetype="application/json",
+            headers={"Content-disposition": f"attachment; filename={nome_arquivo}"}
+        )
+    except Exception as e:
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
+
+@app.route('/api/master/backup/limpar', methods=['DELETE'])
+def limpar_banco_nuvem():
+    supabase = get_supabase_client()
+    if not supabase:
+        return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
+
+    try:
+        # Calcula a data de 30 dias atrás (Limpeza Mensal)
+        limite_data = (datetime.now() - timedelta(days=30)).isoformat()
+        
+        # Apaga apenas os registros MAIS ANTIGOS que 30 dias
+        supabase.table('regulacoes').delete().lt('created_at', limite_data).execute()
+        supabase.table('historico_emails').delete().lt('created_at', limite_data).execute()
+        
+        return jsonify({"sucesso": True, "mensagem": "Limpeza concluída! Dados com mais de 30 dias foram removidos da nuvem."})
+    except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
 if __name__ == '__main__':
