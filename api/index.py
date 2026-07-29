@@ -1,17 +1,16 @@
 import os
 import uuid
-from flask import Flask, request, jsonify, send_from_directory, send_file, Response
+from flask import Flask, request, jsonify, send_from_directory, send_file
 from supabase import create_client, Client
 from supabase.lib.client_options import ClientOptions
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import json
-from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 
 # ==========================================
 # 0. ROTAS DO FRONT-END (Telas)
@@ -20,12 +19,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def serve_tenant():
     return send_from_directory(os.path.join(BASE_DIR, 'public'), 'index.html')
 
+
 @app.route('/master')
 def serve_master():
     master_path = os.path.join(BASE_DIR, 'master.html')
     if not os.path.exists(master_path):
         master_path = os.path.join(BASE_DIR, 'public', 'master.html')
     return send_file(master_path)
+
 
 # Função auxiliar para disparar e-mails
 def enviar_email(destinatario, assunto, corpo_html):
@@ -49,6 +50,7 @@ def enviar_email(destinatario, assunto, corpo_html):
         print("Erro ao enviar e-mail:", e)
         return False
 
+
 # ==========================================
 # 1. CONEXÕES SUPABASE (Inicialização Segura)
 # ==========================================
@@ -66,8 +68,10 @@ def get_supabase_client() -> Client:
                 print("Erro crítico ao inicializar Supabase:", str(e))
     return None
 
+
 MASTER_PASSWORD = (os.environ.get("MASTER_PASSWORD") or "admin").strip()
 BUCKET_NAME = "uploads"
+
 
 # ==========================================
 # 2. ROTAS DO PAINEL MASTER
@@ -81,11 +85,13 @@ def master_login():
         return jsonify({"sucesso": True})
     return jsonify({"sucesso": False, "erro": "Senha incorreta"}), 401
 
+
 @app.route('/api/master/unidades', methods=['GET'])
 def get_unidades():
     supabase = get_supabase_client()
     if not supabase:
-        return jsonify({"sucesso": False, "erro": "Supabase offline. Verifique as Variáveis de Ambiente na Vercel."}), 500
+        return jsonify(
+            {"sucesso": False, "erro": "Supabase offline. Verifique as Variáveis de Ambiente na Vercel."}), 500
 
     try:
         response = supabase.table('unidades').select('*').order('created_at', desc=True).execute()
@@ -96,6 +102,7 @@ def get_unidades():
             return jsonify({"sucesso": True, "unidades": response.data})
         except Exception as e:
             return jsonify({"sucesso": False, "erro": str(e)}), 500
+
 
 @app.route('/api/master/unidades', methods=['POST'])
 def criar_unidade():
@@ -147,6 +154,7 @@ def criar_unidade():
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
+
 @app.route('/api/master/unidades/<id>/status', methods=['PATCH'])
 def alterar_status_unidade(id):
     supabase = get_supabase_client()
@@ -159,6 +167,7 @@ def alterar_status_unidade(id):
         return jsonify({"sucesso": True})
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
+
 
 # ==========================================
 # 3. ROTAS DO PAINEL DO CLIENTE (TENANT)
@@ -174,7 +183,8 @@ def tenant_login():
     senha = data.get('senha')
 
     try:
-        response = supabase.table('unidades').select('*').eq('cnpj', cnpj).eq('senha_acesso', senha).eq('status', 'ativa').execute()
+        response = supabase.table('unidades').select('*').eq('cnpj', cnpj).eq('senha_acesso', senha).eq('status',
+                                                                                                        'ativa').execute()
 
         if len(response.data) > 0:
             unidade = response.data[0]
@@ -192,6 +202,7 @@ def tenant_login():
         return jsonify({"sucesso": False, "erro": "CNPJ ou Senha inválidos, ou unidade bloqueada."}), 401
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
+
 
 @app.route('/api/tenant/regulacoes/<id_reg>/anexos', methods=['DELETE'])
 def deletar_anexo_regulacao(id_reg):
@@ -222,7 +233,6 @@ def deletar_anexo_regulacao(id_reg):
 
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
-
 
 
 @app.route('/api/tenant/regulacoes/<id_reg>/anexos', methods=['PATCH'])
@@ -283,52 +293,6 @@ def adicionar_anexos_regulacao(id_reg):
         print(f"Erro crítico na rota de anexos: {str(e)}")
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
-# ==========================================
-# NOVAS ROTAS: EDITAR E EXCLUIR REGISTRO
-# ==========================================
-@app.route('/api/tenant/regulacoes/<id_reg>', methods=['DELETE'])
-def deletar_registro_regulacao(id_reg):
-    supabase = get_supabase_client()
-    if not supabase:
-        return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
-
-    try:
-        # Exclui o registro pelo ID
-        supabase.table('regulacoes').delete().eq('id', id_reg).execute()
-        return jsonify({"sucesso": True, "mensagem": "Registro excluído com sucesso."})
-    except Exception as e:
-        return jsonify({"sucesso": False, "erro": str(e)}), 500
-
-@app.route('/api/tenant/regulacoes/<id_reg>', methods=['PUT'])
-def editar_registro_regulacao(id_reg):
-    supabase = get_supabase_client()
-    if not supabase:
-        return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
-
-    try:
-        data = request.get_json(silent=True) or {}
-        
-        # Monta os dados para atualização (apenas os que vierem na requisição)
-        update_data = {
-            "nome_paciente": data.get("nome_paciente"),
-            "cpf": data.get("cpf"),
-            "email": data.get("email"),
-            "telefone": data.get("telefone"),
-            "procedimento": data.get("procedimento"),
-            "prioridade": data.get("prioridade"),
-            "unidade_saude": data.get("unidade_saude"), # NOVO CAMPO
-            "especificacao_sus": data.get("especificacao_sus"),
-            "endereco": data.get("endereco")
-        }
-        
-        # Limpa as chaves nulas para não sobrescrever com None
-        update_data = {k: v for k, v in update_data.items() if v is not None}
-        
-        supabase.table('regulacoes').update(update_data).eq('id', id_reg).execute()
-        return jsonify({"sucesso": True})
-    except Exception as e:
-        return jsonify({"sucesso": False, "erro": str(e)}), 500
-        
 
 @app.route('/api/tenant/regulacoes', methods=['GET'])
 def get_regulacoes():
@@ -341,10 +305,12 @@ def get_regulacoes():
         return jsonify({"sucesso": False, "erro": "ID da unidade é obrigatório"}), 400
 
     try:
-        response = supabase.table('regulacoes').select('*').eq('unidade_id', unidade_id).order('created_at', desc=True).execute()
+        response = supabase.table('regulacoes').select('*').eq('unidade_id', unidade_id).order('created_at',
+                                                                                               desc=True).execute()
         return jsonify({"sucesso": True, "regulacoes": response.data})
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
+
 
 @app.route('/api/tenant/regulacoes', methods=['POST'])
 def criar_regulacao():
@@ -355,16 +321,16 @@ def criar_regulacao():
     try:
         data = request.form
         protocolo = f"REQ-{str(uuid.uuid4())[:4].upper()}"
-        
+
         urls_anexos = []
         arquivos = request.files.getlist('anexos')
-        
+
         for file in arquivos:
             if file and file.filename != '':
                 file_ext = file.filename.split('.')[-1]
                 unique_filename = f"regulacoes/{protocolo}/{uuid.uuid4().hex}.{file_ext}"
                 file_bytes = file.read()
-                
+
                 try:
                     supabase.storage.from_(BUCKET_NAME).upload(
                         path=unique_filename,
@@ -386,10 +352,7 @@ def criar_regulacao():
             "procedimento": data.get("procedimento"),
             "prioridade": data.get("prioridade"),
             "status_atual": "Em Análise",
-            "anexos": urls_anexos,
-            "unidade_saude": data.get("unidade_saude"), 
-            "especificacao_sus": data.get("especificacao_sus"), 
-            "endereco": data.get("endereco")
+            "anexos": urls_anexos
         }
 
         supabase.table('regulacoes').insert(novo_paciente).execute()
@@ -412,6 +375,7 @@ def criar_regulacao():
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
+
 # ==========================================
 # 4. NOVAS ROTAS DOS MÓDULOS (DINÂMICAS)
 # ==========================================
@@ -423,7 +387,8 @@ def get_pacientes():
 
     unidade_id = request.args.get('unidade_id')
     try:
-        response = supabase.table('regulacoes').select('*').eq('unidade_id', unidade_id).order('created_at', desc=True).execute()
+        response = supabase.table('regulacoes').select('*').eq('unidade_id', unidade_id).order('created_at',
+                                                                                               desc=True).execute()
 
         pacientes_dict = {}
         for reg in response.data:
@@ -445,6 +410,7 @@ def get_pacientes():
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
+
 @app.route('/api/tenant/relatorios', methods=['GET'])
 def get_relatorios():
     supabase = get_supabase_client()
@@ -453,7 +419,8 @@ def get_relatorios():
 
     unidade_id = request.args.get('unidade_id')
     try:
-        response = supabase.table('regulacoes').select('procedimento, prioridade, status_atual').eq('unidade_id', unidade_id).execute()
+        response = supabase.table('regulacoes').select('procedimento, prioridade, status_atual').eq('unidade_id',
+                                                                                                    unidade_id).execute()
         data = response.data or []
 
         stats = {
@@ -470,6 +437,7 @@ def get_relatorios():
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
+
 @app.route('/api/tenant/emails', methods=['GET'])
 def get_emails():
     supabase = get_supabase_client()
@@ -478,11 +446,13 @@ def get_emails():
 
     unidade_id = request.args.get('unidade_id')
     try:
-        response = supabase.table('historico_emails').select('*').eq('unidade_id', unidade_id).order('created_at', desc=True).execute()
+        response = supabase.table('historico_emails').select('*').eq('unidade_id', unidade_id).order('created_at',
+                                                                                                     desc=True).execute()
         return jsonify({"sucesso": True, "emails": response.data})
     except Exception:
         try:
-            response = supabase.table('regulacoes').select('protocolo, email, nome_paciente, created_at').eq('unidade_id', unidade_id).order('created_at', desc=True).execute()
+            response = supabase.table('regulacoes').select('protocolo, email, nome_paciente, created_at').eq(
+                'unidade_id', unidade_id).order('created_at', desc=True).execute()
             emails_mock = []
             for r in response.data:
                 emails_mock.append({
@@ -496,6 +466,7 @@ def get_emails():
             return jsonify({"sucesso": True, "emails": emails_mock})
         except Exception as e2:
             return jsonify({"sucesso": False, "erro": str(e2)}), 500
+
 
 @app.route('/api/tenant/regulacoes/<id_reg>', methods=['PATCH'])
 def atualizar_regulacao(id_reg):
@@ -596,6 +567,7 @@ def atualizar_regulacao(id_reg):
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
+
 @app.route('/api/tenant/alertar-gestor', methods=['POST'])
 def alertar_gestor_email():
     data = request.get_json(silent=True) or {}
@@ -610,7 +582,8 @@ def alertar_gestor_email():
     remetente = os.environ.get("SMTP_EMAIL", "seu-email@gmail.com")
     senha = os.environ.get("SMTP_PASSWORD", "sua-senha-de-app")
 
-    lista_html = "".join([f"<li><b>{p['nome']}</b> (Protocolo: {p['protocolo']}) - {p['prioridade']}</li>" for p in pacientes])
+    lista_html = "".join(
+        [f"<li><b>{p['nome']}</b> (Protocolo: {p['protocolo']}) - {p['prioridade']}</li>" for p in pacientes])
 
     img_tag = f'<img src="{logo_url}" alt="Logo" style="max-height: 60px; margin-bottom: 20px;">' if logo_url else ''
 
@@ -643,66 +616,6 @@ def alertar_gestor_email():
         print("Erro envio e-mail:", str(e))
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
-# ==========================================
-# 5. MÓDULO DE BACKUP E ALERTA MENSAL
-# ==========================================
-@app.route('/api/master/sistema/status', methods=['GET'])
-def status_banco():
-    supabase = get_supabase_client()
-    if not supabase:
-        return jsonify({"sucesso": False}), 500
-    try:
-        # Conta a quantidade total de regulações para disparar o alerta
-        res = supabase.table('regulacoes').select('id', count='exact').execute()
-        total_regs = res.count if res.count is not None else len(res.data)
-        return jsonify({"sucesso": True, "total_registros": total_regs})
-    except Exception:
-        return jsonify({"sucesso": False}), 500
-
-@app.route('/api/master/backup/executar', methods=['GET'])
-def executar_backup_local():
-    supabase = get_supabase_client()
-    if not supabase:
-        return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
-
-    try:
-        reg_resp = supabase.table('regulacoes').select('*').execute()
-        email_resp = supabase.table('historico_emails').select('*').execute()
-
-        backup_data = {
-            "data_backup": datetime.now().isoformat(),
-            "regulacoes": reg_resp.data or [],
-            "emails": email_resp.data or []
-        }
-
-        json_str = json.dumps(backup_data, ensure_ascii=False, indent=4)
-        nome_arquivo = f"backup_sisunid_{datetime.now().strftime('%Y_%m_%d')}.json"
-        
-        return Response(
-            json_str,
-            mimetype="application/json",
-            headers={"Content-disposition": f"attachment; filename={nome_arquivo}"}
-        )
-    except Exception as e:
-        return jsonify({"sucesso": False, "erro": str(e)}), 500
-
-@app.route('/api/master/backup/limpar', methods=['DELETE'])
-def limpar_banco_nuvem():
-    supabase = get_supabase_client()
-    if not supabase:
-        return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
-
-    try:
-        # Calcula a data de 30 dias atrás (Limpeza Mensal)
-        limite_data = (datetime.now() - timedelta(days=30)).isoformat()
-        
-        # Apaga apenas os registros MAIS ANTIGOS que 30 dias
-        supabase.table('regulacoes').delete().lt('created_at', limite_data).execute()
-        supabase.table('historico_emails').delete().lt('created_at', limite_data).execute()
-        
-        return jsonify({"sucesso": True, "mensagem": "Limpeza concluída! Dados com mais de 30 dias foram removidos da nuvem."})
-    except Exception as e:
-        return jsonify({"sucesso": False, "erro": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
