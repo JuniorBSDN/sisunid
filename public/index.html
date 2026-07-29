@@ -550,48 +550,72 @@
         </main>
     </div>
 
-    <!-- MODAL DE AVALIAÇÃO DO PACIENTE -->
-    <div id="modal-avaliar" class="modal-overlay">
+    <!-- NOVO MODAL: EDIÇÃO DE REGISTRO (CORRIGIDO) -->
+    <div id="modal-editar-registro" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-header">
-                <div>
-                    <h3 style="font-size: 18px;" id="modal-titulo-paciente">Avaliar Paciente</h3>
-                    <p style="font-size: 13px; color: var(--text-muted);" id="modal-subtitulo-protocolo">Protocolo #REQ-0000</p>
-                </div>
-                <button onclick="fecharModalAvaliar()" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-muted);">&times;</button>
+                <h3 style="font-size: 18px;">Editar Registro do Paciente</h3>
+                <button onclick="fecharModalEditar()" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-muted);">&times;</button>
             </div>
-            <form id="form-modal-avaliacao">
-                <input type="hidden" id="modal-reg-id">
+            <form id="form-modal-editar">
+                <input type="hidden" id="edit-id-reg">
                 <div class="modal-body">
-                    <div style="background: var(--bg-color); padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
-                        <div style="font-size: 13px; color: var(--text-muted);">Procedimento Solicitado:</div>
-                        <div style="font-weight: 600; font-size: 15px;" id="modal-info-procedimento">-</div>
-                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Nome Completo</label>
+                            <input type="text" id="edit-nome" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">CPF</label>
+                            <input type="text" id="edit-cpf" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">E-mail</label>
+                            <input type="email" id="edit-email" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Telefone</label>
+                            <input type="text" id="edit-telefone" class="form-control" required>
+                        </div>
 
-                    <div class="form-group" style="margin-bottom: 16px;">
-                        <label class="form-label">Decisão da Regulação / Novo Status</label>
-                        <select id="modal-status-select" class="form-control" required onchange="toggleDataAgendamento(this.value)">
-                            <option value="Em Análise">Em Análise</option>
-                            <option value="Agendado">Agendado (Aprovado)</option>
-                            <option value="Aguardando Vaga">Aguardando Vaga em Fila</option>
-                            <option value="Devolvido/Incompleto">Devolvido (Documentação Incompleta)</option>
-                            <option value="Negado/Incompatível">Negado (Procedimento Não Autorizado)</option>
-                        </select>
-                    </div>
+                        <div class="form-group full-width">
+                            <label class="form-label">Endereço Completo</label>
+                            <input type="text" id="edit-endereco" class="form-control" placeholder="Rua, Número, Bairro, Cidade..." required>
+                        </div>
 
-                    <div class="form-group" id="group-data-agendamento" style="display: none; margin-bottom: 16px;">
-                        <label class="form-label">Data e Hora do Agendamento</label>
-                        <input type="datetime-local" id="modal-data-agendamento" class="form-control">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Parecer Regulador / Justificativa</label>
-                        <textarea id="modal-parecer" class="form-control" rows="4" placeholder="Digite o parecer médico/regulador ou instruções para o paciente..." required></textarea>
+                        <div class="form-group full-width" style="border-top: 1px solid var(--border); margin: 8px 0;"></div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Unidade Solicitante / Destino</label>
+                            <input type="text" id="edit-unidade" class="form-control" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Categoria</label>
+                            <select id="edit-procedimento" class="form-control" onchange="atualizarEspecificacoes('edit-procedimento', 'edit-especificacao-sus')" required>
+                                <option value="">Selecione a Categoria...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Procedimento SUS</label>
+                            <select id="edit-especificacao-sus" class="form-control" required>
+                                <option value="">Selecione primeiro a categoria...</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Prioridade</label>
+                            <select id="edit-prioridade" class="form-control" required>
+                                <option value="Rotina">Rotina</option>
+                                <option value="Prioridade">Prioridade</option>
+                                <option value="Urgência">Urgência</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn-primary" style="background: transparent; color: var(--text-muted); border: 1px solid var(--border);" onclick="fecharModalAvaliar()">Cancelar</button>
-                    <button type="submit" class="btn-primary" id="btn-salvar-avaliacao"><i class="ph ph-check-circle"></i> Confirmar Avaliação</button>
+                    <button type="button" class="btn-primary" style="background: transparent; color: var(--text-muted); border: 1px solid var(--border);" onclick="fecharModalEditar()">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="btn-salvar-edicao"><i class="ph ph-floppy-disk"></i> Salvar Alterações</button>
                 </div>
             </form>
         </div>
@@ -1608,7 +1632,7 @@ window.addEventListener('DOMContentLoaded', inicializarSelectCategorias);
             }
         }
 
-        function abrirModalEditar(idReg) {
+      function abrirModalEditar(idReg) {
             const reg = listaRegulacoesCache.find(r => r.id === idReg);
             if (!reg) return;
 
@@ -1618,16 +1642,18 @@ window.addEventListener('DOMContentLoaded', inicializarSelectCategorias);
             document.getElementById('edit-email').value = reg.email || '';
             document.getElementById('edit-telefone').value = reg.telefone || '';
             document.getElementById('edit-unidade').value = reg.unidade_saude || '';
-            // Preenche a Categoria
+            
             document.getElementById('edit-procedimento').value = reg.procedimento || '';
-            // Aciona a função que carrega a lista do procedimento específico E já deixa marcado o que estava no banco
-            atualizarEspecificacoes('edit-procedimento', 'edit-especificacao', reg.especificacao_sus);
+            // Ajustado para apontar para o ID unificado do select
+            atualizarEspecificacoes('edit-procedimento', 'edit-especificacao-sus', reg.especificacao_sus);
+            
             document.getElementById('edit-prioridade').value = reg.prioridade || 'Rotina';
             document.getElementById('edit-endereco').value = reg.endereco || '';
 
             document.getElementById('modal-editar-registro').style.display = 'flex';
         }
 
+        
         function fecharModalEditar() {
             document.getElementById('modal-editar-registro').style.display = 'none';
         }
