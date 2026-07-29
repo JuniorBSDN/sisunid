@@ -6,8 +6,6 @@ from supabase.lib.client_options import ClientOptions
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import sqlite3
-import json
 
 app = Flask(__name__)
 
@@ -68,46 +66,6 @@ def get_supabase_client() -> Client:
 
 MASTER_PASSWORD = (os.environ.get("MASTER_PASSWORD") or "admin").strip()
 BUCKET_NAME = "uploads"
-
-
-# ==========================================
-# 1.5 CONEXÃO SQLITE (BACKUP LOCAL)
-# ==========================================
-DB_BACKUP_PATH = os.path.join(BASE_DIR, 'sisunid_backup.db')
-
-def init_sqlite_backup():
-    """Cria o banco de dados local SQLite e as tabelas se não existirem."""
-    conn = sqlite3.connect(DB_BACKUP_PATH)
-    c = conn.cursor()
-    # Tabela para salvar as Regulações e Prontuários
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS backup_regulacoes (
-            id TEXT PRIMARY KEY,
-            unidade_id TEXT,
-            protocolo TEXT,
-            cpf TEXT,
-            nome_paciente TEXT,
-            dados_completos TEXT,
-            data_backup TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    # Tabela para salvar o histórico de E-mails
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS backup_emails (
-            id TEXT PRIMARY KEY,
-            unidade_id TEXT,
-            protocolo TEXT,
-            destinatario TEXT,
-            dados_completos TEXT,
-            data_backup TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    conn.commit()
-    conn.close()
-
-# Executa a criação do banco local assim que o servidor inicia
-init_sqlite_backup()
-
 
 # ==========================================
 # 2. ROTAS DO PAINEL MASTER
@@ -682,70 +640,6 @@ def alertar_gestor_email():
     except Exception as e:
         print("Erro envio e-mail:", str(e))
         return jsonify({"sucesso": False, "erro": str(e)}), 500
-
-# ==========================================
-# 5. ROTAS DE BACKUP E LIMPEZA (MASTER)
-# ==========================================
-@app.route('/api/master/backup/executar', methods=['POST'])
-def executar_backup_local():
-    supabase = get_supabase_client()
-    if not supabase:
-        return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
-
-    try:
-        # 1. Busca todos os dados da nuvem (Supabase)
-        reg_resp = supabase.table('regulacoes').select('*').execute()
-        email_resp = supabase.table('historico_emails').select('*').execute()
-        
-        regulacoes = reg_resp.data or []
-        emails = email_resp.data or []
-
-        # 2. Conecta no SQLite local
-        conn = sqlite3.connect(DB_BACKUP_PATH)
-        c = conn.cursor()
-
-        # 3. Salva Regulações (dados_completos vira JSON para não perder NADA, nem anexos)
-        for r in regulacoes:
-            c.execute('''
-                INSERT OR REPLACE INTO backup_regulacoes 
-                (id, unidade_id, protocolo, cpf, nome_paciente, dados_completos)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (str(r.get('id')), r.get('unidade_id'), r.get('protocolo'), r.get('cpf'), r.get('nome_paciente'), json.dumps(r)))
-
-        # 4. Salva E-mails
-        for e in emails:
-            c.execute('''
-                INSERT OR REPLACE INTO backup_emails 
-                (id, unidade_id, protocolo, destinatario, dados_completos)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (str(e.get('id')), e.get('unidade_id'), e.get('protocolo'), e.get('destinatario'), json.dumps(e)))
-
-        conn.commit()
-        conn.close()
-
-        return jsonify({
-            "sucesso": True, 
-            "mensagem": f"Backup concluído: {len(regulacoes)} regulações e {len(emails)} e-mails salvos localmente no sisunid_backup.db."
-        })
-
-    except Exception as e:
-        return jsonify({"sucesso": False, "erro": f"Erro ao fazer backup: {str(e)}"}), 500
-
-@app.route('/api/master/backup/limpar', methods=['DELETE'])
-def limpar_banco_nuvem():
-    supabase = get_supabase_client()
-    if not supabase:
-        return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
-
-    try:
-        # Apaga todos os registros de regulações e emails usando um filtro de data seguro (qualquer data antes de 2100)
-        # IMPORTANTE: A tabela 'unidades' NÃO é apagada para manter o acesso dos clientes.
-        supabase.table('regulacoes').delete().lt('created_at', '2100-01-01').execute()
-        supabase.table('historico_emails').delete().lt('created_at', '2100-01-01').execute()
-        
-        return jsonify({"sucesso": True, "mensagem": "Limpeza da nuvem concluída com sucesso! Banco Supabase esvaziado (exceto Unidades)."})
-    except Exception as e:
-        return jsonify({"sucesso": False, "erro": f"Erro ao limpar Supabase: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
