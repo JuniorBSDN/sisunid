@@ -280,6 +280,52 @@ def adicionar_anexos_regulacao(id_reg):
     except Exception as e:
         print(f"Erro crítico na rota de anexos: {str(e)}")
         return jsonify({"sucesso": False, "erro": str(e)}), 500
+
+# ==========================================
+# NOVAS ROTAS: EDITAR E EXCLUIR REGISTRO
+# ==========================================
+@app.route('/api/tenant/regulacoes/<id_reg>', methods=['DELETE'])
+def deletar_registro_regulacao(id_reg):
+    supabase = get_supabase_client()
+    if not supabase:
+        return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
+
+    try:
+        # Exclui o registro pelo ID
+        supabase.table('regulacoes').delete().eq('id', id_reg).execute()
+        return jsonify({"sucesso": True, "mensagem": "Registro excluído com sucesso."})
+    except Exception as e:
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
+
+@app.route('/api/tenant/regulacoes/<id_reg>', methods=['PUT'])
+def editar_registro_regulacao(id_reg):
+    supabase = get_supabase_client()
+    if not supabase:
+        return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
+
+    try:
+        data = request.get_json(silent=True) or {}
+        
+        # Monta os dados para atualização (apenas os que vierem na requisição)
+        update_data = {
+            "nome_paciente": data.get("nome_paciente"),
+            "cpf": data.get("cpf"),
+            "email": data.get("email"),
+            "telefone": data.get("telefone"),
+            "procedimento": data.get("procedimento"),
+            "prioridade": data.get("prioridade"),
+            "unidade_saude": data.get("unidade_saude"), # NOVO CAMPO
+            "especificacao_sus": data.get("especificacao_sus"),
+            "endereco": data.get("endereco")
+        }
+        
+        # Limpa as chaves nulas para não sobrescrever com None
+        update_data = {k: v for k, v in update_data.items() if v is not None}
+        
+        supabase.table('regulacoes').update(update_data).eq('id', id_reg).execute()
+        return jsonify({"sucesso": True})
+    except Exception as e:
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
         
 
 @app.route('/api/tenant/regulacoes', methods=['GET'])
@@ -338,7 +384,10 @@ def criar_regulacao():
             "procedimento": data.get("procedimento"),
             "prioridade": data.get("prioridade"),
             "status_atual": "Em Análise",
-            "anexos": urls_anexos
+            "anexos": urls_anexos,
+            "unidade_saude": data.get("unidade_saude"), 
+            "especificacao_sus": data.get("especificacao_sus"), 
+            "endereco": data.get("endereco")
         }
 
         supabase.table('regulacoes').insert(novo_paciente).execute()
