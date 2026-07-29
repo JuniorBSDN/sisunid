@@ -1124,13 +1124,15 @@ window.addEventListener('DOMContentLoaded', inicializarSelectCategorias);
                 });
 
                 const data = await response.json();
-                if (response.ok && data.sucesso) {
+               if (response.ok && data.sucesso) {
                     showToast(`Protocolo ${data.protocolo} Gerado!`, 'Inclusão salva no banco de dados.');
                     this.reset();
                     document.getElementById('label-arquivo-anexo').innerHTML = 'Arraste arquivos aqui ou <span style="color:var(--primary); font-weight:600;">Clique para buscar</span> no computador';
+                    
+                    // ESSA É A LINHA NOVA QUE APAGA A MEMÓRIA DO ALERTA
+                    sessionStorage.removeItem('alerta_visto'); 
+                    
                     switchView('dashboard', document.querySelectorAll('.nav-item')[0]);
-                } else {
-                    alert('Erro ao salvar: ' + (data.erro || 'Falha no servidor.'));
                 }
             } catch (error) {
                 alert('Erro de conexão.');
