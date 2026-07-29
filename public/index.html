@@ -495,19 +495,8 @@
 
                     <div class="card">
                         <div class="card-header">Volume por Procedimento</div>
-                        <div class="card-body" style="display:flex; flex-direction:column; gap:16px;">
-                            <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:8px;">
-                                <span style="color:var(--text-muted);">Consultas</span>
-                                <span style="font-weight:600;" id="vol-consultas">0</span>
-                            </div>
-                            <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:8px;">
-                                <span style="color:var(--text-muted);">Exames de Imagem / Lab</span>
-                                <span style="font-weight:600;" id="vol-exames">0</span>
-                            </div>
-                            <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:8px;">
-                                <span style="color:var(--text-muted);">Cirurgias</span>
-                                <span style="font-weight:600;" id="vol-procedimentos">0</span>
-                            </div>
+                        <div class="card-body" id="container-volumes-dinamicos" style="display:flex; flex-direction:column; gap:16px; max-height: 220px; overflow-y: auto;">
+                            <span style="color:var(--text-muted); font-size: 13px; text-align: center;">Aguardando geração do relatório...</span>
                         </div>
                     </div>
                 </div>
@@ -1435,126 +1424,132 @@ window.addEventListener('DOMContentLoaded', inicializarSelectCategorias);
 
         
         
-        // --- RELATÓRIOS E FILTRAGEM ---
-       function gerarRelatorioNaTela() {
-            const dataIni = document.getElementById('rel-data-ini').value;
-            const dataFim = document.getElementById('rel-data-fim').value;
-            const tipo = document.getElementById('rel-tipo').value;
-            let dadosFiltrados = listaRegulacoesCache;
+        function gerarRelatorioNaTela() {
+    const dataIni = document.getElementById('rel-data-ini').value;
+    const dataFim = document.getElementById('rel-data-fim').value;
+    const tipo = document.getElementById('rel-tipo').value;
+    let dadosFiltrados = listaRegulacoesCache;
 
-            if (dataIni) {
-                dadosFiltrados = dadosFiltrados.filter(r => r.created_at && r.created_at.split('T')[0] >= dataIni);
-            }
-            if (dataFim) {
-                dadosFiltrados = dadosFiltrados.filter(r => r.created_at && r.created_at.split('T')[0] <= dataFim);
-            }
+    if (dataIni) {
+        dadosFiltrados = dadosFiltrados.filter(r => r.created_at.split('T')[0] >= dataIni);
+    }
+    if (dataFim) {
+        dadosFiltrados = dadosFiltrados.filter(r => r.created_at.split('T')[0] <= dataFim);
+    }
 
-            const containerGraficos = document.getElementById('relatorio-graficos');
-            const containerTabela = document.getElementById('relatorio-tabela-container');
-            const tbody = document.getElementById('tabela-relatorio-gerado');
-            const tituloTabela = document.getElementById('relatorio-titulo-tabela');
+    const containerGraficos = document.getElementById('relatorio-graficos');
+    const containerTabela = document.getElementById('relatorio-tabela-container');
+    const tbody = document.getElementById('tabela-relatorio-gerado');
+    const tituloTabela = document.getElementById('relatorio-titulo-tabela');
 
-            if (tipo === 'geral') {
-                containerGraficos.style.display = 'grid';
-                containerTabela.style.display = 'none';
+    if (tipo === 'geral') {
+        containerGraficos.style.display = 'grid';
+        containerTabela.style.display = 'none';
 
-                let consultas = 0, exames = 0, cirurgias = 0;
-                let noPrazo = 0, alerta = 0, atrasados = 0;
+        // Objeto vazio para contagem dinâmica
+        let volumesDinamicos = {};
+        let noPrazo = 0, alerta = 0, atrasados = 0;
 
-                dadosFiltrados.forEach(r => {
-                    const proc = (r.procedimento || '').toLowerCase();
+        dadosFiltrados.forEach(r => {
+            // 1. Consolidação Dinâmica de Volumes (Lê a categoria real gravada no banco)
+            const categoria = r.procedimento || 'Não Especificado';
+            volumesDinamicos[categoria] = (volumesDinamicos[categoria] || 0) + 1;
 
-                    // 1. Consolidação Ampla de Volumes Baseada nas Novas Categorias
-                    if (proc.includes('consulta') || proc.includes('atenção domiciliar') || proc.includes('saúde da')) {
-                        consultas++;
-                    } else if (proc.includes('cirurgia')) {
-                        cirurgias++;
-                    } else if (proc.includes('exame') || proc.includes('endoscopias') || proc.includes('oftalmologia') || proc.includes('otorrino') || proc.includes('vacinação') || proc.includes('odontologia')) {
-                        exames++;
-                    } else {
-                        consultas++; // Categoria padrão caso haja termo genérico
-                    }
-
-                    // 2. Consolidação Real de Prazos (SLA)
-                    if (r.status_atual === 'Agendado' || r.prioridade === 'Rotina') {
-                        noPrazo++;
-                    } else if (r.status_atual === 'Em Análise') {
-                        if (r.prioridade === 'Prioridade') {
-                            alerta++;
-                        } else if (r.prioridade === 'Urgência') {
-                            atrasados++;
-                        } else {
-                            noPrazo++;
-                        }
-                    } else {
-                        noPrazo++; // Finalizados, Devolvidos ou Negados contam positivamente no fluxo
-                    }
-                });
-
-                // Atualiza os números de volume na tela
-                document.getElementById('vol-consultas').innerText = consultas;
-                document.getElementById('vol-exames').innerText = exames;
-                document.getElementById('vol-procedimentos').innerText = cirurgias;
-
-                // Atualiza as barras de percentual com precisão
-                let total = dadosFiltrados.length;
-                
-                if (total === 0) {
-                    document.getElementById('bar-prazo').style.width = '0%';
-                    document.getElementById('val-prazo').innerText = '0%';
-                    document.getElementById('bar-alerta').style.width = '0%';
-                    document.getElementById('val-alerta').innerText = '0%';
-                    document.getElementById('bar-atraso').style.width = '0%';
-                    document.getElementById('val-atraso').innerText = '0%';
-                } else {
-                    document.getElementById('bar-prazo').style.width = `${(noPrazo/total)*100}%`;
-                    document.getElementById('val-prazo').innerText = `${Math.round((noPrazo/total)*100)}%`;
-
-                    document.getElementById('bar-alerta').style.width = `${(alerta/total)*100}%`;
-                    document.getElementById('val-alerta').innerText = `${Math.round((alerta/total)*100)}%`;
-
-                    document.getElementById('bar-atraso').style.width = `${(atrasados/total)*100}%`;
-                    document.getElementById('val-atraso').innerText = `${Math.round((atrasados/total)*100)}%`;
-                }
-
+            // 2. Consolidação Exata de Prazos (SLA)
+            if (r.status_atual === 'Agendado' || r.prioridade === 'Rotina') {
+                noPrazo++;
+            } else if (r.status_atual === 'Em Análise') {
+                if (r.prioridade === 'Prioridade') alerta++;
+                else if (r.prioridade === 'Urgência') atrasados++;
+                else noPrazo++;
             } else {
-                containerGraficos.style.display = 'none';
-                containerTabela.style.display = 'block';
-
-                let filtradosPorTipo = [];
-                let textoFiltroData = "";
-                if(dataIni || dataFim) {
-                    textoFiltroData = ` (Período: ${dataIni ? dataIni.split('-').reverse().join('/') : 'Início'} até ${dataFim ? dataFim.split('-').reverse().join('/') : 'Hoje'})`;
-                }
-
-                if (tipo === 'agendados') {
-                    tituloTabela.innerText = "Relatório: Pacientes Agendados / Concluídos" + textoFiltroData;
-                    filtradosPorTipo = dadosFiltrados.filter(r => r.status_atual === 'Agendado');
-                } else if (tipo === 'atrasados') {
-                    tituloTabela.innerText = "Relatório Crítico: Urgências Pendentes" + textoFiltroData;
-                    filtradosPorTipo = dadosFiltrados.filter(r => r.status_atual === 'Em Análise' && r.prioridade === 'Urgência');
-                }
-
-                tbody.innerHTML = '';
-                if (filtradosPorTipo.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum registro encontrado com estes filtros.</td></tr>';
-                } else {
-                    filtradosPorTipo.forEach(r => {
-                        const d = new Date(r.created_at);
-                        const dataBr = d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-                        tbody.innerHTML += `
-                            <tr>
-                                <td style="font-size: 13px;">${dataBr}</td>
-                                <td style="font-weight:bold; color:var(--primary);">#${r.protocolo}</td>
-                                <td>${r.nome_paciente}</td>
-                                <td>${r.procedimento}<br><small style="font-weight:600; color:var(--text-muted);">${r.prioridade}</small></td>
-                                <td><span class="badge ${r.status_atual === 'Agendado' ? 'bg-success' : 'bg-warning'}">${r.status_atual}</span></td>
-                            </tr>
-                        `;
-                    });
-                }
+                noPrazo++; // Status Devolvidos, Negados ou Aguardando entram como resolvidos/finalizados
             }
+        });
+
+        // ==========================================
+        // RENDERIZAR VOLUMES NA TELA
+        // ==========================================
+        const containerVolumes = document.getElementById('container-volumes-dinamicos');
+        containerVolumes.innerHTML = ''; // Limpa o conteúdo anterior
+
+        // Converte o objeto em array e ordena decrescente (maior volume primeiro)
+        const volumesOrdenados = Object.entries(volumesDinamicos).sort((a, b) => b[1] - a[1]);
+
+        if (volumesOrdenados.length === 0) {
+            containerVolumes.innerHTML = '<span style="color:var(--text-muted); font-size:13px; text-align:center;">Nenhum dado encontrado para o período selecionado.</span>';
+        } else {
+            volumesOrdenados.forEach(([nome, quantidade]) => {
+                containerVolumes.innerHTML += `
+                    <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:8px;">
+                        <span style="color:var(--text-muted); font-size: 14px;">${nome}</span>
+                        <span style="font-weight:600;">${quantidade}</span>
+                    </div>
+                `;
+            });
         }
+
+        // ==========================================
+        // ATUALIZAR GRÁFICOS DE BARRA (SLA)
+        // ==========================================
+        let total = dadosFiltrados.length;
+
+        if (total === 0) {
+            document.getElementById('bar-prazo').style.width = '0%';
+            document.getElementById('val-prazo').innerText = '0%';
+            document.getElementById('bar-alerta').style.width = '0%';
+            document.getElementById('val-alerta').innerText = '0%';
+            document.getElementById('bar-atraso').style.width = '0%';
+            document.getElementById('val-atraso').innerText = '0%';
+        } else {
+            document.getElementById('bar-prazo').style.width = `${(noPrazo/total)*100}%`;
+            document.getElementById('val-prazo').innerText = `${Math.round((noPrazo/total)*100)}%`;
+
+            document.getElementById('bar-alerta').style.width = `${(alerta/total)*100}%`;
+            document.getElementById('val-alerta').innerText = `${Math.round((alerta/total)*100)}%`;
+
+            document.getElementById('bar-atraso').style.width = `${(atrasados/total)*100}%`;
+            document.getElementById('val-atraso').innerText = `${Math.round((atrasados/total)*100)}%`;
+        }
+
+    } else {
+        containerGraficos.style.display = 'none';
+        containerTabela.style.display = 'block';
+
+        let filtradosPorTipo = [];
+        let textoFiltroData = "";
+        if(dataIni || dataFim) {
+            textoFiltroData = ` (Período: ${dataIni ? dataIni.split('-').reverse().join('/') : 'Início'} até ${dataFim ? dataFim.split('-').reverse().join('/') : 'Hoje'})`;
+        }
+
+        if (tipo === 'agendados') {
+            tituloTabela.innerText = "Relatório: Pacientes Agendados / Concluídos" + textoFiltroData;
+            filtradosPorTipo = dadosFiltrados.filter(r => r.status_atual === 'Agendado');
+        } else if (tipo === 'atrasados') {
+            tituloTabela.innerText = "Relatório Crítico: Urgências Pendentes" + textoFiltroData;
+            filtradosPorTipo = dadosFiltrados.filter(r => r.status_atual === 'Em Análise' && r.prioridade === 'Urgência');
+        }
+
+        tbody.innerHTML = '';
+        if (filtradosPorTipo.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum registro encontrado com estes filtros.</td></tr>';
+        } else {
+            filtradosPorTipo.forEach(r => {
+                const d = new Date(r.created_at);
+                const dataBr = d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="font-size: 13px;">${dataBr}</td>
+                        <td style="font-weight:bold; color:var(--primary);">#${r.protocolo}</td>
+                        <td>${r.nome_paciente}</td>
+                        <td>${r.procedimento}<br><small style="font-weight:600; color:var(--text-muted);">${r.prioridade}</small></td>
+                        <td><span class="badge ${r.status_atual === 'Agendado' ? 'bg-success' : 'bg-warning'}">${r.status_atual}</span></td>
+                    </tr>
+                `;
+            });
+        }
+    }
+}
         
         
         function imprimirProntuario() {
