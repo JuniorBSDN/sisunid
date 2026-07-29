@@ -367,21 +367,19 @@
                                     <label class="form-label">Unidade Solicitante / Destino</label>
                                     <input type="text" id="input-unidade-saude" class="form-control" placeholder="Informe a unidade..." required>
                                 </div>
-                                <div class="form-group">
-                                    <label class="form-label">Procedimento SUS (Consulta/Exame Específico)</label>
-                                    <input type="text" id="input-especificacao-sus" class="form-control" placeholder="Ex: Raio-X de Tórax, Consulta Cardiologista..." required>
-                                </div>
-
-                                <div class="form-group">
-                                    <label class="form-label">Categoria do Procedimento</label>
-                                    <select id="input-procedimento" class="form-control" required>
-                                        <option value="">Selecione a Categoria...</option>
-                                        <option value="Consulta Especializada">Consulta Especializada</option>
-                                        <option value="Exame de Imagem">Exame de Imagem</option>
-                                        <option value="Exame Laboratorial">Exame Laboratorial</option>
-                                        <option value="Procedimento Cirúrgico">Procedimento Cirúrgico</option>
-                                    </select>
-                                </div>
+                               <div class="form-group">
+    <label class="form-label">Categoria do Procedimento</label>
+    <select id="input-procedimento" class="form-control" onchange="atualizarEspecificacoes('input-procedimento', 'input-especificacao-sus')" required>
+        <option value="">Selecione a Categoria...</option>
+        <!-- As opções serão injetadas pelo JavaScript -->
+    </select>
+</div>
+<div class="form-group">
+    <label class="form-label">Procedimento SUS Específico</label>
+    <select id="input-especificacao-sus" class="form-control" required>
+        <option value="">Selecione primeiro a categoria...</option>
+    </select>
+</div>
                                 <div class="form-group">
                                     <label class="form-label">Prioridade Clínica</label>
                                     <select id="input-prioridade" class="form-control" required>
@@ -682,7 +680,7 @@
                             <input type="text" id="edit-telefone" class="form-control" required>
                         </div>
 
-                        <!-- NOVO CAMPO DE ENDEREÇO ADICIONADO AQUI -->
+                        
                         <div class="form-group full-width">
                             <label class="form-label">Endereço Completo</label>
                             <input type="text" id="edit-endereco" class="form-control" placeholder="Rua, Número, Bairro, Cidade..." required>
@@ -694,19 +692,20 @@
                             <label class="form-label">Unidade Solicitante / Destino</label>
                             <input type="text" id="edit-unidade" class="form-control" required>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Procedimento SUS</label>
-                            <input type="text" id="edit-especificacao" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Categoria</label>
-                            <select id="edit-procedimento" class="form-control" required>
-                                <option value="Consulta Especializada">Consulta Especializada</option>
-                                <option value="Exame de Imagem">Exame de Imagem</option>
-                                <option value="Exame Laboratorial">Exame Laboratorial</option>
-                                <option value="Procedimento Cirúrgico">Procedimento Cirúrgico</option>
-                            </select>
-                        </div>
+                        
+                       <div class="form-group">
+    <label class="form-label">Categoria</label>
+    <select id="edit-procedimento" class="form-control" onchange="atualizarEspecificacoes('edit-procedimento', 'edit-especificacao')" required>
+        <option value="">Selecione a Categoria...</option>
+    </select>
+</div>
+<div class="form-group">
+    <label class="form-label">Procedimento SUS</label>
+    <select id="edit-especificacao" class="form-control" required>
+        <option value="">Selecione primeiro a categoria...</option>
+    </select>
+</div>
+                        
                         <div class="form-group">
                             <label class="form-label">Prioridade</label>
                             <select id="edit-prioridade" class="form-control" required>
@@ -735,6 +734,84 @@
     </div>
 
     <script>
+
+        // ==========================================
+// BANCO DE DADOS LOCAL: CATEGORIAS E PROCEDIMENTOS
+// ==========================================
+const baseProcedimentosSUS = {
+    "Consultas Médicas": [
+        "Clínico Geral", "Médico da Família", "Pediatria", "Ginecologia", "Obstetrícia", 
+        "Cardiologia", "Neurologia", "Ortopedia", "Urologia", "Gastroenterologia", 
+        "Endocrinologia", "Dermatologia", "Pneumologia", "Oftalmologia", 
+        "Otorrinolaringologia", "Psiquiatria", "Oncologia", "Nefrologia", 
+        "Reumatologia", "Infectologia", "Cirurgia Geral", "Cirurgia Vascular", 
+        "Cirurgia Plástica Reparadora", "Mastologia", "Proctologia", "Geriatria", 
+        "Hematologia", "Alergia e Imunologia", "Medicina do Trabalho", "Medicina Física e Reabilitação"
+    ],
+    "Consultas Multiprofissionais": [
+        "Enfermagem", "Psicologia", "Nutrição", "Fisioterapia", "Terapia Ocupacional", 
+        "Fonoaudiologia", "Assistência Social", "Farmácia Clínica", "Odontologia", "Educação Física"
+    ],
+    "Exames Laboratoriais": [
+        "Hemograma completo", "Glicemia", "Hemoglobina glicada", "Colesterol total", "HDL", "LDL", 
+        "Triglicerídeos", "Creatinina", "Ureia", "Ácido úrico", "TGO", "TGP", "Gama GT", 
+        "Bilirrubinas", "TSH", "T4 Livre", "PSA", "Beta HCG", "HIV", "Hepatites", "Sífilis", 
+        "Dengue", "COVID-19", "Influenza", "Urina tipo I", "Urocultura", "Parasitológico de fezes", 
+        "Coprocultura", "Sangue oculto nas fezes", "Coagulograma", "PCR", "VHS", "Ferritina", 
+        "Vitamina D", "Vitamina B12", "Ácido fólico", "Exames hormonais/imunológicos"
+    ],
+    "Exames Cardiológicos": ["ECG", "Ecocardiograma", "Teste ergométrico", "Holter", "MAPA", "Doppler", "Cateterismo", "Angiografia"],
+    "Exames Respiratórios": ["Espirometria", "Gasometria", "Broncoscopia"],
+    "Exames de Imagem": ["Radiografia", "Ultrassonografia", "Mamografia", "Densitometria óssea", "Tomografia Computadorizada", "Ressonância Magnética", "Angiotomografia", "Angiorressonância"],
+    "Oftalmologia": ["Mapeamento de retina", "Fundo de olho", "Tonometria", "Campimetria", "OCT", "Retinografia", "Biometria"],
+    "Otorrinolaringologia": ["Audiometria", "Impedanciometria", "Nasofibroscopia", "Videolaringoscopia"],
+    "Endoscopias": ["Endoscopia digestiva", "Colonoscopia", "Retossigmoidoscopia", "Cistoscopia", "Histeroscopia", "Broncoscopia"],
+    "Saúde da Mulher": ["Pré-natal", "Ultrassom obstétrico", "Preventivo (Papanicolau)", "Colposcopia", "Mamografia", "Planejamento familiar", "Inserção de DIU", "Laqueadura"],
+    "Saúde da Criança": ["Puericultura", "Teste do pezinho", "Teste da orelhinha", "Teste do olhinho", "Teste do coraçãozinho", "Vacinação Infantil"],
+    "Odontologia": ["Limpeza", "Restauração", "Extração", "Canal", "Prótese dentária", "Cirurgia bucal", "CEO - Especializado"],
+    "Vacinação": ["BCG", "Hepatite A e B", "Pentavalente", "Poliomielite", "Rotavírus", "Tríplice Viral", "Febre Amarela", "HPV", "Influenza", "COVID-19", "Pneumocócicas", "Meningocócicas", "dT", "dTpa", "Varicela", "Outras Vacinas do PNI"],
+    "Cirurgias": ["Hérnia", "Vesícula", "Apendicite", "Catarata", "Vasectomia", "Laqueadura", "Histerectomia", "Cirurgias ortopédicas", "Cirurgias cardíacas", "Neurocirurgias", "Cirurgias oncológicas", "Cirurgias vasculares", "Cirurgias urológicas", "Cirurgias ginecológicas", "Transplantes"],
+    "Tratamentos": ["Quimioterapia", "Radioterapia", "Hemodiálise", "Diálise Peritoneal", "Fisioterapia", "Reabilitação", "Saúde Mental (CAPS)", "Tratamento tuberculose", "Hanseníase", "Tratamento HIV", "Tratamento Hepatites", "Doenças raras", "Cuidados paliativos"],
+    "Urgência e Emergência": ["Atendimento em UBS", "UPA 24 horas", "SAMU 192", "Pronto-socorro", "Internação", "UTI", "Trauma", "AVC", "Infarto"],
+    "Atenção Domiciliar": ["Programa Melhor em Casa", "Curativos", "Oxigenoterapia", "Cuidados paliativos", "Visitas domiciliares"]
+};
+
+function inicializarSelectCategorias() {
+    const selects = ['input-procedimento', 'edit-procedimento'];
+    selects.forEach(id => {
+        const select = document.getElementById(id);
+        if (!select) return;
+        select.innerHTML = '<option value="">Selecione a Categoria...</option>';
+        Object.keys(baseProcedimentosSUS).forEach(categoria => {
+            select.innerHTML += `<option value="${categoria}">${categoria}</option>`;
+        });
+    });
+}
+
+function atualizarEspecificacoes(idCategoria, idEspecificacao, valorPreSelecionado = null) {
+    const categoriaSelecionada = document.getElementById(idCategoria).value;
+    const selectEspecificacao = document.getElementById(idEspecificacao);
+
+    selectEspecificacao.innerHTML = '<option value="">Selecione o Procedimento...</option>';
+
+    if (categoriaSelecionada && baseProcedimentosSUS[categoriaSelecionada]) {
+        baseProcedimentosSUS[categoriaSelecionada].forEach(procedimento => {
+            selectEspecificacao.innerHTML += `<option value="${procedimento}">${procedimento}</option>`;
+        });
+        
+        // Se for uma edição e já tiver um valor salvo, seleciona ele automaticamente
+        if (valorPreSelecionado) {
+            selectEspecificacao.value = valorPreSelecionado;
+        }
+    } else {
+        selectEspecificacao.innerHTML = '<option value="">Selecione primeiro a categoria...</option>';
+    }
+}
+
+// Inicia as categorias na tela quando a página carrega
+window.addEventListener('DOMContentLoaded', inicializarSelectCategorias);
+
+        
         let listaRegulacoesCache = [];
         let listaPacientesCache = [];
 
@@ -1497,8 +1574,10 @@
             document.getElementById('edit-email').value = reg.email || '';
             document.getElementById('edit-telefone').value = reg.telefone || '';
             document.getElementById('edit-unidade').value = reg.unidade_saude || '';
-            document.getElementById('edit-especificacao').value = reg.especificacao_sus || '';
-            document.getElementById('edit-procedimento').value = reg.procedimento || 'Consulta Especializada';
+            // Preenche a Categoria
+            document.getElementById('edit-procedimento').value = reg.procedimento || '';
+            // Aciona a função que carrega a lista do procedimento específico E já deixa marcado o que estava no banco
+            atualizarEspecificacoes('edit-procedimento', 'edit-especificacao', reg.especificacao_sus);
             document.getElementById('edit-prioridade').value = reg.prioridade || 'Rotina';
             document.getElementById('edit-endereco').value = reg.endereco || '';
 
