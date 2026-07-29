@@ -1442,12 +1442,11 @@ window.addEventListener('DOMContentLoaded', inicializarSelectCategorias);
             const tipo = document.getElementById('rel-tipo').value;
             let dadosFiltrados = listaRegulacoesCache;
 
-
             if (dataIni) {
-                dadosFiltrados = dadosFiltrados.filter(r => r.created_at.split('T')[0] >= dataIni);
+                dadosFiltrados = dadosFiltrados.filter(r => r.created_at && r.created_at.split('T')[0] >= dataIni);
             }
             if (dataFim) {
-                dadosFiltrados = dadosFiltrados.filter(r => r.created_at.split('T')[0] <= dataFim);
+                dadosFiltrados = dadosFiltrados.filter(r => r.created_at && r.created_at.split('T')[0] <= dataFim);
             }
 
             const containerGraficos = document.getElementById('relatorio-graficos');
@@ -1463,37 +1462,41 @@ window.addEventListener('DOMContentLoaded', inicializarSelectCategorias);
                 let noPrazo = 0, alerta = 0, atrasados = 0;
 
                 dadosFiltrados.forEach(r => {
-                    // 1. Consolidação Exata de Volumes
-                    // 1. Consolidação Exata de Volumes (Atualizado para as novas categorias)
-                    if (r.procedimento && r.procedimento.includes('Consulta')) {
+                    const proc = (r.procedimento || '').toLowerCase();
+
+                    // 1. Consolidação Ampla de Volumes Baseada nas Novas Categorias
+                    if (proc.includes('consulta') || proc.includes('atenção domiciliar') || proc.includes('saúde da')) {
                         consultas++;
-                    } else if (r.procedimento === 'Cirurgias') {
+                    } else if (proc.includes('cirurgia')) {
                         cirurgias++;
-                    } else if (r.procedimento && (r.procedimento.includes('Exame') || r.procedimento === 'Endoscopias')) {
+                    } else if (proc.includes('exame') || proc.includes('endoscopias') || proc.includes('oftalmologia') || proc.includes('otorrino') || proc.includes('vacinação') || proc.includes('odontologia')) {
                         exames++;
                     } else {
-                        // Para vacinas, odontologia, etc., você pode decidir se soma em exames/consultas ou cria um novo contador no futuro.
-                        // Por enquanto, podemos somar em consultas genéricas ou apenas ignorar nos 3 contadores principais.
-                        consultas++; 
+                        consultas++; // Categoria padrão caso haja termo genérico
                     }
-                    // 2. Consolidação Exata de Prazos (SLA)
+
+                    // 2. Consolidação Real de Prazos (SLA)
                     if (r.status_atual === 'Agendado' || r.prioridade === 'Rotina') {
                         noPrazo++;
                     } else if (r.status_atual === 'Em Análise') {
-                        if (r.prioridade === 'Prioridade') alerta++;
-                        else if (r.prioridade === 'Urgência') atrasados++;
-                        else noPrazo++;
+                        if (r.prioridade === 'Prioridade') {
+                            alerta++;
+                        } else if (r.prioridade === 'Urgência') {
+                            atrasados++;
+                        } else {
+                            noPrazo++;
+                        }
                     } else {
-                        noPrazo++; // Status Devolvidos, Negados ou Aguardando entram como resolvidos/finalizados
+                        noPrazo++; // Finalizados, Devolvidos ou Negados contam positivamente no fluxo
                     }
                 });
 
-                // Atualiza os números na tela
+                // Atualiza os números de volume na tela
                 document.getElementById('vol-consultas').innerText = consultas;
                 document.getElementById('vol-exames').innerText = exames;
                 document.getElementById('vol-procedimentos').innerText = cirurgias;
 
-                // Atualiza as barras (Prevenindo erro de divisão por zero)
+                // Atualiza as barras de percentual com precisão
                 let total = dadosFiltrados.length;
                 
                 if (total === 0) {
@@ -1552,6 +1555,7 @@ window.addEventListener('DOMContentLoaded', inicializarSelectCategorias);
                 }
             }
         }
+        
         
         function imprimirProntuario() {
             document.body.classList.add('printing-prontuario');
