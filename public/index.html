@@ -175,7 +175,7 @@
         .toast { position: fixed; bottom: 24px; right: 24px; background: var(--success); color: white; padding: 16px 24px; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 12px; transform: translateY(100px); opacity: 0; transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 10000; }
         .toast.show { transform: translateY(0); opacity: 1; }
 
-        /* --- ESTILOS DE IMPRESSÃO --- */
+       /* --- ESTILOS DE IMPRESSÃO CORRIGIDOS --- */
         @media print {
             html, body { height: auto !important; overflow: visible !important; display: block !important; background: white !important; }
             #tenant-app-container, .main-content { display: block !important; height: auto !important; overflow: visible !important; flex: none !important; margin: 0 !important; padding: 0 !important; }
@@ -206,7 +206,7 @@
             <div style="text-align: center; margin-bottom: 32px;">
                 <i class="ph-fill ph-heartbeat" style="font-size: 48px; color: var(--primary);"></i>
                 <h2 style="margin-top: 16px;">Portal da Unidade</h2>
-                <p style="color: var(--text-muted); font-size: 14px;">Acesse o sistema de regulação.</p>
+                <p style="color: var(--text-muted); font-size: 14px;" id="login-slogan">Acesse o sistema de regulação.</p>
             </div>
             <form id="form-login-tenant">
                 <div class="form-group" style="margin-bottom: 16px;">
@@ -537,7 +537,7 @@
         </main>
     </div>
 
-    <!-- MODAL 1: AVALIAÇÃO DE REGISTRO (CORRIGIDO E RESTAURADO) -->
+    <!-- MODAL DE AVALIAÇÃO (ADICIONADO PARA QUE O BOTÃO DE AVALIAR FUNCIONE) -->
     <div id="modal-avaliar" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-header">
@@ -581,7 +581,7 @@
         </div>
     </div>
 
-    <!-- MODAL 2: EDIÇÃO DE REGISTRO -->
+    <!-- NOVO MODAL: EDIÇÃO DE REGISTRO (CORRIGIDO) -->
     <div id="modal-editar-registro" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-header">
@@ -652,7 +652,7 @@
         </div>
     </div>
 
-    <!-- MODAL 3: ALERTAS GESTOR -->
+    <!-- MODAL DE ALERTAS GESTOR -->
     <div id="modal-alertas-gestor" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-header" style="background: var(--danger-bg); border-bottom-color: var(--danger);">
@@ -674,7 +674,7 @@
         </div>
     </div>
     
-    <!-- MODAL 4: PRONTUÁRIO COMPLETO -->
+    <!-- MODAL DO PRONTUÁRIO COMPLETO -->
     <div id="modal-prontuario" class="modal-overlay">
         <div class="modal-card" style="max-width: 750px;">
             <div class="modal-header">
@@ -706,7 +706,7 @@
             </div>
         </div>
     </div>
-
+    
     <!-- TOAST -->
     <div id="toast" class="toast">
         <i class="ph-fill ph-check-circle" style="font-size: 24px;"></i>
@@ -717,6 +717,10 @@
     </div>
 
     <script>
+
+        // ==========================================
+        // BANCO DE DADOS LOCAL: CATEGORIAS E PROCEDIMENTOS
+        // ==========================================
         const baseProcedimentosSUS = {
             "Consultas Médicas": [
                 "Clínico Geral", "Médico da Família", "Pediatria", "Ginecologia", "Obstetrícia", 
@@ -770,7 +774,6 @@
         function atualizarEspecificacoes(idCategoria, idEspecificacao, valorPreSelecionado = null) {
             const categoriaSelecionada = document.getElementById(idCategoria).value;
             const selectEspecificacao = document.getElementById(idEspecificacao);
-            if (!selectEspecificacao) return;
 
             selectEspecificacao.innerHTML = '<option value="">Selecione o Procedimento...</option>';
 
@@ -797,6 +800,7 @@
             document.getElementById('sidebar-overlay').classList.toggle('active');
         }
 
+        // --- 1. LOGIN TENANT ---
         document.getElementById('form-login-tenant').addEventListener('submit', async function(e) {
             e.preventDefault();
             const cnpj = document.getElementById('tenant-cnpj').value;
@@ -884,6 +888,7 @@
             if (sessionStorage.getItem('unidade_id')) iniciarSistemaTenant();
         }
 
+        // --- 2. NAVEGAÇÃO ---
         function switchView(viewId, navElement) {
             document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -908,6 +913,7 @@
             setTimeout(() => toast.classList.remove('show'), 4000);
         }
 
+        // --- 3. TABELA E AÇÕES ---
         async function carregarRegulacoes() {
             const tbody = document.getElementById('tabela-regulacoes');
             tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Buscando regulações no banco...</td></tr>';
@@ -994,6 +1000,7 @@
             renderTabelaRegulacoes(filtrados);
         }
 
+        // --- 4. MODAL DE AVALIAÇÃO ---
         function abrirModalAvaliar(idReg) {
             const reg = listaRegulacoesCache.find(r => r.id === idReg);
             if (!reg) return;
@@ -1063,6 +1070,7 @@
             }
         });
 
+        // --- 5. CADASTRO DE RECEPÇÃO ---
         document.getElementById('form-recepcao').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btnSalvar = document.getElementById('btn-salvar-reg');
@@ -1077,6 +1085,7 @@
             formData.append('procedimento', document.getElementById('input-procedimento').value);
             formData.append('prioridade', document.getElementById('input-prioridade').value);
             formData.append('endereco', document.getElementById('input-endereco-paciente').value);
+            
             formData.append('unidade_saude', document.getElementById('input-unidade-saude').value);
             formData.append('especificacao_sus', document.getElementById('input-especificacao-sus').value);
 
@@ -1092,11 +1101,13 @@
                 });
 
                 const data = await response.json();
-                if (response.ok && data.sucesso) {
+               if (response.ok && data.sucesso) {
                     showToast(`Protocolo ${data.protocolo} Gerado!`, 'Inclusão salva no banco de dados.');
                     this.reset();
                     document.getElementById('label-arquivo-anexo').innerHTML = 'Arraste arquivos aqui ou <span style="color:var(--primary); font-weight:600;">Clique para buscar</span> no computador';
+                    
                     sessionStorage.removeItem('alerta_visto'); 
+                    
                     switchView('dashboard', document.querySelectorAll('.nav-item')[0]);
                 }
             } catch (error) {
@@ -1106,6 +1117,7 @@
             }
         });
 
+        // --- 6. PACIENTES E PRONTUÁRIO ---
         async function carregarPacientesBanco() {
             const tbody = document.getElementById('tabela-pacientes');
             tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Buscando base de pacientes...</td></tr>';
@@ -1226,7 +1238,10 @@
 
         async function enviarNovosDocumentos(idRegulacao, inputElement) {
             const arquivos = inputElement.files;
-            if (!arquivos || arquivos.length === 0) return;
+            if (!arquivos || arquivos.length === 0) {
+                alert("Nenhum arquivo selecionado.");
+                return;
+            }
 
             const formData = new FormData();
             for (let i = 0; i < arquivos.length; i++) {
@@ -1242,6 +1257,7 @@
                 });
                 
                 const data = await response.json();
+
                 if (response.ok && data.sucesso) {
                     showToast('Sucesso!', 'Novos documentos adicionados.');
                     await carregarPacientesBanco();
@@ -1251,6 +1267,7 @@
                     alert('Erro ao enviar anexos: ' + (data.erro || 'Falha no servidor.'));
                 }
             } catch (err) {
+                console.error("Erro no fetch:", err);
                 alert('Erro de conexão ao enviar documentos.');
             }
         }
@@ -1283,6 +1300,22 @@
 
         function fecharProntuario() {
             document.getElementById('modal-prontuario').style.display = 'none';
+        }
+
+        // --- 7. RELATÓRIOS E E-MAILS ---
+        async function carregarRelatoriosBanco() {
+            const unidade_id = sessionStorage.getItem('unidade_id');
+            try {
+                const res = await fetch(`/api/tenant/relatorios?unidade_id=${unidade_id}`);
+                const data = await res.json();
+
+                if (data.sucesso) {
+                    const stats = data.stats;
+                    document.getElementById('vol-consultas').innerText = stats.consultas;
+                    document.getElementById('vol-exames').innerText = stats.exames;
+                    document.getElementById('vol-procedimentos').innerText = stats.procedimentos;
+                }
+            } catch(e) {}
         }
 
         async function carregarEmailsBanco() {
@@ -1322,6 +1355,7 @@
             }
         }
 
+        // --- SISTEMA DE ALERTA DO GESTOR APRIMORADO ---
         function checarPacientesCriticos(regulacoes) {
             const criticos = regulacoes.filter(r =>
                 r.status_atual === 'Em Análise' && (r.prioridade === 'Urgência' || r.prioridade === 'Prioridade')
@@ -1365,7 +1399,7 @@
             document.getElementById('modal-alertas-gestor').style.display = 'none';
         }
 
-        async function gerarRelatorioNaTela() {
+       async function gerarRelatorioNaTela() {
             if (!listaRegulacoesCache || listaRegulacoesCache.length === 0) {
                 const unidade_id = sessionStorage.getItem('unidade_id');
                 if (unidade_id) {
@@ -1375,7 +1409,9 @@
                         if (response.ok && data.sucesso) {
                             listaRegulacoesCache = data.regulacoes || [];
                         }
-                    } catch (e) {}
+                    } catch (e) {
+                        console.error("Erro ao sincronizar cache para relatório", e);
+                    }
                 }
             }
 
@@ -1384,8 +1420,12 @@
             const tipo = document.getElementById('rel-tipo').value;
             let dadosFiltrados = listaRegulacoesCache;
 
-            if (dataIni) dadosFiltrados = dadosFiltrados.filter(r => r.created_at && r.created_at.split('T')[0] >= dataIni);
-            if (dataFim) dadosFiltrados = dadosFiltrados.filter(r => r.created_at && r.created_at.split('T')[0] <= dataFim);
+            if (dataIni) {
+                dadosFiltrados = dadosFiltrados.filter(r => r.created_at && r.created_at.split('T')[0] >= dataIni);
+            }
+            if (dataFim) {
+                dadosFiltrados = dadosFiltrados.filter(r => r.created_at && r.created_at.split('T')[0] <= dataFim);
+            }
 
             const containerGraficos = document.getElementById('relatorio-graficos');
             const containerTabela = document.getElementById('relatorio-tabela-container');
@@ -1401,6 +1441,7 @@
 
                 dadosFiltrados.forEach(r => {
                     const proc = (r.procedimento || '').toLowerCase();
+
                     if (proc.includes('consulta') || proc.includes('atenção domiciliar') || proc.includes('saúde da')) {
                         consultas++;
                     } else if (proc.includes('cirurgia')) {
@@ -1414,19 +1455,28 @@
                     if (r.status_atual === 'Agendado' || r.prioridade === 'Rotina') {
                         noPrazo++;
                     } else if (r.status_atual === 'Em Análise') {
-                        if (r.prioridade === 'Prioridade') alerta++;
-                        else if (r.prioridade === 'Urgência') atrasados++;
-                        else noPrazo++;
+                        if (r.prioridade === 'Prioridade') {
+                            alerta++;
+                        } else if (r.prioridade === 'Urgência') {
+                            atrasados++;
+                        } else {
+                            noPrazo++;
+                        }
                     } else {
                         noPrazo++; 
                     }
                 });
 
-                document.getElementById('vol-consultas').innerText = consultas;
-                document.getElementById('vol-exames').innerText = exames;
-                document.getElementById('vol-procedimentos').innerText = cirurgias;
+                const elConsultas = document.getElementById('vol-consultas');
+                const elExames = document.getElementById('vol-exames');
+                const elCirurgias = document.getElementById('vol-procedimentos');
+
+                if (elConsultas) elConsultas.innerText = consultas;
+                if (elExames) elExames.innerText = exames;
+                if (elCirurgias) elCirurgias.innerText = cirurgias;
 
                 let total = dadosFiltrados.length;
+                
                 if (total === 0) {
                     document.getElementById('bar-prazo').style.width = '0%';
                     document.getElementById('val-prazo').innerText = '0%';
@@ -1437,11 +1487,14 @@
                 } else {
                     document.getElementById('bar-prazo').style.width = `${(noPrazo/total)*100}%`;
                     document.getElementById('val-prazo').innerText = `${Math.round((noPrazo/total)*100)}%`;
+
                     document.getElementById('bar-alerta').style.width = `${(alerta/total)*100}%`;
                     document.getElementById('val-alerta').innerText = `${Math.round((alerta/total)*100)}%`;
+
                     document.getElementById('bar-atraso').style.width = `${(atrasados/total)*100}%`;
                     document.getElementById('val-atraso').innerText = `${Math.round((atrasados/total)*100)}%`;
                 }
+
             } else {
                 containerGraficos.style.display = 'none';
                 containerTabela.style.display = 'block';
@@ -1487,8 +1540,12 @@
             setTimeout(() => document.body.classList.remove('printing-prontuario'), 500);
         }
 
+        // ==========================================
+        // NOVAS FUNÇÕES DE EDIÇÃO E EXCLUSÃO
+        // ==========================================
+
         async function excluirRegistro(idReg) {
-            if(!confirm("Tem certeza absoluta que deseja EXCLUIR este registro? Esta ação não pode ser desfeita.")) return;
+            if(!confirm("Tem certeza absoluta que deseja EXCLUIR este registro? Esta ação não pode ser desfeita e removerá o paciente da fila.")) return;
 
             showToast('Processando...', 'Excluindo o registro do banco de dados.');
 
@@ -1500,7 +1557,7 @@
 
                 if (response.ok && data.sucesso) {
                     showToast('Excluído!', 'Registro removido com sucesso.');
-                    carregarRegulacoes();
+                    carregarRegulacoes(); 
                 } else {
                     alert('Erro ao excluir: ' + (data.erro || 'Falha no servidor.'));
                 }
@@ -1544,7 +1601,7 @@
                 cpf: document.getElementById('edit-cpf').value,
                 email: document.getElementById('edit-email').value,
                 telefone: document.getElementById('edit-telefone').value,
-                endereco: document.getElementById('edit-endereco').value,
+                endereco: document.getElementById('edit-endereco').value, 
                 unidade_saude: document.getElementById('edit-unidade').value,
                 especificacao_sus: document.getElementById('edit-especificacao-sus').value,
                 procedimento: document.getElementById('edit-procedimento').value,
@@ -1562,7 +1619,7 @@
                 if (data.sucesso) {
                     showToast('Atualizado!', 'Os dados do paciente foram alterados com sucesso.');
                     fecharModalEditar();
-                    carregarRegulacoes();
+                    carregarRegulacoes(); 
                 } else {
                     alert('Erro ao salvar edição: ' + data.erro);
                 }
