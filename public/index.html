@@ -1435,8 +1435,23 @@ window.addEventListener('DOMContentLoaded', inicializarSelectCategorias);
 
         
         
-        // --- RELATÓRIOS E FILTRAGEM ---
-       function gerarRelatorioNaTela() {
+     async function gerarRelatorioNaTela() {
+            // Se o cache estiver vazio, busca os dados do banco primeiro para o relatório não vir zerado
+            if (!listaRegulacoesCache || listaRegulacoesCache.length === 0) {
+                const unidade_id = sessionStorage.getItem('unidade_id');
+                if (unidade_id) {
+                    try {
+                        const response = await fetch(`/api/tenant/regulacoes?unidade_id=${unidade_id}`);
+                        const data = await response.json();
+                        if (response.ok && data.sucesso) {
+                            listaRegulacoesCache = data.regulacoes || [];
+                        }
+                    } catch (e) {
+                        console.error("Erro ao sincronizar cache para relatório", e);
+                    }
+                }
+            }
+
             const dataIni = document.getElementById('rel-data-ini').value;
             const dataFim = document.getElementById('rel-data-fim').value;
             const tipo = document.getElementById('rel-tipo').value;
@@ -1464,7 +1479,7 @@ window.addEventListener('DOMContentLoaded', inicializarSelectCategorias);
                 dadosFiltrados.forEach(r => {
                     const proc = (r.procedimento || '').toLowerCase();
 
-                    // 1. Consolidação Ampla de Volumes Baseada nas Novas Categorias
+                    // Consolidação Ampla de Volumes Baseada nas Categorias
                     if (proc.includes('consulta') || proc.includes('atenção domiciliar') || proc.includes('saúde da')) {
                         consultas++;
                     } else if (proc.includes('cirurgia')) {
@@ -1472,10 +1487,10 @@ window.addEventListener('DOMContentLoaded', inicializarSelectCategorias);
                     } else if (proc.includes('exame') || proc.includes('endoscopias') || proc.includes('oftalmologia') || proc.includes('otorrino') || proc.includes('vacinação') || proc.includes('odontologia')) {
                         exames++;
                     } else {
-                        consultas++; // Categoria padrão caso haja termo genérico
+                        consultas++; 
                     }
 
-                    // 2. Consolidação Real de Prazos (SLA)
+                    // Consolidação Real de Prazos (SLA)
                     if (r.status_atual === 'Agendado' || r.prioridade === 'Rotina') {
                         noPrazo++;
                     } else if (r.status_atual === 'Em Análise') {
@@ -1487,16 +1502,19 @@ window.addEventListener('DOMContentLoaded', inicializarSelectCategorias);
                             noPrazo++;
                         }
                     } else {
-                        noPrazo++; // Finalizados, Devolvidos ou Negados contam positivamente no fluxo
+                        noPrazo++; 
                     }
                 });
 
-                // Atualiza os números de volume na tela
-                document.getElementById('vol-consultas').innerText = consultas;
-                document.getElementById('vol-exames').innerText = exames;
-                document.getElementById('vol-procedimentos').innerText = cirurgias;
+                // Atualiza com segurança os elementos na tela
+                const elConsultas = document.getElementById('vol-consultas');
+                const elExames = document.getElementById('vol-exames');
+                const elCirurgias = document.getElementById('vol-procedimentos');
 
-                // Atualiza as barras de percentual com precisão
+                if (elConsultas) elConsultas.innerText = consultas;
+                if (elExames) elExames.innerText = exames;
+                if (elCirurgias) elCirurgias.innerText = cirurgias;
+
                 let total = dadosFiltrados.length;
                 
                 if (total === 0) {
@@ -1541,7 +1559,7 @@ window.addEventListener('DOMContentLoaded', inicializarSelectCategorias);
                 } else {
                     filtradosPorTipo.forEach(r => {
                         const d = new Date(r.created_at);
-                        const dataBr = d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                        const dataBr = !isNaN(d) ? d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) : 'Data N/A';
                         tbody.innerHTML += `
                             <tr>
                                 <td style="font-size: 13px;">${dataBr}</td>
@@ -1555,6 +1573,7 @@ window.addEventListener('DOMContentLoaded', inicializarSelectCategorias);
                 }
             }
         }
+        
         
         
         function imprimirProntuario() {
