@@ -616,6 +616,34 @@ def alertar_gestor_email():
         print("Erro envio e-mail:", str(e))
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
+@app.route('/api/tenant/backup', methods=['GET'])
+def exportar_backup_tenant():
+    supabase = get_supabase_client()
+    if not supabase:
+        return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
+
+    unidade_id = request.args.get('unidade_id')
+    if not unidade_id:
+        return jsonify({"sucesso": False, "erro": "ID da unidade é obrigatório"}), 400
+
+    try:
+        # Busca dados isolados da unidade em produção com segurança
+        unidade_info = supabase.table('unidades').select('*').eq('id', unidade_id).execute()
+        regulacoes_info = supabase.table('regulacoes').select('*').eq('unidade_id', unidade_id).execute()
+        emails_info = supabase.table('historico_emails').select('*').eq('unidade_id', unidade_id).execute()
+
+        pacote_backup = {
+            "versao_sistema": "1.0",
+            "unidade_id": unidade_id,
+            "dados_unidade": unidade_info.data,
+            "regulacoes": regulacoes_info.data,
+            "historico_emails": emails_info.data
+        }
+
+        return jsonify({"sucesso": True, "backup": pacote_backup})
+    except Exception as e:
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
