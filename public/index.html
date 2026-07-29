@@ -1382,15 +1382,22 @@ window.addEventListener('DOMContentLoaded', inicializarSelectCategorias);
             }
         }
 
-        // --- SISTEMA DE ALERTA DO GESTOR ---
+        // --- SISTEMA DE ALERTA DO GESTOR APRIMORADO ---
         function checarPacientesCriticos(regulacoes) {
-            if (sessionStorage.getItem('alerta_visto') === 'true') return;
-
+            // Filtra quem está pendente e em caráter crítico (Urgência ou Prioridade)
             const criticos = regulacoes.filter(r =>
                 r.status_atual === 'Em Análise' && (r.prioridade === 'Urgência' || r.prioridade === 'Prioridade')
             );
 
-            if (criticos.length > 0) {
+            if (criticos.length === 0) return;
+
+            // Pega a lista de IDs críticos que já foram alertados nesta sessão
+            let idsAlertados = JSON.parse(sessionStorage.getItem('ids_alertados_sessao') || '[]');
+
+            // Verifica se há algum paciente crítico NOVO que ainda não abriu alerta
+            const novosCriticos = criticos.filter(r => !idsAlertados.includes(r.id));
+
+            if (novosCriticos.length > 0) {
                 const tbody = document.getElementById('lista-pacientes-criticos');
                 tbody.innerHTML = '';
 
@@ -1403,8 +1410,12 @@ window.addEventListener('DOMContentLoaded', inicializarSelectCategorias);
                     `;
                 });
 
+                // Exibe o modal na tela de forma garantida
                 document.getElementById('modal-alertas-gestor').style.display = 'flex';
-                sessionStorage.setItem('alerta_visto', 'true');
+
+                // Salva todos os IDs atuais na lista de alertados para não repetir o incômodo na mesma listagem
+                const todosIdsCriticos = criticos.map(r => r.id);
+                sessionStorage.setItem('ids_alertados_sessao', JSON.stringify(todosIdsCriticos));
             }
         }
 
