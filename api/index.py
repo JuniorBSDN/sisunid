@@ -342,6 +342,7 @@ def criar_regulacao():
                 except Exception as err_supa:
                     print(f"Erro no upload do arquivo {file.filename}:", str(err_supa))
 
+        # Montagem única e limpa do pacote do paciente (sem blocos duplicados)
         novo_paciente = {
             "unidade_id": data.get("unidade_id"),
             "protocolo": protocolo,
@@ -350,18 +351,15 @@ def criar_regulacao():
             "email": data.get("email"),
             "telefone": data.get("telefone"),
             "procedimento": data.get("procedimento"),
-            
-            #--------------------------------------------
             "endereco": data.get("endereco"),
             "unidade_saude": data.get("unidade_saude"),
             "especificacao_sus": data.get("especificacao_sus"),
-            # ----------------------------------------
-            
             "prioridade": data.get("prioridade"),
             "status_atual": "Em Análise",
             "anexos": urls_anexos
         }
 
+        # Execução única protegida
         supabase.table('regulacoes').insert(novo_paciente).execute()
 
         try:
