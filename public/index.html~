@@ -444,6 +444,9 @@
                         <h1 class="page-title">Relatórios e Desempenho</h1>
                         <p class="page-subtitle" style="margin-top: 4px;">Filtre os dados e gere arquivos consolidados da sua regulação.</p>
                     </div>
+                    <button class="btn-primary" onclick="realizarBackupSeguro()">
+                        <i class="ph ph-database"></i> Baixar Backup de Segurança (JSON)
+                    </button>
                     <button class="btn-primary" onclick="window.print()"><i class="ph ph-download-simple"></i> Exportar Relatório PDF</button>
                 </div>
 
@@ -1647,6 +1650,40 @@ window.addEventListener('DOMContentLoaded', inicializarSelectCategorias);
                 btn.innerHTML = '<i class="ph ph-floppy-disk"></i> Salvar Alterações';
             }
         });
+
+        async function realizarBackupSeguro() {
+    const unidade_id = sessionStorage.getItem('unidade_id');
+    if (!unidade_id) {
+        alert("Sessão inválida.");
+        return;
+    }
+
+    showToast('Gerando Backup...', 'Compilando os dados da unidade com segurança.');
+
+    try {
+        const response = await fetch(`/api/tenant/backup?unidade_id=${unidade_id}`);
+        const data = await response.json();
+
+        if (response.ok && data.sucesso) {
+            // Cria um arquivo JSON virtual para download automático no computador do cliente
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data.backup, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            
+            const dataAtual = new Date().toISOString().split('T')[0];
+            downloadAnchor.setAttribute("download", `backup_sisunid_${unidade_id}_${dataAtual}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+
+            showToast('Backup Concluído!', 'O arquivo de segurança foi baixado com sucesso.');
+        } else {
+            alert('Erro ao gerar backup: ' + (data.erro || 'Falha no servidor.'));
+        }
+    } catch (err) {
+        alert('Erro de conexão ao gerar o backup.');
+    }
+}
     </script>
 </body>
 </html>
