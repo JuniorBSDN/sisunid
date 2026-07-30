@@ -1166,13 +1166,15 @@ function inicializarSelectCategorias(elementoEspecifico = null) {
 
     
        // --- 5. CADASTRO DE RECEPÇÃO (COM MÚLTIPLOS PROCEDIMENTOS) ---
-        document.getElementById('form-recepcao').addEventListener('submit', async function(e) {
+       document.getElementById('form-recepcao').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btnSalvar = document.getElementById('btn-salvar-reg');
-            btnSalvar.innerHTML = 'Processando Registros...';
+            
+            // TRAVA DE SEGURANÇA CONTRA CLIQUE DUPLO
+            if (btnSalvar.disabled) return;
             btnSalvar.disabled = true;
+            btnSalvar.innerHTML = 'Processando Registros...';
 
-            // 1. Coleta os dados em comum (Nome, CPF, etc)
             const commonData = new FormData();
             commonData.append('unidade_id', sessionStorage.getItem('unidade_id'));
             commonData.append('nome_paciente', document.getElementById('input-nome-paciente').value);
@@ -1187,19 +1189,16 @@ function inicializarSelectCategorias(elementoEspecifico = null) {
                 commonData.append('anexos', inputArquivos.files[i]);
             }
 
-            // 2. Coleta todos os blocos de procedimentos gerados na tela
             const blocos = document.querySelectorAll('.procedimento-bloco');
             let protocolosGerados = [];
             let erros = 0;
 
-            // 3. Envia uma requisição separada para CADA procedimento
             for (let i = 0; i < blocos.length; i++) {
                 const bloco = blocos[i];
                 const cat = bloco.querySelector('.select-categoria').value;
                 const esp = bloco.querySelector('.select-especificacao').value;
                 const pri = bloco.querySelector('.select-prioridade').value;
 
-                // Cria um formulário clone para este procedimento específico
                 const formDataEspec = new FormData();
                 for (let pair of commonData.entries()) {
                     formDataEspec.append(pair[0], pair[1]);
@@ -1224,20 +1223,97 @@ function inicializarSelectCategorias(elementoEspecifico = null) {
                 }
             }
 
-            // 4. Finalização
+            // RESTAURA O BOTÃO APÓS O TÉRMINO
             btnSalvar.disabled = false;
             btnSalvar.innerHTML = '<i class="ph ph-check-circle"></i> Registrar e Gerar Protocolo';
 
             if (protocolosGerados.length > 0) {
                 showToast(`Sucesso!`, `Protocolos gerados: ${protocolosGerados.join(', ')}`);
                 
-                // Reseta o formulário e deixa apenas 1 bloco de procedimento na tela
                 this.reset();
                 document.getElementById('label-arquivo-anexo').innerHTML = 'Arraste arquivos aqui...';
                 
                 const container = document.getElementById('container-procedimentos');
                 while (container.children.length > 1) { container.removeChild(container.lastChild); }
                 
+                sessionStorage.removeItem('alerta_visto');
+                switchView('dashboard', document.querySelectorAll('.nav-item')[0]);
+            }
+
+            if (erros > 0) {
+                alert(`Atenção: ${erros} procedimento(s) apresentaram falha ao salvar.`);
+            }
+        });document.getElementById('form-recepcao').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btnSalvar = document.getElementById('btn-salvar-reg');
+            
+            // TRAVA DE SEGURANÇA CONTRA CLIQUE DUPLO
+            if (btnSalvar.disabled) return;
+            btnSalvar.disabled = true;
+            btnSalvar.innerHTML = 'Processando Registros...';
+
+            const commonData = new FormData();
+            commonData.append('unidade_id', sessionStorage.getItem('unidade_id'));
+            commonData.append('nome_paciente', document.getElementById('input-nome-paciente').value);
+            commonData.append('cpf', document.getElementById('input-cpf').value);
+            commonData.append('email', document.getElementById('input-email-paciente').value);
+            commonData.append('telefone', document.getElementById('input-telefone').value);
+            commonData.append('endereco', document.getElementById('input-endereco-paciente').value);
+            commonData.append('unidade_saude', document.getElementById('input-unidade-saude').value);
+
+            const inputArquivos = document.getElementById('file-upload');
+            for (let i = 0; i < inputArquivos.files.length; i++) {
+                commonData.append('anexos', inputArquivos.files[i]);
+            }
+
+            const blocos = document.querySelectorAll('.procedimento-bloco');
+            let protocolosGerados = [];
+            let erros = 0;
+
+            for (let i = 0; i < blocos.length; i++) {
+                const bloco = blocos[i];
+                const cat = bloco.querySelector('.select-categoria').value;
+                const esp = bloco.querySelector('.select-especificacao').value;
+                const pri = bloco.querySelector('.select-prioridade').value;
+
+                const formDataEspec = new FormData();
+                for (let pair of commonData.entries()) {
+                    formDataEspec.append(pair[0], pair[1]);
+                }
+                formDataEspec.append('procedimento', cat);
+                formDataEspec.append('especificacao_sus', esp);
+                formDataEspec.append('prioridade', pri);
+
+                try {
+                    const response = await fetch('/api/tenant/regulacoes', {
+                        method: 'POST',
+                        body: formDataEspec
+                    });
+                    const data = await response.json();
+                    if (response.ok && data.sucesso) {
+                        protocolosGerados.push(data.protocolo);
+                    } else {
+                        erros++;
+                    }
+                } catch (error) {
+                    erros++;
+                }
+            }
+
+            // RESTAURA O BOTÃO APÓS O TÉRMINO
+            btnSalvar.disabled = false;
+            btnSalvar.innerHTML = '<i class="ph ph-check-circle"></i> Registrar e Gerar Protocolo';
+
+            if (protocolosGerados.length > 0) {
+                showToast(`Sucesso!`, `Protocolos gerados: ${protocolosGerados.join(', ')}`);
+                
+                this.reset();
+                document.getElementById('label-arquivo-anexo').innerHTML = 'Arraste arquivos aqui...';
+                
+                const container = document.getElementById('container-procedimentos');
+                while (container.children.length > 1) { container.removeChild(container.lastChild); }
+                
+                sessionStorage.removeItem('alerta_visto');
                 switchView('dashboard', document.querySelectorAll('.nav-item')[0]);
             }
 
@@ -1245,6 +1321,8 @@ function inicializarSelectCategorias(elementoEspecifico = null) {
                 alert(`Atenção: ${erros} procedimento(s) apresentaram falha ao salvar.`);
             }
         });
+
+        
         // --- 6. PACIENTES E PRONTUÁRIO ---
         async function carregarPacientesBanco() {
             const tbody = document.getElementById('tabela-pacientes');
