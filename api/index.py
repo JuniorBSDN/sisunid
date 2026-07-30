@@ -364,8 +364,6 @@ def criar_regulacao():
 
         supabase.table('regulacoes').insert(novo_paciente).execute()
 
-        supabase.table('regulacoes').insert(novo_paciente).execute()
-
         try:
             email_log = {
                 "unidade_id": data.get("unidade_id"),
