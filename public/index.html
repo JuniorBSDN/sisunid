@@ -675,10 +675,18 @@
    <!-- NOVO MODAL: EDIÇÃO DE REGISTRO (ATUALIZADO COM ENDEREÇO) -->
     <div id="modal-editar-registro" class="modal-overlay">
         <div class="modal-card">
-            <div class="modal-header">
-                <h3 style="font-size: 18px;">Editar Registro do Paciente</h3>
-                <button onclick="fecharModalEditar()" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-muted);">&times;</button>
+            
+            <!-- CABEÇALHO ATUALIZADO AQUI -->
+            <div class="modal-header" style="align-items: flex-start;">
+                <div>
+                    <h3 style="font-size: 18px; margin-bottom: 4px;">Editar Registro do Paciente</h3>
+                    <p style="font-size: 13px; color: var(--primary); font-weight: 600;" id="edit-subtitulo-info">
+                        Protocolo #REQ-0000 &bull; Carregando procedimento...
+                    </p>
+                </div>
+                <button onclick="fecharModalEditar()" style="background:none; border:none; font-size:24px; cursor:pointer; color:var(--text-muted); line-height: 1;">&times;</button>
             </div>
+            <!-- FIM DO CABEÇALHO ATUALIZADO -->
             <form id="form-modal-editar">
                 <input type="hidden" id="edit-id-reg">
                 <div class="modal-body">
@@ -1691,20 +1699,34 @@ function inicializarSelectCategorias(elementoEspecifico = null) {
             }
         }
 
-        function abrirModalEditar(idReg) {
+       function abrirModalEditar(idReg) {
             const reg = listaRegulacoesCache.find(r => r.id === idReg);
             if (!reg) return;
 
+            // 1. INJETA A INFORMAÇÃO VISUAL NO CABEÇALHO DO MODAL
+            const labelSubtitulo = document.getElementById('edit-subtitulo-info');
+            if(labelSubtitulo) {
+                const protocoloText = reg.protocolo || 'S/N';
+                const categoriaText = reg.procedimento || 'Categoria Indefinida';
+                const especificacaoText = reg.especificacao_sus || 'Especificação Indefinida';
+                
+                labelSubtitulo.innerHTML = `Protocolo #${protocoloText} <span style="color: var(--text-muted); font-weight: normal;">&bull; ${categoriaText} (${especificacaoText})</span>`;
+            }
+
+            // 2. PREENCHE OS DADOS DO FORMULÁRIO NORMALMENTE
             document.getElementById('edit-id-reg').value = reg.id;
             document.getElementById('edit-nome').value = reg.nome_paciente || '';
             document.getElementById('edit-cpf').value = reg.cpf || '';
             document.getElementById('edit-email').value = reg.email || '';
             document.getElementById('edit-telefone').value = reg.telefone || '';
             document.getElementById('edit-unidade').value = reg.unidade_saude || '';
+            
             // Preenche a Categoria
             document.getElementById('edit-procedimento').value = reg.procedimento || '';
+            
             // Aciona a função que carrega a lista do procedimento específico E já deixa marcado o que estava no banco
             atualizarEspecificacoes('edit-procedimento', 'edit-especificacao', reg.especificacao_sus);
+            
             document.getElementById('edit-prioridade').value = reg.prioridade || 'Rotina';
             document.getElementById('edit-endereco').value = reg.endereco || '';
 
