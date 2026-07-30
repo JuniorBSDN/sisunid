@@ -350,10 +350,19 @@ def criar_regulacao():
             "email": data.get("email"),
             "telefone": data.get("telefone"),
             "procedimento": data.get("procedimento"),
+            
+            #--------------------------------------------
+            "endereco": data.get("endereco"),
+            "unidade_saude": data.get("unidade_saude"),
+            "especificacao_sus": data.get("especificacao_sus"),
+            # ----------------------------------------
+            
             "prioridade": data.get("prioridade"),
             "status_atual": "Em Análise",
             "anexos": urls_anexos
         }
+
+        supabase.table('regulacoes').insert(novo_paciente).execute()
 
         supabase.table('regulacoes').insert(novo_paciente).execute()
 
@@ -615,6 +624,37 @@ def alertar_gestor_email():
     except Exception as e:
         print("Erro envio e-mail:", str(e))
         return jsonify({"sucesso": False, "erro": str(e)}), 500
+
+@app.route('/api/tenant/regulacoes/<id_reg>', methods=['PUT'])
+def editar_dados_regulacao(id_reg):
+    supabase = get_supabase_client()
+    if not supabase:
+        return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
+
+    data = request.get_json(silent=True) or {}
+
+    try:
+        # Monta o pacote de dados recebidos do Front-end (exatamente como você preencheu)
+        update_data = {
+            "nome_paciente": data.get("nome_paciente"),
+            "cpf": data.get("cpf"),
+            "email": data.get("email"),
+            "telefone": data.get("telefone"),
+            "endereco": data.get("endereco"),
+            "unidade_saude": data.get("unidade_saude"),
+            "especificacao_sus": data.get("especificacao_sus"),
+            "procedimento": data.get("procedimento"),
+            "prioridade": data.get("prioridade")
+        }
+
+        # Salva as alterações no Supabase
+        supabase.table('regulacoes').update(update_data).eq('id', id_reg).execute()
+
+        return jsonify({"sucesso": True})
+
+    except Exception as e:
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
+
 
 @app.route('/api/tenant/backup', methods=['GET'])
 def exportar_backup_tenant():
