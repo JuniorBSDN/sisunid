@@ -655,6 +655,21 @@ def editar_dados_regulacao(id_reg):
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
+@app.route('/api/tenant/regulacoes/<id_reg>', methods=['DELETE'])
+def excluir_regulacao(id_reg):
+    supabase = get_supabase_client()
+    if not supabase:
+        return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
+
+    try:
+        # Comando seguro para deletar APENAS o paciente com o ID exato selecionado
+        supabase.table('regulacoes').delete().eq('id', id_reg).execute()
+        
+        return jsonify({"sucesso": True, "mensagem": "Registro excluído com sucesso."})
+
+    except Exception as e:
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
+
 
 @app.route('/api/tenant/backup', methods=['GET'])
 def exportar_backup_tenant():
