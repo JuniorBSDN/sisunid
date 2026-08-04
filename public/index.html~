@@ -367,29 +367,57 @@
                                     <label class="form-label">Unidade Solicitante / Destino</label>
                                     <input type="text" id="input-unidade-saude" class="form-control" placeholder="Informe a unidade..." required>
                                 </div>
-                               <div class="form-group">
-    <label class="form-label">Categoria do Procedimento</label>
-    <select id="input-procedimento" class="form-control" onchange="atualizarEspecificacoes('input-procedimento', 'input-especificacao-sus')" required>
-        <option value="">Selecione a Categoria...</option>
-        <!-- As opções serão injetadas pelo JavaScript -->
-    </select>
-</div>
-<div class="form-group">
-    <label class="form-label">Procedimento SUS Específico</label>
-    <select id="input-especificacao-sus" class="form-control" required>
-        <option value="">Selecione primeiro a categoria...</option>
-    </select>
-</div>
-                                <div class="form-group">
-                                    <label class="form-label">Prioridade Clínica</label>
-                                    <select id="input-prioridade" class="form-control" required>
-                                        <option value="Rotina">Rotina (SLA 180 dias)</option>
-                                        <option value="Prioridade">Prioridade (SLA 30 dias)</option>
-                                        <option value="Urgência">Urgência (SLA 72 horas)</option>
-                                    </select>
-                                </div>
-                                <!-- FIM DOS NOVOS CAMPOS -->
+                               
 
+
+                                
+                             
+                                
+                               
+                                
+                                <!-- INÍCIO DOS PROCEDIMENTOS MÚLTIPLOS -->
+                                <div class="form-group full-width" style="border-top: 1px solid var(--border); margin: 8px 0;"></div>
+                                
+                                <div class="form-group full-width">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                        <h3 style="font-size: 16px; color: var(--text-main); margin: 0;">Procedimentos Solicitados</h3>
+                                        <button type="button" class="btn-primary" style="padding: 6px 12px; font-size: 12px; background: var(--info); border: none;" onclick="adicionarBlocoProcedimento()">
+                                            <i class="ph ph-plus"></i> Adicionar Outro Procedimento
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div id="container-procedimentos" class="form-group full-width" style="display: flex; flex-direction: column; gap: 16px;">
+                                    <!-- Bloco de Procedimento Base (Pelo menos 1 sempre existirá) -->
+                                    <div class="procedimento-bloco" style="background: #f8fafc; padding: 16px; border: 1px solid var(--border); border-radius: 8px; position: relative;">
+                                        <div class="form-grid">
+                                            <div class="form-group">
+                                                <label class="form-label">Categoria do Procedimento</label>
+                                                <select class="form-control select-categoria" required onchange="atualizarEspDinamica(this)">
+                                                    <option value="">Selecione a Categoria...</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="form-label">Procedimento SUS Específico</label>
+                                                <select class="form-control select-especificacao" required>
+                                                    <option value="">Selecione primeiro a categoria...</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="form-label">Prioridade Clínica</label>
+                                                <select class="form-control select-prioridade" required>
+                                                    <option value="Rotina">Rotina (SLA 180 dias)</option>
+                                                    <option value="Prioridade">Prioridade (SLA 30 dias)</option>
+                                                    <option value="Urgência">Urgência (SLA 72 horas)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- FIM DOS PROCEDIMENTOS MÚLTIPLOS -->
+                           
+
+                                
                                 <div class="form-group full-width">
                                     <label class="form-label">Anexar Documentos (Guia médica, fotos, PDFs)</label>
                                     <div class="upload-zone" onclick="document.getElementById('file-upload').click()">
@@ -647,10 +675,18 @@
    <!-- NOVO MODAL: EDIÇÃO DE REGISTRO (ATUALIZADO COM ENDEREÇO) -->
     <div id="modal-editar-registro" class="modal-overlay">
         <div class="modal-card">
-            <div class="modal-header">
-                <h3 style="font-size: 18px;">Editar Registro do Paciente</h3>
-                <button onclick="fecharModalEditar()" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-muted);">&times;</button>
+            
+            <!-- CABEÇALHO ATUALIZADO AQUI -->
+            <div class="modal-header" style="align-items: flex-start;">
+                <div>
+                    <h3 style="font-size: 18px; margin-bottom: 4px;">Editar Registro do Paciente</h3>
+                    <p style="font-size: 13px; color: var(--primary); font-weight: 600;" id="edit-subtitulo-info">
+                        Protocolo #REQ-0000 &bull; Carregando procedimento...
+                    </p>
+                </div>
+                <button onclick="fecharModalEditar()" style="background:none; border:none; font-size:24px; cursor:pointer; color:var(--text-muted); line-height: 1;">&times;</button>
             </div>
+            <!-- FIM DO CABEÇALHO ATUALIZADO -->
             <form id="form-modal-editar">
                 <input type="hidden" id="edit-id-reg">
                 <div class="modal-body">
@@ -686,17 +722,17 @@
                         </div>
                         
                        <div class="form-group">
-    <label class="form-label">Categoria</label>
-    <select id="edit-procedimento" class="form-control" onchange="atualizarEspecificacoes('edit-procedimento', 'edit-especificacao')" required>
-        <option value="">Selecione a Categoria...</option>
-    </select>
-</div>
-<div class="form-group">
-    <label class="form-label">Procedimento SUS</label>
-    <select id="edit-especificacao" class="form-control" required>
-        <option value="">Selecione primeiro a categoria...</option>
-    </select>
-</div>
+                            <label class="form-label">Categoria</label>
+                            <select id="edit-procedimento" class="form-control" onchange="atualizarEspecificacoes('edit-procedimento', 'edit-especificacao')" required>
+                                <option value="">Selecione a Categoria...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Procedimento SUS</label>
+                            <select id="edit-especificacao" class="form-control" required>
+                                <option value="">Selecione primeiro a categoria...</option>
+                            </select>
+                        </div>
                         
                         <div class="form-group">
                             <label class="form-label">Prioridade</label>
@@ -768,40 +804,84 @@ const baseProcedimentosSUS = {
     "Atenção Domiciliar": ["Programa Melhor em Casa", "Curativos", "Oxigenoterapia", "Cuidados paliativos", "Visitas domiciliares"]
 };
 
-function inicializarSelectCategorias() {
-    const selects = ['input-procedimento', 'edit-procedimento'];
-    selects.forEach(id => {
-        const select = document.getElementById(id);
-        if (!select) return;
-        select.innerHTML = '<option value="">Selecione a Categoria...</option>';
-        Object.keys(baseProcedimentosSUS).forEach(categoria => {
-            select.innerHTML += `<option value="${categoria}">${categoria}</option>`;
-        });
-    });
-}
-
-function atualizarEspecificacoes(idCategoria, idEspecificacao, valorPreSelecionado = null) {
-    const categoriaSelecionada = document.getElementById(idCategoria).value;
-    const selectEspecificacao = document.getElementById(idEspecificacao);
-
-    selectEspecificacao.innerHTML = '<option value="">Selecione o Procedimento...</option>';
-
-    if (categoriaSelecionada && baseProcedimentosSUS[categoriaSelecionada]) {
-        baseProcedimentosSUS[categoriaSelecionada].forEach(procedimento => {
-            selectEspecificacao.innerHTML += `<option value="${procedimento}">${procedimento}</option>`;
-        });
-        
-        // Se for uma edição e já tiver um valor salvo, seleciona ele automaticamente
-        if (valorPreSelecionado) {
-            selectEspecificacao.value = valorPreSelecionado;
+function inicializarSelectCategorias(elementoEspecifico = null) {
+            const selects = elementoEspecifico ? [elementoEspecifico] : document.querySelectorAll('.select-categoria, #edit-procedimento');
+            
+            selects.forEach(select => {
+                // Se já tem opções (além da default), não preenche de novo
+                if(select.options.length > 1 && !elementoEspecifico) return; 
+                
+                let html = '<option value="">Selecione a Categoria...</option>';
+                Object.keys(baseProcedimentosSUS).forEach(categoria => {
+                    html += `<option value="${categoria}">${categoria}</option>`;
+                });
+                select.innerHTML = html;
+            });
         }
-    } else {
-        selectEspecificacao.innerHTML = '<option value="">Selecione primeiro a categoria...</option>';
-    }
-}
 
-// Inicia as categorias na tela quando a página carrega
-window.addEventListener('DOMContentLoaded', inicializarSelectCategorias);
+        // Função para o Modal de Edição continuar funcionando
+        function atualizarEspecificacoes(idCategoria, idEspecificacao, valorPreSelecionado = null) {
+            const cat = document.getElementById(idCategoria).value;
+            const esp = document.getElementById(idEspecificacao);
+            preencherSelectEspecificacao(cat, esp, valorPreSelecionado);
+        }
+
+        // Nova função para os múltiplos blocos dinâmicos
+        function atualizarEspDinamica(selectCategoria) {
+            const bloco = selectCategoria.closest('.procedimento-bloco');
+            const selectEsp = bloco.querySelector('.select-especificacao');
+            preencherSelectEspecificacao(selectCategoria.value, selectEsp);
+        }
+
+        function preencherSelectEspecificacao(categoria, selectElement, valorPreSelecionado = null) {
+            selectElement.innerHTML = '<option value="">Selecione o Procedimento...</option>';
+            if (categoria && baseProcedimentosSUS[categoria]) {
+                baseProcedimentosSUS[categoria].forEach(procedimento => {
+                    selectElement.innerHTML += `<option value="${procedimento}">${procedimento}</option>`;
+                });
+                if (valorPreSelecionado) selectElement.value = valorPreSelecionado;
+            } else {
+                selectElement.innerHTML = '<option value="">Selecione primeiro a categoria...</option>';
+            }
+        }
+
+        // Adicionar e Remover Blocos
+        function adicionarBlocoProcedimento() {
+            const container = document.getElementById('container-procedimentos');
+            const novoBloco = document.createElement('div');
+            novoBloco.className = 'procedimento-bloco';
+            novoBloco.style = 'background: #f8fafc; padding: 16px; border: 1px solid var(--border); border-radius: 8px; position: relative; margin-top: 16px;';
+            
+            novoBloco.innerHTML = `
+                <button type="button" onclick="this.closest('.procedimento-bloco').remove()" style="position: absolute; top: 10px; right: 10px; background: var(--danger-bg); color: var(--danger); border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;"><i class="ph ph-trash"></i> Remover</button>
+                <div class="form-grid" style="margin-top: 12px;">
+                    <div class="form-group">
+                        <label class="form-label">Categoria do Procedimento</label>
+                        <select class="form-control select-categoria" required onchange="atualizarEspDinamica(this)">
+                            <option value="">Selecione a Categoria...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Procedimento SUS Específico</label>
+                        <select class="form-control select-especificacao" required>
+                            <option value="">Selecione primeiro a categoria...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Prioridade Clínica</label>
+                        <select class="form-control select-prioridade" required>
+                            <option value="Rotina">Rotina (SLA 180 dias)</option>
+                            <option value="Prioridade">Prioridade (SLA 30 dias)</option>
+                            <option value="Urgência">Urgência (SLA 72 horas)</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+            container.appendChild(novoBloco);
+            inicializarSelectCategorias(novoBloco.querySelector('.select-categoria'));
+        }
+
+        window.addEventListener('DOMContentLoaded', () => inicializarSelectCategorias());
 
         
         let listaRegulacoesCache = [];
@@ -1084,55 +1164,165 @@ window.addEventListener('DOMContentLoaded', inicializarSelectCategorias);
             }
         });
 
-        // --- 5. CADASTRO DE RECEPÇÃO ---
-        document.getElementById('form-recepcao').addEventListener('submit', async function(e) {
+    
+       // --- 5. CADASTRO DE RECEPÇÃO (COM MÚLTIPLOS PROCEDIMENTOS) ---
+       document.getElementById('form-recepcao').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btnSalvar = document.getElementById('btn-salvar-reg');
-            btnSalvar.innerHTML = 'Enviando e Carregando Arquivos...';
-
-            const formData = new FormData();
-            formData.append('unidade_id', sessionStorage.getItem('unidade_id'));
-            formData.append('nome_paciente', document.getElementById('input-nome-paciente').value);
-            formData.append('cpf', document.getElementById('input-cpf').value);
-            formData.append('email', document.getElementById('input-email-paciente').value);
-            formData.append('telefone', document.getElementById('input-telefone').value);
-            formData.append('procedimento', document.getElementById('input-procedimento').value);
-            formData.append('prioridade', document.getElementById('input-prioridade').value);
-            formData.append('endereco', document.getElementById('input-endereco-paciente').value);
             
-            // NOVOS CAMPOS AQUI
-            formData.append('unidade_saude', document.getElementById('input-unidade-saude').value);
-            formData.append('especificacao_sus', document.getElementById('input-especificacao-sus').value);
+            // TRAVA DE SEGURANÇA CONTRA CLIQUE DUPLO
+            if (btnSalvar.disabled) return;
+            btnSalvar.disabled = true;
+            btnSalvar.innerHTML = 'Processando Registros...';
+
+            const commonData = new FormData();
+            commonData.append('unidade_id', sessionStorage.getItem('unidade_id'));
+            commonData.append('nome_paciente', document.getElementById('input-nome-paciente').value);
+            commonData.append('cpf', document.getElementById('input-cpf').value);
+            commonData.append('email', document.getElementById('input-email-paciente').value);
+            commonData.append('telefone', document.getElementById('input-telefone').value);
+            commonData.append('endereco', document.getElementById('input-endereco-paciente').value);
+            commonData.append('unidade_saude', document.getElementById('input-unidade-saude').value);
 
             const inputArquivos = document.getElementById('file-upload');
             for (let i = 0; i < inputArquivos.files.length; i++) {
-                formData.append('anexos', inputArquivos.files[i]);
+                commonData.append('anexos', inputArquivos.files[i]);
             }
 
-            try {
-                const response = await fetch('/api/tenant/regulacoes', {
-                    method: 'POST',
-                    body: formData
-                });
+            const blocos = document.querySelectorAll('.procedimento-bloco');
+            let protocolosGerados = [];
+            let erros = 0;
 
-                const data = await response.json();
-               if (response.ok && data.sucesso) {
-                    showToast(`Protocolo ${data.protocolo} Gerado!`, 'Inclusão salva no banco de dados.');
-                    this.reset();
-                    document.getElementById('label-arquivo-anexo').innerHTML = 'Arraste arquivos aqui ou <span style="color:var(--primary); font-weight:600;">Clique para buscar</span> no computador';
-                    
-                    // ESSA É A LINHA NOVA QUE APAGA A MEMÓRIA DO ALERTA
-                    sessionStorage.removeItem('alerta_visto'); 
-                    
-                    switchView('dashboard', document.querySelectorAll('.nav-item')[0]);
+            for (let i = 0; i < blocos.length; i++) {
+                const bloco = blocos[i];
+                const cat = bloco.querySelector('.select-categoria').value;
+                const esp = bloco.querySelector('.select-especificacao').value;
+                const pri = bloco.querySelector('.select-prioridade').value;
+
+                const formDataEspec = new FormData();
+                for (let pair of commonData.entries()) {
+                    formDataEspec.append(pair[0], pair[1]);
                 }
-            } catch (error) {
-                alert('Erro de conexão.');
-            } finally {
-                btnSalvar.innerHTML = '<i class="ph ph-check-circle"></i> Registrar e Gerar Protocolo';
+                formDataEspec.append('procedimento', cat);
+                formDataEspec.append('especificacao_sus', esp);
+                formDataEspec.append('prioridade', pri);
+
+                try {
+                    const response = await fetch('/api/tenant/regulacoes', {
+                        method: 'POST',
+                        body: formDataEspec
+                    });
+                    const data = await response.json();
+                    if (response.ok && data.sucesso) {
+                        protocolosGerados.push(data.protocolo);
+                    } else {
+                        erros++;
+                    }
+                } catch (error) {
+                    erros++;
+                }
+            }
+
+            // RESTAURA O BOTÃO APÓS O TÉRMINO
+            btnSalvar.disabled = false;
+            btnSalvar.innerHTML = '<i class="ph ph-check-circle"></i> Registrar e Gerar Protocolo';
+
+            if (protocolosGerados.length > 0) {
+                showToast(`Sucesso!`, `Protocolos gerados: ${protocolosGerados.join(', ')}`);
+                
+                this.reset();
+                document.getElementById('label-arquivo-anexo').innerHTML = 'Arraste arquivos aqui...';
+                
+                const container = document.getElementById('container-procedimentos');
+                while (container.children.length > 1) { container.removeChild(container.lastChild); }
+                
+                sessionStorage.removeItem('alerta_visto');
+                switchView('dashboard', document.querySelectorAll('.nav-item')[0]);
+            }
+
+            if (erros > 0) {
+                alert(`Atenção: ${erros} procedimento(s) apresentaram falha ao salvar.`);
+            }
+        });document.getElementById('form-recepcao').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btnSalvar = document.getElementById('btn-salvar-reg');
+            
+            // TRAVA DE SEGURANÇA CONTRA CLIQUE DUPLO
+            if (btnSalvar.disabled) return;
+            btnSalvar.disabled = true;
+            btnSalvar.innerHTML = 'Processando Registros...';
+
+            const commonData = new FormData();
+            commonData.append('unidade_id', sessionStorage.getItem('unidade_id'));
+            commonData.append('nome_paciente', document.getElementById('input-nome-paciente').value);
+            commonData.append('cpf', document.getElementById('input-cpf').value);
+            commonData.append('email', document.getElementById('input-email-paciente').value);
+            commonData.append('telefone', document.getElementById('input-telefone').value);
+            commonData.append('endereco', document.getElementById('input-endereco-paciente').value);
+            commonData.append('unidade_saude', document.getElementById('input-unidade-saude').value);
+
+            const inputArquivos = document.getElementById('file-upload');
+            for (let i = 0; i < inputArquivos.files.length; i++) {
+                commonData.append('anexos', inputArquivos.files[i]);
+            }
+
+            const blocos = document.querySelectorAll('.procedimento-bloco');
+            let protocolosGerados = [];
+            let erros = 0;
+
+            for (let i = 0; i < blocos.length; i++) {
+                const bloco = blocos[i];
+                const cat = bloco.querySelector('.select-categoria').value;
+                const esp = bloco.querySelector('.select-especificacao').value;
+                const pri = bloco.querySelector('.select-prioridade').value;
+
+                const formDataEspec = new FormData();
+                for (let pair of commonData.entries()) {
+                    formDataEspec.append(pair[0], pair[1]);
+                }
+                formDataEspec.append('procedimento', cat);
+                formDataEspec.append('especificacao_sus', esp);
+                formDataEspec.append('prioridade', pri);
+
+                try {
+                    const response = await fetch('/api/tenant/regulacoes', {
+                        method: 'POST',
+                        body: formDataEspec
+                    });
+                    const data = await response.json();
+                    if (response.ok && data.sucesso) {
+                        protocolosGerados.push(data.protocolo);
+                    } else {
+                        erros++;
+                    }
+                } catch (error) {
+                    erros++;
+                }
+            }
+
+            // RESTAURA O BOTÃO APÓS O TÉRMINO
+            btnSalvar.disabled = false;
+            btnSalvar.innerHTML = '<i class="ph ph-check-circle"></i> Registrar e Gerar Protocolo';
+
+            if (protocolosGerados.length > 0) {
+                showToast(`Sucesso!`, `Protocolos gerados: ${protocolosGerados.join(', ')}`);
+                
+                this.reset();
+                document.getElementById('label-arquivo-anexo').innerHTML = 'Arraste arquivos aqui...';
+                
+                const container = document.getElementById('container-procedimentos');
+                while (container.children.length > 1) { container.removeChild(container.lastChild); }
+                
+                sessionStorage.removeItem('alerta_visto');
+                switchView('dashboard', document.querySelectorAll('.nav-item')[0]);
+            }
+
+            if (erros > 0) {
+                alert(`Atenção: ${erros} procedimento(s) apresentaram falha ao salvar.`);
             }
         });
 
+        
         // --- 6. PACIENTES E PRONTUÁRIO ---
         async function carregarPacientesBanco() {
             const tbody = document.getElementById('tabela-pacientes');
@@ -1587,20 +1777,34 @@ window.addEventListener('DOMContentLoaded', inicializarSelectCategorias);
             }
         }
 
-        function abrirModalEditar(idReg) {
+       function abrirModalEditar(idReg) {
             const reg = listaRegulacoesCache.find(r => r.id === idReg);
             if (!reg) return;
 
+            // 1. INJETA A INFORMAÇÃO VISUAL NO CABEÇALHO DO MODAL
+            const labelSubtitulo = document.getElementById('edit-subtitulo-info');
+            if(labelSubtitulo) {
+                const protocoloText = reg.protocolo || 'S/N';
+                const categoriaText = reg.procedimento || 'Categoria Indefinida';
+                const especificacaoText = reg.especificacao_sus || 'Especificação Indefinida';
+                
+                labelSubtitulo.innerHTML = `Protocolo #${protocoloText} <span style="color: var(--text-muted); font-weight: normal;">&bull; ${categoriaText} (${especificacaoText})</span>`;
+            }
+
+            // 2. PREENCHE OS DADOS DO FORMULÁRIO NORMALMENTE
             document.getElementById('edit-id-reg').value = reg.id;
             document.getElementById('edit-nome').value = reg.nome_paciente || '';
             document.getElementById('edit-cpf').value = reg.cpf || '';
             document.getElementById('edit-email').value = reg.email || '';
             document.getElementById('edit-telefone').value = reg.telefone || '';
             document.getElementById('edit-unidade').value = reg.unidade_saude || '';
+            
             // Preenche a Categoria
             document.getElementById('edit-procedimento').value = reg.procedimento || '';
+            
             // Aciona a função que carrega a lista do procedimento específico E já deixa marcado o que estava no banco
             atualizarEspecificacoes('edit-procedimento', 'edit-especificacao', reg.especificacao_sus);
+            
             document.getElementById('edit-prioridade').value = reg.prioridade || 'Rotina';
             document.getElementById('edit-endereco').value = reg.endereco || '';
 
@@ -1611,36 +1815,39 @@ window.addEventListener('DOMContentLoaded', inicializarSelectCategorias);
             document.getElementById('modal-editar-registro').style.display = 'none';
         }
 
+        // --- FUNÇÃO DE SALVAR A EDIÇÃO ---
         document.getElementById('form-modal-editar').addEventListener('submit', async function(e) {
             e.preventDefault();
             const idReg = document.getElementById('edit-id-reg').value;
             const btn = document.getElementById('btn-salvar-edicao');
             btn.innerHTML = 'Salvando...';
+            btn.disabled = true;
 
             const payload = {
                 nome_paciente: document.getElementById('edit-nome').value,
                 cpf: document.getElementById('edit-cpf').value,
                 email: document.getElementById('edit-email').value,
                 telefone: document.getElementById('edit-telefone').value,
-                endereco: document.getElementById('edit-endereco').value, // <-- Confira se essa linha existe
+                endereco: document.getElementById('edit-endereco').value,
                 unidade_saude: document.getElementById('edit-unidade').value,
-                especificacao_sus: document.getElementById('edit-especificacao').value,
                 procedimento: document.getElementById('edit-procedimento').value,
+                especificacao_sus: document.getElementById('edit-especificacao').value,
                 prioridade: document.getElementById('edit-prioridade').value
             };
 
             try {
-                const response = await fetch(`/api/tenant/regulacoes/${idReg}`, {
-                    method: 'PUT',
+                // Utilizando a rota POST segura que criamos anteriormente no Python
+                const response = await fetch(`/api/tenant/regulacoes/${idReg}/editar`, {
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
 
                 const data = await response.json();
                 if (data.sucesso) {
-                    showToast('Atualizado!', 'Os dados do paciente foram alterados com sucesso.');
+                    showToast('Atualizado!', 'Os dados do protocolo foram alterados com sucesso.');
                     fecharModalEditar();
-                    carregarRegulacoes(); // Atualiza a tabela com os novos dados
+                    carregarRegulacoes(); // Atualiza a tabela na tela
                 } else {
                     alert('Erro ao salvar edição: ' + data.erro);
                 }
@@ -1648,9 +1855,10 @@ window.addEventListener('DOMContentLoaded', inicializarSelectCategorias);
                 alert('Erro de conexão ao salvar edição.');
             } finally {
                 btn.innerHTML = '<i class="ph ph-floppy-disk"></i> Salvar Alterações';
+                btn.disabled = false;
             }
         });
-
+        
         async function realizarBackupSeguro() {
     const unidade_id = sessionStorage.getItem('unidade_id');
     if (!unidade_id) {
