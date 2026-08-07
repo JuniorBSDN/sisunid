@@ -76,6 +76,23 @@ BUCKET_NAME = "uploads"
 # ==========================================
 # 2. ROTAS DO PAINEL MASTER
 # ==========================================
+
+# NOVA ROTA: REGISTRO DE PAGAMENTO MENSAL
+@app.route('/api/master/unidades/<id>/pagamento', methods=['PATCH'])
+def registrar_pagamento_unidade(id):
+    supabase = get_supabase_client()
+    if not supabase:
+        return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
+    try:
+        data = request.get_json(silent=True) or {}
+        mes_ano = data.get('mes_ano') # Recebe o mês no formato "08/2026"
+        
+        supabase.table('unidades').update({"mes_liberado": mes_ano}).eq('id', id).execute()
+        return jsonify({"sucesso": True})
+    except Exception as e:
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
+
+
 @app.route('/api/master/login', methods=['POST'])
 def master_login():
     data = request.get_json(silent=True) or {}
@@ -196,7 +213,8 @@ def tenant_login():
                     "gestor": unidade.get('gestor'),
                     "slogan": unidade.get('slogan'),
                     "tema": unidade.get('tema'),
-                    "logo_url": unidade.get('logo_url')
+                    "logo_url": unidade.get('logo_url'),
+                    "mes_liberado": unidade.get('mes_liberado', '') # <--- NOVA LINHA INSERIDA
                 }
             })
         return jsonify({"sucesso": False, "erro": "CNPJ ou Senha inválidos, ou unidade bloqueada."}), 401
@@ -621,6 +639,7 @@ def alertar_gestor_email():
         print("Erro envio e-mail:", str(e))
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
+
 @app.route('/api/tenant/regulacoes/<id_reg>', methods=['PUT'])
 def editar_dados_regulacao(id_reg):
     supabase = get_supabase_client()
@@ -651,6 +670,7 @@ def editar_dados_regulacao(id_reg):
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)}), 500
 
+
 @app.route('/api/tenant/regulacoes/<id_reg>', methods=['DELETE'])
 def excluir_regulacao(id_reg):
     supabase = get_supabase_client()
@@ -660,7 +680,7 @@ def excluir_regulacao(id_reg):
     try:
         # Comando seguro para deletar APENAS o paciente com o ID exato selecionado
         supabase.table('regulacoes').delete().eq('id', id_reg).execute()
-        
+
         return jsonify({"sucesso": True, "mensagem": "Registro excluído com sucesso."})
 
     except Exception as e:
