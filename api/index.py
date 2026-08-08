@@ -77,6 +77,27 @@ BUCKET_NAME = "uploads"
 # 2. ROTAS DO PAINEL MASTER
 # ==========================================
 
+@app.route('/api/master/unidades/<id>', methods=['PUT'])
+def editar_unidade(id):
+    supabase = get_supabase_client()
+    if not supabase:
+        return jsonify({"sucesso": False, "erro": "Supabase offline."}), 500
+    try:
+        data = request.get_json(silent=True) or {}
+        update_data = {
+            "nome_empresa": data.get('nome_empresa'),
+            "cnpj": data.get('cnpj'),
+            "gestor": data.get('gestor'),
+            "telefone": data.get('telefone'),
+            "email": data.get('email'),
+            "endereco": data.get('endereco'),
+            "dia_vencimento": int(data.get('dia_vencimento', 5))
+        }
+        supabase.table('unidades').update(update_data).eq('id', id).execute()
+        return jsonify({"sucesso": True})
+    except Exception as e:
+        return jsonify({"sucesso": False, "erro": str(e)}), 500
+        
 # NOVA ROTA: REGISTRO DE PAGAMENTO MENSAL
 @app.route('/api/master/unidades/<id>/pagamento', methods=['PATCH'])
 def registrar_pagamento_unidade(id):
@@ -156,6 +177,7 @@ def criar_unidade():
             "email": request.form.get('email'),
             "endereco": request.form.get('endereco'),
             "slogan": request.form.get('slogan'),
+            "dia_vencimento": int(request.form.get('dia_vencimento', 5)),
             "tema": {
                 "primaria": request.form.get('tema_primaria', '#2563eb'),
                 "secundaria": request.form.get('tema_secundaria', '#1e3a8a')
