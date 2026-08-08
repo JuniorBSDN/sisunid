@@ -1004,39 +1004,39 @@ function inicializarSelectCategorias(elementoEspecifico = null) {
         
         // --- NOVA FUNÇÃO DE COBRANÇA AUTOMÁTICA INTELIGENTE ---
        function verificarFaturamento() {
-            const dataAtual = new Date();
-            const diaAtual = dataAtual.getDate();
-            const mesAnoAtual = (dataAtual.getMonth() + 1).toString().padStart(2, '0') + '/' + dataAtual.getFullYear();
+    const dataAtual = new Date();
+    const diaAtual = dataAtual.getDate();
+    const mesAnoAtual = (dataAtual.getMonth() + 1).toString().padStart(2, '0') + '/' + dataAtual.getFullYear();
 
-            const empresaStr = sessionStorage.getItem('empresa_data');
-            let mesLiberado = '';
-            let diaVencimento = 10; // Padrão se não houver
+    const empresaStr = sessionStorage.getItem('empresa_data');
+    let mesLiberado = '';
+    let diaVencimento = 10;
 
-            if (empresaStr) {
-                const empresa = JSON.parse(empresaStr);
-                mesLiberado = empresa.mes_liberado;
-                if (empresa.dia_vencimento) diaVencimento = parseInt(empresa.dia_vencimento);
-            }
+    if (empresaStr) {
+        const empresa = JSON.parse(empresaStr);
+        mesLiberado = empresa.mes_liberado;
+        if (empresa.dia_vencimento) diaVencimento = parseInt(empresa.dia_vencimento);
+    }
 
-            // Se o carimbo do banco bater com o mês atual, não faz nada (Está Pago)
-            if (mesLiberado === mesAnoAtual) return; 
+    if (mesLiberado === mesAnoAtual) return; 
 
-            // Avisa 4 dias antes do vencimento até a data de vencimento
-            const inicioAviso = diaVencimento - 4 < 1 ? 1 : diaVencimento - 4;
+    const inicioAviso = diaVencimento - 4 < 1 ? 1 : diaVencimento - 4;
 
-            if (diaAtual >= inicioAviso && diaAtual <= diaVencimento) {
-                // Altera dinamicamente o texto do aviso
-                document.querySelector('#aviso-faturamento p').innerText = `Vencimento dia ${diaVencimento.toString().padStart(2,'0')}. Bloqueio iminente.`;
-                setTimeout(() => document.getElementById('aviso-faturamento').classList.add('show'), 2000);
-            } 
-            // Bloqueia 1 dia após o vencimento
-            else if (diaAtual > diaVencimento) {
-                document.getElementById('tenant-app-container').style.pointerEvents = 'none';
-                const telaBloqueio = document.getElementById('bloqueio-tela');
-                telaBloqueio.style.display = 'flex';
-                telaBloqueio.style.pointerEvents = 'auto';
-            }
-        }
+    if (diaAtual >= inicioAviso && diaAtual <= diaVencimento) {
+        document.querySelector('#aviso-faturamento p').innerText = `Mensalidade em aberto. Vencimento dia ${diaVencimento.toString().padStart(2,'0')}.`;
+        
+        // Exibe o aviso após 1 segundo
+        setTimeout(() => {
+            document.getElementById('aviso-faturamento').classList.add('show');
+        }, 1000);
+    } 
+    else if (diaAtual > diaVencimento) {
+        document.getElementById('tenant-app-container').style.pointerEvents = 'none';
+        const telaBloqueio = document.getElementById('bloqueio-tela');
+        telaBloqueio.style.display = 'flex';
+        telaBloqueio.style.pointerEvents = 'auto';
+    }
+}
 
         // --- ATUALIZE SUA FUNÇÃO EXISTENTE ---
         function iniciarSistemaTenant() {
