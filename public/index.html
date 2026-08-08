@@ -1003,27 +1003,38 @@ function inicializarSelectCategorias(elementoEspecifico = null) {
 
         
         // --- NOVA FUNÇÃO DE COBRANÇA AUTOMÁTICA INTELIGENTE ---
-        function verificarFaturamento() {
+       function verificarFaturamento() {
             const dataAtual = new Date();
             const diaAtual = dataAtual.getDate();
             const mesAnoAtual = (dataAtual.getMonth() + 1).toString().padStart(2, '0') + '/' + dataAtual.getFullYear();
 
             const empresaStr = sessionStorage.getItem('empresa_data');
             let mesLiberado = '';
+            let diaVencimento = 5; // Padrão se não houver
+
             if (empresaStr) {
-                mesLiberado = JSON.parse(empresaStr).mes_liberado;
+                const empresa = JSON.parse(empresaStr);
+                mesLiberado = empresa.mes_liberado;
+                if (empresa.dia_vencimento) diaVencimento = parseInt(empresa.dia_vencimento);
             }
 
             // Se o carimbo do banco bater com o mês atual, não faz nada (Está Pago)
             if (mesLiberado === mesAnoAtual) return; 
 
-            if (diaAtual >= 1 && diaAtual <= 5) {
+            // Avisa 4 dias antes do vencimento até a data de vencimento
+            const inicioAviso = diaVencimento - 4 < 1 ? 1 : diaVencimento - 4;
+
+            if (diaAtual >= inicioAviso && diaAtual <= diaVencimento) {
+                // Altera dinamicamente o texto do aviso
+                document.querySelector('#aviso-faturamento p').innerText = `Vencimento dia ${diaVencimento.toString().padStart(2,'0')}. Bloqueio iminente.`;
                 setTimeout(() => document.getElementById('aviso-faturamento').classList.add('show'), 2000);
-            } else if (diaAtual > 5) {
+            } 
+            // Bloqueia 1 dia após o vencimento
+            else if (diaAtual > diaVencimento) {
                 document.getElementById('tenant-app-container').style.pointerEvents = 'none';
                 const telaBloqueio = document.getElementById('bloqueio-tela');
                 telaBloqueio.style.display = 'flex';
-                telaBloqueio.style.pointerEvents = 'auto'; // Habilita o clique nos botões do PIX e Backup
+                telaBloqueio.style.pointerEvents = 'auto';
             }
         }
 
