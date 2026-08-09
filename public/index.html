@@ -75,6 +75,7 @@
         .btn-primary:hover { opacity: 0.9; }
 
         .card { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 24px; }
+       
         .card-header { padding: 20px 24px; border-bottom: 1px solid var(--border); font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
         .card-body { padding: 24px; }
 
@@ -188,8 +189,19 @@
             .view-section.active { display: block !important; padding: 0 !important; max-width: 100% !important; margin: 0 !important; }
 
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-            .card { box-shadow: none !important; border: 1px solid #e2e8f0 !important; page-break-inside: avoid; break-inside: avoid; margin-bottom: 24px !important; }
-
+           
+            .card { 
+                box-shadow: none !important; 
+                border: 1px solid #e2e8f0 !important; 
+                page-break-inside: auto !important; /* Alterado de avoid para auto */
+                break-inside: auto !important;      /* Alterado de avoid para auto */
+                margin-bottom: 24px !important; 
+            }
+            
+            /* Adicione esta regra para garantir que a tabela não seja cortada */
+            .table-responsive { 
+                overflow: visible !important; 
+            }
             body.printing-prontuario #tenant-app-container { display: none !important; }
             body.printing-prontuario .modal-overlay { position: relative !important; display: block !important; background: white !important; padding: 0 !important; }
             body.printing-prontuario .modal-card { max-width: 100% !important; box-shadow: none !important; border: none !important; margin: 0 !important; }
