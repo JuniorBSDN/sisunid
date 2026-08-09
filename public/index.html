@@ -216,11 +216,67 @@
                 break-inside: avoid !important;
             }
 
-            body.printing-prontuario #tenant-app-container { display: none !important; }
-            body.printing-prontuario .modal-overlay { position: relative !important; display: block !important; background: white !important; padding: 0 !important; }
-            body.printing-prontuario .modal-card { max-width: 100% !important; box-shadow: none !important; border: none !important; margin: 0 !important; }
-            body.printing-prontuario .modal-footer, body.printing-prontuario .modal-header button { display: none !important; }
-            body.printing-prontuario .modal-body { overflow: visible !important; max-height: none !important; padding: 0 24px !important; }
+           /* --- MODAL PRONTUÁRIO: LAYOUT DE DOCUMENTO OFICIAL --- */
+            
+            /* Ocultar a aplicação por trás */
+            body.printing-prontuario #tenant-app-container { 
+                display: none !important; 
+            }
+            
+            /* Travar o modal no topo da folha (Remove o espaço em branco gigante) */
+            body.printing-prontuario .modal-overlay { 
+                position: absolute !important; 
+                top: 0 !important; 
+                left: 0 !important; 
+                display: block !important; 
+                background: white !important; 
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            
+            body.printing-prontuario .modal-card { 
+                max-width: 100% !important; 
+                box-shadow: none !important; 
+                border: none !important; 
+                margin: 0 !important; 
+                padding: 0 !important;
+            }
+            
+            /* Esconder rodapé e botões interativos (Ex: "Adicionar Novos Documentos") */
+            body.printing-prontuario .modal-footer, 
+            body.printing-prontuario .modal-header button,
+            body.printing-prontuario label.btn-primary, 
+            body.printing-prontuario .btn-action { 
+                display: none !important; 
+            }
+
+            /* Estilizar o Cabeçalho do Prontuário (Linha forte e tipografia formal) */
+            body.printing-prontuario .modal-header { 
+                border-bottom: 2px solid #0f172a !important; 
+                padding: 0 0 16px 0 !important; 
+                margin-bottom: 24px !important;
+                align-items: center !important;
+            }
+            
+            body.printing-prontuario .modal-header h3 {
+                font-size: 20px !important;
+                text-transform: uppercase !important;
+                color: #000 !important;
+            }
+            
+            /* Corpo do Prontuário */
+            body.printing-prontuario .modal-body { 
+                overflow: visible !important; 
+                max-height: none !important; 
+                padding: 0 !important; 
+            }
+
+            /* Caixa de Dados do Paciente (Troca o fundo cinza por uma borda formal) */
+            body.printing-prontuario .modal-body > div:first-child {
+                background: transparent !important;
+                border: 1px solid #cbd5e1 !important;
+                padding: 16px !important;
+            }
         }
     </style>
 </head>
