@@ -7,74 +7,42 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
+        /* [SEUS ESTILOS CSS PERMANECEM IGUAIS ATÉ A CLASSE ACTION-GROUP] */
         :root {
-            --master-primary: #4f46e5;
-            --master-hover: #4338ca;
-            --master-dark: #1e1b4b;
-            --bg-color: #f1f5f9;
-            --surface: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
-            --success: #10b981;
-            --danger: #ef4444;
+            --master-primary: #4f46e5; --master-hover: #4338ca; --master-dark: #1e1b4b;
+            --bg-color: #f1f5f9; --surface: #ffffff; --text-main: #0f172a;
+            --text-muted: #64748b; --border: #e2e8f0; --success: #10b981; --danger: #ef4444;
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
-
-        /* --- LOGIN MASTER --- */
-        #login-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--master-dark); z-index: 9999;
-            display: flex; align-items: center; justify-content: center; padding: 16px;
-        }
-        .login-card {
-            background: var(--surface); width: 100%; max-width: 400px; padding: 40px 32px;
-            border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-        }
-
+        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--master-dark); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 16px; }
+        .login-card { background: var(--surface); width: 100%; max-width: 400px; padding: 40px 32px; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
         #app-container { display: none; width: 100%; height: 100%; }
-
-        /* --- SIDEBAR & TOPBAR --- */
         .sidebar { width: 260px; background-color: var(--master-dark); color: white; display: flex; flex-direction: column; z-index: 20; }
         .logo { padding: 24px; font-size: 22px; font-weight: 700; color: white; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .nav-menu { padding: 24px 16px; display: flex; flex-direction: column; gap: 8px; }
         .nav-item { padding: 12px 16px; border-radius: 8px; color: #cbd5e1; display: flex; align-items: center; gap: 12px; font-weight: 500; cursor: pointer; border: none; background: transparent; width: 100%; text-align: left; font-size: 15px; transition: all 0.2s ease; }
         .nav-item:hover { background-color: rgba(255,255,255,0.1); color: white; }
         .nav-item.active { background-color: var(--master-primary); color: white; }
-
         .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; position: relative; }
         .topbar { background-color: var(--surface); padding: 16px 32px; display: flex; justify-content: flex-end; align-items: center; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
-
-        /* --- VIEWS --- */
         .view-section { display: none; padding: 32px; max-width: 1200px; margin: 0 auto; width: 100%; animation: fadeIn 0.3s ease; }
         .view-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* --- COMPONENTES BÁSICOS --- */
         .page-header { margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; }
         .page-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
-
         .btn-primary { background-color: var(--master-primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; transition: 0.2s; white-space: nowrap; }
         .btn-primary:hover { background-color: var(--master-hover); }
         .btn-outline { background: transparent; color: var(--text-main); border: 1px solid var(--border); padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; white-space: nowrap; }
         .btn-action { background: none; border: 1px solid var(--border); padding: 8px; border-radius: 6px; color: var(--text-muted); cursor: pointer; transition: 0.2s; }
         .btn-action:hover { color: var(--master-primary); border-color: var(--master-primary); background: var(--bg-color); }
         .btn-action.danger:hover { color: var(--danger); border-color: var(--danger); }
-
         .card { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; padding: 24px; }
-
-        /* --- DASHBOARD WIDGETS --- */
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 24px; }
         .stat-card { padding: 24px; background: var(--surface); border-radius: 12px; border: 1px solid var(--border); }
         .stat-card h3 { color: var(--text-muted); font-size: 14px; font-weight: 500; margin-bottom: 8px; text-transform: uppercase; }
         .stat-card .value { font-size: 32px; font-weight: 700; }
-
-        /* --- FILTROS DE IMPRESSÃO --- */
         .filter-bar { display: flex; gap: 16px; align-items: flex-end; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid var(--border); flex-wrap: wrap; }
-
-        /* --- FORMULÁRIOS --- */
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .form-group { display: flex; flex-direction: column; gap: 8px; }
         .form-group.full { grid-column: 1 / -1; }
@@ -84,8 +52,6 @@
         .color-item { display: flex; align-items: center; gap: 8px; }
         .color-item input[type="color"] { width: 40px; height: 40px; border: none; border-radius: 8px; cursor: pointer; padding: 0; }
         .upload-logo { border: 2px dashed var(--border); border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; background: #f8fafc; }
-
-        /* --- TABELA --- */
         .table-container { overflow-x: auto; margin-top: 16px; border-radius: 8px; border: 1px solid var(--border); }
         table { width: 100%; border-collapse: collapse; text-align: left; }
         th, td { padding: 16px; border-bottom: 1px solid var(--border); font-size: 14px; }
@@ -94,26 +60,25 @@
         .badge.bg-success { background: #ecfdf5; color: var(--success); }
         .badge.bg-danger { background: #fef2f2; color: var(--danger); }
         .action-group { display: flex; gap: 8px; }
-
-        /* --- RESPONSIVIDADE MASTER --- */
         .btn-menu-mobile { display: none; background: none; border: none; font-size: 24px; color: var(--text-main); cursor: pointer; margin-right: 16px; }
         .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 15; }
 
+        /* ADIÇÃO: Estilo do Modal de Edição */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 9000; display: none; align-items: center; justify-content: center; padding: 16px; }
+        .modal-card { background: var(--surface); width: 100%; max-width: 600px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); overflow: hidden; animation: fadeIn 0.2s ease; }
+        .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 24px; max-height: 70vh; overflow-y: auto; }
+        .modal-footer { padding: 16px 24px; background: #f8fafc; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; }
+
         @media (max-width: 768px) {
             .btn-menu-mobile { display: block; }
-            .sidebar { position: fixed; left: -260px; height: 100vh; transition: 0.3s ease; box-shadow: 2px 0 8px rgba(0,0,0,0.1); z-index: 20; }
+            .sidebar { position: fixed; left: -260px; height: 100vh; transition: 0.3s ease; z-index: 20; }
             .sidebar.open { left: 0; }
             .sidebar-overlay.active { display: block; }
-            
-            .stats-grid { grid-template-columns: 1fr; }
-            .form-grid { grid-template-columns: 1fr; }
+            .stats-grid, .form-grid { grid-template-columns: 1fr; }
             .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
-            .topbar { padding: 12px 16px; justify-content: space-between; }
-            
-            .view-section { padding: 16px; }
             .filter-bar { flex-direction: column; align-items: stretch; }
             .filter-bar .form-group { flex: none; width: 100%; }
-            .filter-bar .btn-primary { width: 100%; justify-content: center; }
         }
     </style>
 </head>
@@ -156,13 +121,10 @@
                 </button>
             </header>
 
-            <!-- ================= VIEW 1: DASHBOARD ================= -->
             <section id="dashboard" class="view-section active">
                 <div class="page-header">
                     <h1 class="page-title">Dashboard Master</h1>
                 </div>
-
-                <!-- WIDGETS -->
                 <div class="stats-grid">
                     <div class="stat-card" style="border-left: 4px solid var(--master-primary);">
                         <h3>Total de Unidades</h3><div class="value" id="dash-total">0</div>
@@ -174,45 +136,18 @@
                         <h3>Status: Desativadas</h3><div class="value" style="color: var(--danger);" id="dash-inativas">0</div>
                     </div>
                 </div>
-
-                <!-- IMPRIMIR RELATÓRIO DASHBOARD -->
-                <div class="card">
-                    <h3 style="margin-bottom: 16px; font-size: 16px;">Imprimir Relatório Geral</h3>
-                    <div class="filter-bar">
-                        <div class="form-group" style="flex:1;">
-                            <label class="form-label">Data Inicial</label>
-                            <input type="date" class="form-control" id="dash-data-ini">
-                        </div>
-                        <div class="form-group" style="flex:1;">
-                            <label class="form-label">Data Final</label>
-                            <input type="date" class="form-control" id="dash-data-fim">
-                        </div>
-                        <div class="form-group" style="flex:1;">
-                            <label class="form-label">Tipo</label>
-                            <select class="form-control" id="dash-tipo-rel">
-                                <option value="todos">Todas as Unidades</option>
-                                <option value="ativas">Somente Ativas</option>
-                                <option value="inativas">Somente Desativadas</option>
-                            </select>
-                        </div>
-                        <button class="btn-primary" onclick="imprimirRelatorioGeral()"><i class="ph ph-printer"></i> Imprimir</button>
-                    </div>
-                </div>
             </section>
 
-            <!-- ================= VIEW 2: GESTÃO (CADASTRAR EMPRESA/CLIENTE) ================= -->
             <section id="gestao-clientes" class="view-section">
                 <div class="page-header">
                     <h1 class="page-title">Gestão de Empresas / Clientes</h1>
                     <button class="btn-primary" onclick="toggleFormulario()"><i class="ph ph-plus"></i> Novo Cadastro</button>
                 </div>
 
-                <!-- FORMULÁRIO DE CADASTRO -->
+                <!-- FORMULÁRIO DE CADASTRO ATUALIZADO (Com Dia de Vencimento) -->
                 <div class="card" id="bloco-formulario" style="display: none; border-left: 4px solid var(--master-primary);">
                     <h3 style="margin-bottom: 24px; font-size: 18px;">Cadastrar Cliente/Empresa</h3>
                     <form id="form-novo-cliente" class="form-grid">
-
-                        <!-- Dados da Empresa -->
                         <div class="form-group">
                             <label class="form-label">Nome da Empresa</label>
                             <input type="text" id="input-nome-empresa" class="form-control" required>
@@ -234,8 +169,8 @@
                             <input type="email" id="input-email" class="form-control" required>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Data de Início</label>
-                            <input type="date" id="input-inicio" class="form-control" required>
+                            <label class="form-label">Dia de Vencimento</label>
+                            <input type="number" id="input-vencimento" class="form-control" min="1" max="31" value="5" required>
                         </div>
                         <div class="form-group full">
                             <label class="form-label">Endereço Completo</label>
@@ -276,19 +211,11 @@
                     </form>
                 </div>
 
-                <!-- LISTA DE CLIENTES E BUSCA -->
                 <div class="card">
                     <div style="display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap;">
                         <div class="form-group" style="flex: 2; min-width: 250px;">
                             <label class="form-label">Buscar Cliente/Empresa</label>
                             <input type="text" id="busca-lista" class="form-control" placeholder="Digite nome, gestor ou CNPJ..." onkeyup="filtrarTabela()">
-                        </div>
-                        <div class="form-group" style="flex: 1; min-width: 150px;">
-                            <label class="form-label">Filtrar Cadastro (Data)</label>
-                            <input type="date" id="busca-data" class="form-control">
-                        </div>
-                        <div class="form-group" style="justify-content: flex-end;">
-                            <button class="btn-primary" onclick="imprimirListaFiltro()"><i class="ph ph-printer"></i> Imprimir</button>
                         </div>
                     </div>
 
@@ -297,7 +224,7 @@
                             <thead>
                                 <tr>
                                     <th>Nome Empresa</th>
-                                    <th>Nome: Responsável/Gestor</th>
+                                    <th>Vencimento (Últ. Pagto)</th>
                                     <th>Senha Admin</th>
                                     <th>Status</th>
                                     <th>Botões de Ação</th>
@@ -313,14 +240,62 @@
         </main>
     </div>
 
-    <!-- SCRIPTS MANTENDO LÓGICA DE API -->
+    <!-- MODAL DE EDIÇÃO -->
+    <div id="modal-editar-unidade" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 style="font-size: 18px; margin: 0;">Editar Cliente</h3>
+                <button onclick="document.getElementById('modal-editar-unidade').style.display='none'" style="background:none; border:none; font-size:24px; cursor:pointer; color:var(--text-muted);">&times;</button>
+            </div>
+            <form id="form-editar-cliente">
+                <input type="hidden" id="edit-id-unidade">
+                <div class="modal-body form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Nome da Empresa</label>
+                        <input type="text" id="edit-nome-empresa" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">CNPJ / CPF</label>
+                        <input type="text" id="edit-cnpj" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nome do Gestor</label>
+                        <input type="text" id="edit-gestor" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Telefone</label>
+                        <input type="text" id="edit-telefone" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" id="edit-email" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Dia de Vencimento</label>
+                        <input type="number" id="edit-vencimento" class="form-control" min="1" max="31" required>
+                    </div>
+                    <div class="form-group full">
+                        <label class="form-label">Endereço</label>
+                        <input type="text" id="edit-endereco" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-outline" onclick="document.getElementById('modal-editar-unidade').style.display='none'">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="btn-salvar-edicao"><i class="ph ph-floppy-disk"></i> Atualizar Dados</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
     <script>
+        let listaUnidadesGlobal = []; // Para armazenar os dados e usar nos botões
+
         function toggleSidebar() {
             document.querySelector('.sidebar').classList.toggle('open');
             document.getElementById('sidebar-overlay').classList.toggle('active');
         }
 
-        // --- 1. LOGIN ---
         document.getElementById('form-login-master').addEventListener('submit', async function(e) {
             e.preventDefault();
             const senha = document.getElementById('master-senha').value;
@@ -343,14 +318,8 @@
                     btn.innerHTML = 'Acessar Painel';
                 }
             } catch (error) {
-                // Fallback Offline
-                if(senha === 'admin') {
-                    sessionStorage.setItem('master_auth', 'true');
-                    iniciarMaster();
-                } else {
-                    alert('Erro de conexão ou senha incorreta. Se offline, use a senha: admin');
-                    btn.innerHTML = 'Acessar Painel';
-                }
+                if(senha === 'admin') { sessionStorage.setItem('master_auth', 'true'); iniciarMaster(); } 
+                else { alert('Erro de conexão ou senha incorreta.'); btn.innerHTML = 'Acessar Painel'; }
             }
         });
 
@@ -360,26 +329,16 @@
             carregarUnidades();
         }
 
-        function fazerLogoutMaster() {
-            sessionStorage.removeItem('master_auth');
-            window.location.reload();
-        }
+        function fazerLogoutMaster() { sessionStorage.removeItem('master_auth'); window.location.reload(); }
+        window.onload = function() { if(sessionStorage.getItem('master_auth') === 'true') iniciarMaster(); }
 
-        window.onload = function() {
-            if(sessionStorage.getItem('master_auth') === 'true') iniciarMaster();
-        }
-
-        // --- 2. NAVEGAÇÃO E UI ---
         function switchView(viewId, navElement) {
             document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             navElement.classList.add('active');
             document.getElementById(viewId).classList.add('active');
-
-            // Fechar sidebar no mobile
             document.querySelector('.sidebar').classList.remove('open');
             document.getElementById('sidebar-overlay').classList.remove('active');
-
             if (viewId === 'gestao-clientes') carregarUnidades();
         }
 
@@ -388,7 +347,6 @@
             form.style.display = form.style.display === 'none' ? 'block' : 'none';
         }
 
-        // --- 3. DADOS (SUPABASE VIA PYTHON) ---
         async function carregarUnidades() {
             const tbody = document.getElementById('tabela-clientes');
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Carregando dados...</td></tr>';
@@ -398,18 +356,14 @@
                 if(response.ok) {
                     const data = await response.json();
                     if(data.sucesso) {
+                        listaUnidadesGlobal = data.unidades;
                         renderTabela(data.unidades);
                     } else {
-                        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">${data.erro || 'Erro ao carregar.'}</td></tr>`;
+                        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">${data.erro}</td></tr>`;
                     }
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Erro no servidor Python.</td></tr>';
                 }
             } catch (e) {
-                const mockData = [
-                    { id: "1", nome_empresa: "Prefeitura de Vigia", gestor: "João Silva", cnpj: "00.000/0001", senha_acesso: "XyZ123", status: "ativa" }
-                ];
-                renderTabela(mockData);
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Erro de comunicação.</td></tr>';
             }
         }
 
@@ -417,39 +371,168 @@
             const tbody = document.getElementById('tabela-clientes');
             tbody.innerHTML = '';
 
-            if(!dados || dados.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhuma empresa cadastrada ainda.</td></tr>';
-                document.getElementById('dash-total').innerText = 0;
-                document.getElementById('dash-ativas').innerText = 0;
-                document.getElementById('dash-inativas').innerText = 0;
-                return;
-            }
-
             let ativas = dados.filter(d => d.status === 'ativa').length;
             document.getElementById('dash-total').innerText = dados.length;
             document.getElementById('dash-ativas').innerText = ativas;
             document.getElementById('dash-inativas').innerText = dados.length - ativas;
 
             dados.forEach(un => {
+                const diaVenc = un.dia_vencimento || 5;
+                const ultPagto = un.mes_liberado || 'Pendente';
+                
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><strong>${un.nome_empresa}</strong><br><small>CNPJ: ${un.cnpj}</small></td>
-                    <td>${un.gestor}</td>
+                    <td><div style="font-weight: 600;">Dia ${diaVenc}</div><small style="color:var(--text-muted);">${ultPagto}</small></td>
                     <td><span style="font-family:monospace; background:#f1f5f9; padding:4px; border-radius:4px;">${un.senha_acesso}</span></td>
                     <td><span class="badge ${un.status === 'ativa' ? 'bg-success' : 'bg-danger'}">${un.status.toUpperCase()}</span></td>
                     <td>
                         <div class="action-group">
-                            <button class="btn-action" title="Gerar Recibo" onclick="acaoExtra('recibo')"><i class="ph ph-receipt"></i></button>
-                            <button class="btn-action" title="Alterar" onclick="acaoExtra('editar')"><i class="ph ph-pencil-simple"></i></button>
-                            <button class="btn-action ${un.status === 'ativa' ? 'danger' : ''}" title="Bloquear/Ativar" onclick="alternarStatus('${un.id}', '${un.status}')">
-                                <i class="ph ${un.status === 'ativa' ? 'ph-lock-key' : 'ph-lock-key-open'}"></i>
-                            </button>
-                            <button class="btn-action" title="Visualizar Contrato" onclick="acaoExtra('contrato')"><i class="ph ph-file-text"></i></button>
+                            <button class="btn-action" style="color: var(--success); border-color: var(--success);" title="Confirmar Pagamento deste Mês" onclick="confirmarPagamentoMensal('${un.id}')"><i class="ph ph-currency-dollar"></i></button>
+                            <button class="btn-action" title="Gerar Recibo" onclick="gerarRecibo('${un.id}')"><i class="ph ph-receipt"></i></button>
+                            <button class="btn-action" title="Editar Unidade" onclick="abrirModalEditar('${un.id}')"><i class="ph ph-pencil-simple"></i></button>
+                            <button class="btn-action ${un.status === 'ativa' ? 'danger' : ''}" title="Bloquear/Ativar" onclick="alternarStatus('${un.id}', '${un.status}')"><i class="ph ${un.status === 'ativa' ? 'ph-lock-key' : 'ph-lock-key-open'}"></i></button>
+                            <button class="btn-action" title="Imprimir Contrato" onclick="gerarContrato('${un.id}')"><i class="ph ph-file-text"></i></button>
                         </div>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
+        }
+
+        // ================= FUNÇÕES NOVAS SUBSTITUINDO ACAOEXTRA =================
+        
+        function abrirModalEditar(id) {
+            const un = listaUnidadesGlobal.find(u => u.id === id);
+            if(!un) return;
+            
+            document.getElementById('edit-id-unidade').value = un.id;
+            document.getElementById('edit-nome-empresa').value = un.nome_empresa;
+            document.getElementById('edit-cnpj').value = un.cnpj;
+            document.getElementById('edit-gestor').value = un.gestor;
+            document.getElementById('edit-telefone').value = un.telefone;
+            document.getElementById('edit-email').value = un.email;
+            document.getElementById('edit-endereco').value = un.endereco;
+            document.getElementById('edit-vencimento').value = un.dia_vencimento || 5;
+            
+            document.getElementById('modal-editar-unidade').style.display = 'flex';
+        }
+
+        document.getElementById('form-editar-cliente').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-id-unidade').value;
+            const btn = document.getElementById('btn-salvar-edicao');
+            btn.innerText = 'Salvando...';
+
+            const payload = {
+                nome_empresa: document.getElementById('edit-nome-empresa').value,
+                cnpj: document.getElementById('edit-cnpj').value,
+                gestor: document.getElementById('edit-gestor').value,
+                telefone: document.getElementById('edit-telefone').value,
+                email: document.getElementById('edit-email').value,
+                endereco: document.getElementById('edit-endereco').value,
+                dia_vencimento: document.getElementById('edit-vencimento').value
+            };
+
+            try {
+                const res = await fetch(`/api/master/unidades/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if(data.sucesso) {
+                    alert('Cliente atualizado!');
+                    document.getElementById('modal-editar-unidade').style.display = 'none';
+                    carregarUnidades();
+                } else { alert('Erro: ' + data.erro); }
+            } catch(err) { alert('Erro de conexão.'); }
+            btn.innerHTML = '<i class="ph ph-floppy-disk"></i> Atualizar Dados';
+        });
+
+        function gerarRecibo(id) {
+            const un = listaUnidadesGlobal.find(u => u.id === id);
+            const valor = prompt("Qual o valor do recibo? (Ex: 150,00)", "150,00");
+            if(!valor) return;
+
+            const janela = window.open('', '_blank');
+            const html = `
+                <html>
+                <body style="font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: auto;">
+                    <div style="border: 1px solid #ccc; padding: 40px; border-radius: 8px;">
+                        <h1 style="text-align: center; color: #4f46e5; margin-bottom: 5px;">RECIBO DE PAGAMENTO</h1>
+                        <h2 style="text-align: center; margin-top: 0; color: #333;">VALOR: R$ ${valor}</h2>
+                        <hr style="margin: 30px 0;">
+                        <p style="font-size: 18px; line-height: 1.8; text-align: justify;">
+                            Recebemos de <strong>${un.nome_empresa}</strong>, inscrito no CNPJ/CPF <strong>${un.cnpj}</strong>, a quantia de <strong>R$ ${valor}</strong>, 
+                            referente à prestação de serviços de licença de uso do software sisUnid (Regulação Municipal).
+                        </p>
+                        <p style="font-size: 18px; margin-top: 40px;">Por ser expressão da verdade, firmamos o presente.</p>
+                        <p style="font-size: 16px; margin-top: 40px; text-align: right;">Vigia/PA, ${new Date().toLocaleDateString('pt-BR')}</p>
+                        
+                        <div style="margin-top: 80px; text-align: center;">
+                            <hr style="width: 300px; margin-bottom: 5px;">
+                            <strong>Desenvolvedor / Fornecedor (sisUnid)</strong>
+                        </div>
+                    </div>
+                    <script>window.print();<\/script>
+                </body>
+                </html>
+            `;
+            janela.document.write(html);
+            janela.document.close();
+        }
+
+        function gerarContrato(id) {
+            const un = listaUnidadesGlobal.find(u => u.id === id);
+            const janela = window.open('', '_blank');
+            const html = `
+                <html>
+                <body style="font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: auto; line-height: 1.6;">
+                    <h2 style="text-align: center;">CONTRATO DE LICENCIAMENTO DE SOFTWARE</h2>
+                    <p><strong>CONTRATANTE:</strong> ${un.nome_empresa}, inscrita no CNPJ ${un.cnpj}, com sede em ${un.endereco}, representada por ${un.gestor}.</p>
+                    <p><strong>CONTRATADA:</strong> Back Informática / sisUnid.</p>
+                    <h3>1. OBJETO</h3>
+                    <p>O presente instrumento tem como objeto o licenciamento do software sisUnid para gestão de regulação de pacientes.</p>
+                    <h3>2. PAGAMENTO</h3>
+                    <p>A CONTRATANTE obriga-se a pagar à CONTRATADA o valor acordado mensalmente, com vencimento todo dia <strong>${un.dia_vencimento || 5}</strong> de cada mês. O atraso superior a 5 dias acarretará na suspensão do acesso.</p>
+                    <div style="margin-top: 100px; display: flex; justify-content: space-between; text-align: center;">
+                        <div style="width: 45%;">
+                            <hr style="margin-bottom: 5px;">
+                            <strong>CONTRATANTE (${un.gestor})</strong>
+                        </div>
+                        <div style="width: 45%;">
+                            <hr style="margin-bottom: 5px;">
+                            <strong>CONTRATADA (sisUnid)</strong>
+                        </div>
+                    </div>
+                    <script>window.print();<\/script>
+                </body>
+                </html>
+            `;
+            janela.document.write(html);
+            janela.document.close();
+        }
+
+        // ================= DEMAIS FUNÇÕES DO MASTER =================
+
+        async function confirmarPagamentoMensal(id) {
+            const dataAtual = new Date();
+            const mesFormatado = prompt("Mês/Ano de referência (Ex: 08/2026):", (dataAtual.getMonth() + 1).toString().padStart(2, '0') + '/' + dataAtual.getFullYear());
+            if(!mesFormatado) return;
+
+            if(!confirm(`Confirmar recebimento do PIX para o mês ${mesFormatado}?`)) return;
+
+            try {
+                const response = await fetch(`/api/master/unidades/${id}/pagamento`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mes_ano: mesFormatado })
+                });
+                const data = await response.json();
+                if(data.sucesso) { alert(`Pagamento confirmado!`); carregarUnidades(); } 
+                else { alert("Erro: " + data.erro); }
+            } catch(e) { alert('Falha de conexão.'); }
         }
 
         document.getElementById('form-novo-cliente').addEventListener('submit', async function(e) {
@@ -463,8 +546,8 @@
             formData.append('gestor', document.getElementById('input-gestor').value);
             formData.append('telefone', document.getElementById('input-telefone').value);
             formData.append('email', document.getElementById('input-email').value);
-            formData.append('data_inicio', document.getElementById('input-inicio').value);
             formData.append('endereco', document.getElementById('input-endereco').value);
+            formData.append('dia_vencimento', document.getElementById('input-vencimento').value);
             formData.append('slogan', document.getElementById('input-slogan').value);
             formData.append('tema_primaria', document.getElementById('input-cor-1').value);
             formData.append('tema_secundaria', document.getElementById('input-cor-2').value);
@@ -476,22 +559,14 @@
             try {
                 const response = await fetch('/api/master/unidades', { method: 'POST', body: formData });
                 const data = await response.json();
-
                 if (response.ok && data.sucesso) {
-                    alert('Cliente cadastrado com sucesso!');
+                    alert('Cliente cadastrado!');
                     this.reset();
                     document.getElementById('nome-arquivo-logo').innerText = 'Clique para anexar a Logo';
-                    toggleFormulario();
-                    carregarUnidades();
-                } else {
-                    alert('⚠️ Erro ao salvar no banco: ' + (data.erro || 'Verifique o Supabase.'));
-                }
-            } catch (error) {
-                alert('Erro de conexão com a API. O servidor Python está rodando?');
-                console.error(error);
-            } finally {
-                btnSalvar.innerHTML = '<i class="ph ph-floppy-disk"></i> Salvar Registro';
-            }
+                    toggleFormulario(); carregarUnidades();
+                } else { alert('Erro: ' + data.erro); }
+            } catch (error) { alert('Erro de conexão.'); } 
+            finally { btnSalvar.innerHTML = '<i class="ph ph-floppy-disk"></i> Salvar Registro'; }
         });
 
         async function alternarStatus(id, statusAtual) {
@@ -504,23 +579,6 @@
                 });
                 carregarUnidades();
             } catch(e) { alert('Falha ao alterar status.'); }
-        }
-
-        function acaoExtra(tipo) {
-            const msgs = {
-                'recibo': 'Módulo de Geração de Recibo em desenvolvimento.',
-                'editar': 'Módulo de Edição abrirá o formulário preenchido.',
-                'contrato': 'Visualizador de PDF de Contratos em desenvolvimento.'
-            };
-            alert(msgs[tipo]);
-        }
-
-        function imprimirRelatorioGeral() {
-            window.print();
-        }
-
-        function imprimirListaFiltro() {
-            window.print();
         }
 
         function filtrarTabela() {
