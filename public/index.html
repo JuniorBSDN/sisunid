@@ -362,19 +362,19 @@
                 </div>
 
                 <div class="stats-grid">
-                    <div class="card stat-card">
+                    <div class="card stat-card" style="cursor: pointer;" onclick="abrirFiltroKPI('total')" title="Clique para ver todos">
                         <h3>Total na Fila Ativa</h3>
                         <div class="value" id="kpi-total">0</div>
                     </div>
-                    <div class="card stat-card" style="border-left: 4px solid var(--success);">
+                    <div class="card stat-card" style="border-left: 4px solid var(--success); cursor: pointer;" onclick="abrirFiltroKPI('agendados')" title="Clique para ver agendados">
                         <h3>Agendados (Hoje)</h3>
                         <div class="value" style="color: var(--success);" id="kpi-agendados">0</div>
                     </div>
-                    <div class="card stat-card warning">
+                    <div class="card stat-card warning" style="cursor: pointer;" onclick="abrirFiltroKPI('alerta')" title="Clique para ver alertas">
                         <h3>Próximos do Limite</h3>
                         <div class="value text-warning" id="kpi-alerta">0</div>
                     </div>
-                    <div class="card stat-card danger">
+                    <div class="card stat-card danger" style="cursor: pointer;" onclick="abrirFiltroKPI('atrasados')" title="Clique para ver atrasados">
                         <h3>SLA Estourado (Atrasos)</h3>
                         <div class="value" id="kpi-atrasados">0</div>
                     </div>
@@ -2094,6 +2094,36 @@ function inicializarSelectCategorias(elementoEspecifico = null) {
     } catch (err) {
         alert('Erro de conexão ao gerar o backup.');
     }
+}
+        function abrirFiltroKPI(tipo) {
+    let filtrados = [];
+    let titulo = "";
+
+    switch(tipo) {
+        case 'total':
+            filtrados = listaRegulacoesCache;
+            titulo = "Relatório: Fila Ativa Completa";
+            break;
+        case 'agendados':
+            filtrados = listaRegulacoesCache.filter(r => r.status_atual === 'Agendado');
+            titulo = "Relatório: Pacientes Agendados";
+            break;
+        case 'alerta':
+            filtrados = listaRegulacoesCache.filter(r => r.prioridade === 'Prioridade' && r.status_atual === 'Em Análise');
+            titulo = "Relatório: Pacientes Próximos do Limite (Alerta)";
+            break;
+        case 'atrasados':
+            filtrados = listaRegulacoesCache.filter(r => r.prioridade === 'Urgência' && r.status_atual === 'Em Análise');
+            titulo = "Relatório Crítico: SLA Estourado / Urgências";
+            break;
+    }
+
+    // Se quiser rolar a tela automaticamente para a tabela principal e atualizar os dados exibidos nela:
+    renderTabelaRegulacoes(filtrados);
+    showToast("Filtro Aplicado", `Exibindo: ${titulo} (${filtrados.length} registros)`);
+    
+    // Opcional: Se preferir focar a visão na aba de relatórios com os dados já prontos para impressão:
+    // Você pode direcionar o usuário direto para a seção de relatórios com a listagem filtrada.
 }
     </script>
 </body>
