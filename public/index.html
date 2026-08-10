@@ -326,6 +326,7 @@
                 <button class="nav-item" onclick="switchView('pacientes', this)"><i class="ph ph-users"></i> Pacientes</button>
                 <button class="nav-item" onclick="switchView('relatorios', this)"><i class="ph ph-chart-line-up"></i> Relatórios</button>
                 <button class="nav-item" onclick="switchView('emails', this)"><i class="ph ph-envelope-simple"></i> E-mails Enviados</button>
+                <button class="nav-item" onclick="switchView('configuracoes', this)"><i class="ph ph-gear"></i> Configurações</button>
                 <button class="nav-item" onclick="fazerLogoutTenant()" style="color: var(--danger); margin-top: auto;"><i class="ph ph-sign-out"></i> Sair do Sistema</button>
             </nav>
         </aside>
@@ -654,6 +655,61 @@
                     </div>
                 </div>
             </section>
+
+<!-- VIEW 6: CONFIGURAÇÕES -->
+            <section id="configuracoes" class="view-section">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-title">Configurações do Sistema</h1>
+                        <p class="page-subtitle">Ajuste notificações, backups automáticos e limpeza de dados.</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <form id="form-configuracoes">
+                            <div class="form-grid">
+                                <div class="form-group full-width">
+                                    <label class="form-label" style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer;">
+                                        <input type="checkbox" id="config-notificar-paciente" style="width: 18px; height: 18px;"> 
+                                        Ativar envio de e-mails automáticos para pacientes
+                                    </label>
+                                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px; margin-left: 26px;">
+                                        Se desativado, o sistema não enviará e-mails de atualização. <b>Isso evita que você receba mensagens de erro (bounce) na sua caixa pessoal.</b>
+                                    </p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">E-mail Administrativo (Para Backups e Alertas)</label>
+                                    <input type="email" id="config-email-admin" class="form-control" placeholder="seu-email@dominio.com">
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Limpeza do Histórico de E-mails (Automático)</label>
+                                    <select id="config-limpeza-dias" class="form-control">
+                                        <option value="0">Não limpar (Manter histórico para sempre)</option>
+                                        <option value="15">Excluir e-mails com mais de 15 dias</option>
+                                        <option value="30">Excluir e-mails com mais de 30 dias</option>
+                                        <option value="60">Excluir e-mails com mais de 60 dias</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group full-width" style="margin-top: 8px;">
+                                    <label class="form-label" style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer;">
+                                        <input type="checkbox" id="config-backup-auto" style="width: 18px; height: 18px;"> 
+                                        Lembrete de Backup Automático
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group full-width" style="display: flex; justify-content: flex-end; margin-top: 24px; border-top: 1px solid var(--border); padding-top: 24px;">
+                                <button type="submit" class="btn-primary" id="btn-salvar-config"><i class="ph ph-floppy-disk"></i> Salvar Configurações</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+            
         </main>
     </div>
 
@@ -1164,6 +1220,7 @@ function inicializarSelectCategorias(elementoEspecifico = null) {
             if (viewId === 'pacientes') carregarPacientesBanco();
             if (viewId === 'relatorios') gerarRelatorioNaTela(); // SUBSTITUÍDO AQUI
             if (viewId === 'emails') carregarEmailsBanco();
+            if (viewId === 'configuracoes') carregarConfiguracoes();
         }
 
         function showToast(titulo, mensagem) {
@@ -1413,6 +1470,70 @@ function inicializarSelectCategorias(elementoEspecifico = null) {
             }
         });
 
+
+// --- FUNÇÕES DA NOVA ABA DE CONFIGURAÇÕES ---
+        async function carregarConfiguracoes() {
+            const unidade_id = sessionStorage.getItem('unidade_id');
+            try {
+                const res = await fetch(`/api/tenant/configuracoes?unidade_id=${unidade_id}`);
+                const data = await res.json();
+                
+                if (data.sucesso && data.configuracoes) {
+                    const c = data.configuracoes;
+                    // Se for null/undefined, assume que é true por padrão
+                    document.getElementById('config-notificar-paciente').checked = c.notificar_paciente !== false; 
+                    document.getElementById('config-email-admin').value = c.email_admin || '';
+                    document.getElementById('config-limpeza-dias').value = c.limpeza_dias || '0';
+                    document.getElementById('config-backup-auto').checked = c.backup_auto === true;
+                }
+            } catch(e) { console.error('Erro ao carregar configurações'); }
+        }
+
+        document.getElementById('form-configuracoes').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-salvar-config');
+            btn.innerHTML = 'Salvando...';
+
+            const payload = {
+                unidade_id: sessionStorage.getItem('unidade_id'),
+                configuracoes: {
+                    notificar_paciente: document.getElementById('config-notificar-paciente').checked,
+                    email_admin: document.getElementById('config-email-admin').value,
+                    limpeza_dias: document.getElementById('config-limpeza-dias').value,
+                    backup_auto: document.getElementById('config-backup-auto').checked
+                }
+            };
+
+            try {
+                const res = await fetch('/api/tenant/configuracoes', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await res.json();
+                if (data.sucesso) {
+                    showToast('Atualizado!', 'As configurações foram salvas com sucesso.');
+                } else {
+                    alert('Erro ao salvar configurações.');
+                }
+            } catch (err) { alert('Erro de conexão ao salvar.'); }
+            
+            btn.innerHTML = '<i class="ph ph-floppy-disk"></i> Salvar Configurações';
+        });
+
+        // Executa a limpeza silenciosa do banco sempre que o usuário faz login na unidade
+        function executarLimpezaAutomatica() {
+            const unidade_id = sessionStorage.getItem('unidade_id');
+            if(unidade_id) {
+                fetch('/api/tenant/limpeza', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ unidade_id })
+                }).catch(e => console.log('Limpeza falhou', e));
+            }
+        }
+        
 
         // --- 6. PACIENTES E PRONTUÁRIO ---
         async function carregarPacientesBanco() {
